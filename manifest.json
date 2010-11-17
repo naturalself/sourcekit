@@ -1,5 +1,5 @@
 {
-  "name": "ChromePad - Text Editor for Chrome",
+  "name": "ChromePad - Text Editor Inside Chrome",
   "version": "0.1",
   "incognito": "split",
   "icons": { "128": "icon.png" },
