@@ -1,0 +1,11 @@
+{
+  "name": "ChromePad - Text Editor for Chrome",
+  "version": "0.1",
+  "incognito": "split",
+  "icons": { "128": "icon.png" },
+  "browser_action": {
+    "default_icon": "icon.png"
+  },
+  "background_page": "background.html",
+  "permissions": ["tabs"]
+}
