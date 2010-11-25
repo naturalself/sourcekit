@@ -7,5 +7,11 @@
     "default_icon": "icon.png"
   },
   "background_page": "background.html",
-  "permissions": ["tabs"]
+  "permissions": ["tabs",
+    "http://api.dropbox.com/",
+    "https://api.dropbox.com/",
+    "http://api-content.dropbox.com/",
+    "https://api-content.dropbox.com/",
+    "http://api.getdropbox.com/"
+  ]
 }
