@@ -5,18 +5,18 @@
       <script src="js/jquery.js"></script>
       <script src='js/oauth.js'></script>
       <script src='js/sha1.js'></script>
-      <script src="js/dropbox.js"></script>
+      <script src="js/modern_dropbox.js"></script>
       
   </head>
   <body>
       <script>
         $(document).ready(function() {
-            dropbox.setup();
-            dropbox.getFolderContents("", function(data) {
+            var dropbox = new ModernDropbox("0660jgq6erg4h63", "0iyu9q1lnb56jyg");
+            dropbox.getDirectoryContents("", function(data) {
                 $.each(data.contents, function(index, file) {
                     if (!file.is_dir) {
                         console.log(file);
-                        $("<li><a href='javascript:chrome.tabs.create({\"url\": \"chromepad.html?path=" + file.path + "\"});'>" + file.path +"</a></li>").appendTo('#content');
+                        $("<li><a href='javascript:chrome.tabs.create({\"url\": \"chromepad.new.html?path=" + file.path + "\"});'>" + file.path +"</a></li>").appendTo('#content');
                     }
                 });
             });

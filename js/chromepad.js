@@ -16,7 +16,7 @@ window.onBespinLoad = function() {
         }
     );
 
-	chromepad.path = objURL['path'].replace(/^\//, '');
+	//chromepad.path = objURL['path'].replace(/^\//, '');
 	
     var edit = document.getElementById("textarea");
     // Get the environment variable.
@@ -24,15 +24,17 @@ window.onBespinLoad = function() {
     // Get the editor.
     var editor = env.editor;
 
-	dropbox.getFile(chromepad.path, function(data) {
+/*	dropbox.getFile(chromepad.path, function(data) {
     	// Change the value and move to the secound line.
     	editor.value = data;
-	});
+	}); */
 };
 
 $(document).ready(function() {
 	dropbox.setup();
-	
+	dropbox.getAccount(function(data) {
+		console.log(data);	
+	});
 	$('#save').click(function() {
 		var edit = document.getElementById("textarea");
 	    // Get the environment variable.

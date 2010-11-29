@@ -1,5 +1,7 @@
 var chromepad = {};
 
+var dropbox = new ModernDropbox("0660jgq6erg4h63", "0iyu9q1lnb56jyg");
+
 window.onBespinLoad = function() {
     // Build an empty URL structure in which we will store
     // the individual query values by key.
@@ -24,12 +26,25 @@ window.onBespinLoad = function() {
     // Get the editor.
     var editor = env.editor;
 
-	// dropbox.getFile(chromepad.path, function(data) {
-	//     	// Change the value and move to the secound line.
-	//     	editor.value = data;
-	// });
+	dropbox.getFileContents(chromepad.path, function(data) {
+		// Change the value and move to the secound line.
+		editor.value = data;
+	});
 };
 
 $(document).ready(function() {
-	
+	$('#save').click(function() {
+		var edit = document.getElementById("textarea");
+	    // Get the environment variable.
+	    var env = edit.bespin;
+	    // Get the editor.
+	    var editor = env.editor;
+		
+		dropbox.putFileContents(chromepad.path, editor.value);
+	});
+
+    $("#logoff").click(function() {
+        console.log("clearing");
+        dropbox.logOutDropbox();
+    });
 });

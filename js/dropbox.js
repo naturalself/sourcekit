@@ -30,7 +30,7 @@ dropbox.consumerKey = "0660jgq6erg4h63";
 dropbox.consumerSecret = "0iyu9q1lnb56jyg";
 
 //Prefix for data storate - MUST be unique
-dropbox.prefix = "chromepad_";
+dropbox.prefix = "dropbox_";
 
 //Set to "dropbox" if your application has been given full Dropbox folder access
 dropbox.accessType = "dropbox";
@@ -267,20 +267,19 @@ dropbox.createOauthRequest = function(param1,param2,callback) {
 	//Timestamp and sign the OAuth request
 	OAuth.setTimestampAndNonce(message);
 	OAuth.SignatureMethod.sign(message, accessor);
-	
+
 	return message;
 }
 
 dropbox.oauthRequest = function(param1,param2,callback) {
 	message = this.createOauthRequest(param1, param2, callback);
-	
+	console.log(message);
 	//Post the OAuth request
 	$.ajax({
 		url: message.action,
 		type: message.method,
 		data: OAuth.getParameterMap(message.parameters),
 		dataType: param1.type,
-		contentType: param1.contentType,
 		success: function(data) {
 			//OAuth request successful - run callback
 			callback(data);

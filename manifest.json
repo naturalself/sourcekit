@@ -8,10 +8,9 @@
   },
   "background_page": "background.html",
   "permissions": ["tabs",
-    "http://api.dropbox.com/",
-    "https://api.dropbox.com/",
-    "http://api-content.dropbox.com/",
-    "https://api-content.dropbox.com/",
-    "http://api.getdropbox.com/"
+    "http://*.dropbox.com/",
+    "https://*.dropbox.com/",
+    "https://*.getdropbox.com/",
+    "http://*.getdropbox.com/"
   ]
 }
