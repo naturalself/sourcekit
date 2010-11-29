@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>Chrome Pad</title>
+      <script src="js/jquery.js"></script>
+      <script src='js/oauth.js'></script>
+      <script src='js/sha1.js'></script>
+      <script src="js/dropbox.js"></script>
+      
+  </head>
+  <body>
+      <script>
+        $(document).ready(function() {
+            dropbox.setup();
+            dropbox.getFolderContents("", function(data) {
+                $.each(data.contents, function(index, file) {
+                    if (!file.is_dir) {
+                        console.log(file);
+                        $("<li><a href='javascript:chrome.tabs.create({\"url\": \"chromepad.html?path=" + file.path + "\"});'>" + file.path +"</a></li>").appendTo('#content');
+                    }
+                });
+            });
+        });
+      </script>
+      <ul id="content"></ul>
+  </body>
+</html>

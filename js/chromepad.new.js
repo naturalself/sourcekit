@@ -24,26 +24,12 @@ window.onBespinLoad = function() {
     // Get the editor.
     var editor = env.editor;
 
-	dropbox.getFile(chromepad.path, function(data) {
-    	// Change the value and move to the secound line.
-    	editor.value = data;
-	});
+	// dropbox.getFile(chromepad.path, function(data) {
+	//     	// Change the value and move to the secound line.
+	//     	editor.value = data;
+	// });
 };
 
 $(document).ready(function() {
-	dropbox.setup();
 	
-	$('#save').click(function() {
-		var edit = document.getElementById("textarea");
-	    // Get the environment variable.
-	    var env = edit.bespin;
-	    // Get the editor.
-	    var editor = env.editor;
-		
-		dropbox.uploadFile('', chromepad.path, editor.value);
-	});
-	
-	$('#logoff').click(function() {
-		dropbox.clearAuthStorage();
-	});
 });

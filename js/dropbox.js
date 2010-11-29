@@ -42,7 +42,7 @@ dropbox.authHTML5 = true;
 dropbox.cache = true;
 
 //Set this to your authorization callback URL
-dropbox.authCallback = "";
+dropbox.authCallback = ""; // chrome.extension.getURL("chromepad.html");
 
 //Maximum number of files to list from a directory. Default 10k
 dropbox.fileLimit = 10000;
@@ -50,72 +50,113 @@ dropbox.fileLimit = 10000;
 //Cookie expire time (in days). Default 10 years
 dropbox.cookieTime = 3650;
 
-/*-------------------No editing required beneath this line-------------------*/
-
-//Incude required JS libraries
-document.write("<script type='text/javascript' src='js/oauth.js'></script>");
-document.write("<script type='text/javascript' src='js/sha1.js'></script>");
-document.write("<script type='text/javascript' src='js/jquery.js'></script>");
-
-//If using HTML5 local storage
-if (dropbox.authHTML5 == true) {
-	//Get tokens (only declares variables if the token exists)
-	temp = localStorage.getItem(dropbox.prefix + "requestToken")
-	if (temp) {
-		dropbox.requestToken = temp;
-	}
-	
-	temp = localStorage.getItem(dropbox.prefix + "requestTokenSecret")
-	if (temp) {
-		dropbox.requestTokenSecret = temp;
-	}
-	
-	temp = localStorage.getItem(dropbox.prefix + "accessToken")
-	if (temp) {
-		dropbox.accessToken = temp;
-	}
-	
-	temp = localStorage.getItem(dropbox.prefix + "accessTokenSecret")
-	if (temp) {
-		dropbox.accessTokenSecret = temp;
-	}
-} else {
-	//Get cookies (for stored OAuth tokens)
-	cookies = document.cookie;
-	cookies = cookies.split(";");
-	
-	//Loop through cookies to extract tokens
-	for (i in cookies) {
-		c = cookies[i];
-		while (c.charAt(0) == ' ') c = c.substring(1);
-		c = c.split("=");
-		switch (c[0]) {
-			case dropbox.prefix + "requestToken":
-				dropbox.requestToken = c[1];
-			break;
-			
-			case dropbox.prefix + "requestTokenSecret":
-				dropbox.requestTokenSecret = c[1];
-			break;
-			
-			case dropbox.prefix + "accessToken":
-				dropbox.accessToken = c[1];
-			break;
-			
-			case dropbox.prefix + "accessTokenSecret":
-				dropbox.accessTokenSecret = c[1];
-			break;
+dropbox.setupAuthStorage = function() {
+	//If using HTML5 local storage
+	if (dropbox.authHTML5 == true) {
+		//Get tokens (only declares variables if the token exists)
+		temp = localStorage.getItem(dropbox.prefix + "requestToken")
+		if (temp) {
+			dropbox.requestToken = temp;
 		}
-	}
 	
-	//While we're here, set the cookie expiry date (for later use)
-	dropbox.cookieExpire = new Date();
-	dropbox.cookieExpire.setDate(dropbox.cookieExpire.getDate()+dropbox.cookieTime);
-	dropbox.cookieExpire = dropbox.cookieExpire.toUTCString();
+		temp = localStorage.getItem(dropbox.prefix + "requestTokenSecret")
+		if (temp) {
+			dropbox.requestTokenSecret = temp;
+		}
+	
+		temp = localStorage.getItem(dropbox.prefix + "accessToken")
+		if (temp) {
+			dropbox.accessToken = temp;
+		}
+	
+		temp = localStorage.getItem(dropbox.prefix + "accessTokenSecret")
+		if (temp) {
+			dropbox.accessTokenSecret = temp;
+		}
+	} else {
+		//Get cookies (for stored OAuth tokens)
+		cookies = document.cookie;
+		cookies = cookies.split(";");
+	
+		//Loop through cookies to extract tokens
+		for (i in cookies) {
+			c = cookies[i];
+			while (c.charAt(0) == ' ') c = c.substring(1);
+			c = c.split("=");
+			switch (c[0]) {
+				case dropbox.prefix + "requestToken":
+					dropbox.requestToken = c[1];
+				break;
+			
+				case dropbox.prefix + "requestTokenSecret":
+					dropbox.requestTokenSecret = c[1];
+				break;
+			
+				case dropbox.prefix + "accessToken":
+					dropbox.accessToken = c[1];
+				break;
+			
+				case dropbox.prefix + "accessTokenSecret":
+					dropbox.accessTokenSecret = c[1];
+				break;
+			}
+		}
+	
+		//While we're here, set the cookie expiry date (for later use)
+		dropbox.cookieExpire = new Date();
+		dropbox.cookieExpire.setDate(dropbox.cookieExpire.getDate()+dropbox.cookieTime);
+		dropbox.cookieExpire = dropbox.cookieExpire.toUTCString();
+	}	
+}
+
+dropbox.clearAuthStorage = function() {
+	//If using HTML5 local storage
+	if (dropbox.authHTML5 == true) {
+		//Get tokens (only declares variables if the token exists)
+		localStorage.removeItem(dropbox.prefix + "requestToken")
+		localStorage.removeItem(dropbox.prefix + "requestTokenSecret")
+		localStorage.removeItem(dropbox.prefix + "accessToken")
+		localStorage.removeItem(dropbox.prefix + "accessTokenSecret")
+	} else {
+		//Get cookies (for stored OAuth tokens)
+		cookies = document.cookie;
+		cookies = cookies.split(";");
+	
+		//Loop through cookies to extract tokens
+		for (i in cookies) {
+			c = cookies[i];
+			while (c.charAt(0) == ' ') c = c.substring(1);
+			c = c.split("=");
+			switch (c[0]) {
+				case dropbox.prefix + "requestToken":
+					dropbox.requestToken = '';
+				break;
+			
+				case dropbox.prefix + "requestTokenSecret":
+					dropbox.requestTokenSecret = '';
+				break;
+			
+				case dropbox.prefix + "accessToken":
+					dropbox.accessToken = '';
+				break;
+			
+				case dropbox.prefix + "accessTokenSecret":
+					dropbox.accessTokenSecret = '';
+				break;
+			}
+		}
+	
+		//While we're here, set the cookie expiry date (for later use)
+		dropbox.cookieExpire = new Date();
+		dropbox.cookieExpire.setDate(dropbox.cookieExpire.getDate()+dropbox.cookieTime);
+		dropbox.cookieExpire = dropbox.cookieExpire.toUTCString();
+	}		
 }
 
 //Setup function runs after libraries are loaded
 dropbox.setup = function() {
+	dropbox.setupAuthStorage();
+	
 	//Check if access already allowed
 	if (!dropbox.accessToken || !dropbox.accessTokenSecret) {
 		//Check if already authorized, but not given access yet
@@ -171,10 +212,6 @@ dropbox.setup = function() {
 		}
 	}
 };
-
-
-//Run setup when everything's loaded
-//window.onload = dropbox.setup;
 
 //Function to send oauth requests
 dropbox.createOauthRequest = function(param1,param2,callback) {
@@ -415,8 +452,8 @@ dropbox.deleteItem = function(path,callback) {
 	});
 }
 
-//Function to delete a file/folder
-dropbox.deleteItem = function(path,callback) {
+//Function to Create Folder
+dropbox.createFolder = function(path,callback) {
 	dropbox.oauthRequest({
 		url: "http://api.dropbox.com/0/fileops/create_folder"
 	}, [
