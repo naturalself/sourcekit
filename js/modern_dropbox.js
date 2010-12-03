@@ -13,7 +13,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 	var _dropboxApiVersion = 0;
 	var _xhr = new XMLHttpRequest();
 	
-	var _ajaxSendFileContents = function(message, content) {
+	var _ajaxSendFileContents = function(message, filename, content) {
 		_xhr.open("POST", message.action, true);
 		
 		var boundary = '---------------------------';
@@ -33,7 +33,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		}
 
 		body += '--' + boundary + "\r\n";
-		body += "Content-Disposition: form-data; name=file; filename=" + message.filename + "\r\n";
+		body += "Content-Disposition: form-data; name=file; filename=" + filename + "\r\n";
 		body += "Content-type: application/octet-stream\r\n\r\n";
 		body += content;
 		body += "\r\n";
@@ -134,7 +134,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		for (key in options) {
 			message.parameters.push([key, options[key]]);
 		}
-
+		
 		OAuth.setTimestampAndNonce(message);
 		OAuth.SignatureMethod.sign(message, accessor);
 
@@ -161,6 +161,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		if (options.multipart) {
 			_ajaxSendFileContents(
 				message,
+				options.filename,
 				options.content
 			);
 		} else {
@@ -290,14 +291,15 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		},
 		
 		putFileContents: function(path, content, callback) {
-			var url = "https://api-content.dropbox.com/" + _dropboxApiVersion + "/files/dropbox/" + path;
-			var message = _createOauthRequest(url, {
-				filename: path.match(/\/([^\\\/]+)$/)[1]
-			});
+			var filename = path.match(/([^\\\/]+)$/)[1];
+			var file_path = path.match(/^(.*?)[^\\\/]+$/)[1];
+			var url = "https://api-content.dropbox.com/" + _dropboxApiVersion + "/files/dropbox/" + file_path + "?file=" + filename;
+			var message = _createOauthRequest(url, { method: "POST" });
 			
 			_sendOauthRequest(message, {
 				multipart: true,
 				content: content,
+				filename: filename,
 				success: (function(data) { callback(data); }).bind(this)
 			});
 		},
