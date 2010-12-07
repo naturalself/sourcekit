@@ -4,12 +4,14 @@
       <title>Chrome Pad</title>
       <link id="bespin_base" href="bespin/"/>
       <link rel="stylesheet" href="css/chromepad.css" type="text/css" media="screen" title="no title" charset="utf-8">
+      <link rel="stylesheet" href="css/smoothness/jquery-ui.css" type="text/css" media="screen" title="no title" charset="utf-8">
 
       <script src="bespin/BespinEmbedded.js"></script>
       <script src="js/jquery.js"></script>
-      <script src='js/oauth.js'></script>
+      <script src="js/jquery-ui.min.js"></script>
       <script src='js/sha1.js'></script>
-      <script src="js/dropbox.js"></script>
+      <script src='js/oauth.js'></script>
+      <script src="js/modern_dropbox.js"></script>
       <script src="js/chromepad.js"></script>
   </head>
   <body>
@@ -17,6 +19,10 @@
         <button id="save">Save</button>        
         <button id="logoff">Log off from Dropbox</button>
     </div>
-    <div class="bespin" id="textarea"></div>
+    <div class="bespin" id="editor"></div>
+    
+    <div id="choose_file_name" style="display: none;">
+        Save to filename <input type="text" name="path" id="path" />
+    </div>
   </body>
 </html>

@@ -1,6 +1,12 @@
-body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: none;}
+body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;}
 
-div.bespin {
-  height: 100%;
-  width: 100%;
+div.bespin { }
+
+div#drawer {
+  height: 32px;
+}
+
+div#drawer_handle {
+  background: red;
+  
 }

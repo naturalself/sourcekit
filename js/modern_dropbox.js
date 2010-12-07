@@ -13,7 +13,13 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 	var _dropboxApiVersion = 0;
 	var _xhr = new XMLHttpRequest();
 	
-	var _ajaxSendFileContents = function(message, filename, content) {
+	var _ajaxSendFileContents = function(options) {
+		var message = options.message;
+		var filename = options.filename;
+		var content = options.content;
+		var success = options.success;
+		var error = options.error;
+		
 		_xhr.open("POST", message.action, true);
 		
 		var boundary = '---------------------------';
@@ -39,9 +45,15 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		body += "\r\n";
 		body += '--' + boundary + '--';
 		
-		_xhr.onreadystatechange = function() {
-			console.log(this);
-		}
+		_xhr.onreadystatechange = (function() {
+			if (this.readyState == 4 && this.status == 200) {				
+				success();
+    		} else if (this.readState == 4) {
+				error();
+			}
+		}).bind(_xhr);
+		
+		_xhr.onerror = error;
 		
 		_xhr.send(body);
 	};
@@ -159,11 +171,13 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		}
 		
 		if (options.multipart) {
-			_ajaxSendFileContents(
-				message,
-				options.filename,
-				options.content
-			);
+			_ajaxSendFileContents({
+				message: message,
+				filename: options.filename,
+				content: options.content,
+				success: options.success,
+				error: options.error
+			});
 		} else {
 			$.ajax({
 				url: message.action,

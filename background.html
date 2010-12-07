@@ -1,11 +1,7 @@
 <html>
   <script>
-    //React when a browser action's icon is clicked.
     chrome.browserAction.onClicked.addListener(function(tab) {
-        chrome.browserAction.setPopup({"popup": "filelist.html"});
-//       chrome.tabs.create({"url": "chromepad.new.html"});
-//        chrome.tabs.create({"url": "chromepad.html"});
-//         chrome.tabs.create({"url": "filelist.html"});
+        chrome.tabs.create({ url: "chromepad.html", selected: true });
     });
   </script>
 </html>
