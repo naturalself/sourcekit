@@ -219,11 +219,18 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 							authTokens["requestTokenSecret"] = parsedTokenPairs["oauth_token_secret"];
 					
 							_storeAuth(authTokens);
-		
-							document.location = "http://api.getdropbox.com/" + _dropboxApiVersion + "/oauth/authorize?oauth_token=" 
-								+ authTokens["requestToken"] 
-								+ "&oauth_callback=" 
-								+ _authCallback;
+							
+							chrome.tabs.create({ url:  "http://api.getdropbox.com/" + _dropboxApiVersion + "/oauth/authorize?oauth_token=" 
+								+ authTokens["requestToken"] + "&oauth_callback=" + _authCallback }); 
+							
+							chrome.tabs.onUpdated.addListener((function(tabId, changeInfo, tab) {
+								console.log(tab);
+								
+								if (tab.url.match(/.*chromepad./)) {
+									console.log("HELLO");
+								}
+							}).bind(this));	
+								
 						}).bind(this)
 					});
 				} else {

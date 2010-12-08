@@ -1,12 +1,23 @@
 body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;}
 
-div.bespin { }
-
-div#drawer {
-  height: 32px;
+body {
+   background: #1A1A1A;
+   font-size: 10px;
+   font-family: "Helvetica Neue", "ubuntu", "Segoe UI", "Arial", sans-serif;
 }
 
-div#drawer_handle {
-  background: red;
-  
+div.bespin { }
+
+div#toolbar {
+  height: 18px;
+  background: #333333;
+  border-bottom: #cccccc solid 1px;
+}
+
+button {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
 }
