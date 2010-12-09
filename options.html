@@ -21,7 +21,12 @@
                 email: $('#email').val(), 
                 password: $('#password').val(),
                 success: (function(data) {
-                    window.location.reload(false);
+                    chrome.tabs.getCurrent(function(tab) {
+                        chrome.tabs.create({ url: "chromepad.html", selected: true });
+                        chrome.tabs.remove(tab.id);
+                    });
+                    
+                    
                 }).bind(this),
                 error: (function(data) {
                     window.location.reload(false);
@@ -41,8 +46,8 @@
             restore_options();
         });
     </script>
-    
-   
+    <h1>ChromePad Options</h1>
+
     <div id="deauthorize" style="display:none;">
         <p>Access has been granted by DropBox!</p>
         

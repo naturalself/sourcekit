@@ -1,11 +1,23 @@
 <html>
-    <head>
-        <script>
-        chrome.browserAction.onClicked.addListener(function(tab) {
-//            dropbox = new ModernDropbox("0660jgq6erg4h63", "0iyu9q1lnb56jyg");
-//            dropbox.initialize();
+    <script src="js/jquery.js"></script>
+    <script src='js/sha1.js'></script>
+    <script src='js/oauth.js'></script>
+    <script src="js/modern_dropbox.js"></script>
+    <script>
+    var consumerKey = "0660jgq6erg4h63";
+    var consumerSecret = "0iyu9q1lnb56jyg";
+    var dropbox = new ModernDropbox(consumerKey, consumerSecret);
+    
+    if (!dropbox.isAccessGranted()) {
+        chrome.tabs.create({ url: "options.html", selected: true });
+    } 
+    
+    chrome.browserAction.onClicked.addListener(function(tab) {
+        if (!dropbox.isAccessGranted()) {
+            chrome.tabs.create({ url: "options.html", selected: true });
+        } else {
             chrome.tabs.create({ url: "chromepad.html", selected: true });
-        });
-        </script>
-    </head>
+        }
+    });
+    </script>
 </html>

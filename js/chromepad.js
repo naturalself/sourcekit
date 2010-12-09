@@ -1,5 +1,5 @@
-var Chromepad = function(editorElement) {	
-	var _dropbox = new ModernDropbox("0660jgq6erg4h63", "0iyu9q1lnb56jyg") //, escape(chrome.extension.getURL("/chromepad.html")));
+var Chromepad = function(editorElement, dropbox) {
+	var _dropbox = dropbox;
 	var _editorElement = editorElement;
 	var _editor;
 	
@@ -55,7 +55,10 @@ var Chromepad = function(editorElement) {
 }
 
 $(document).ready(function() {
-	var chromepad = new Chromepad(document.getElementById("editor"));
+	var bgPage = chrome.extension.getBackgroundPage();
+	var dropbox = bgPage.dropbox;
+	
+	var chromepad = new Chromepad(document.getElementById("editor"), dropbox);
 	
 	window.onBespinLoad = function() {
 		chromepad.initialize();
