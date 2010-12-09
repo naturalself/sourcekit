@@ -1,7 +1,11 @@
 <html>
-  <script>
-    chrome.browserAction.onClicked.addListener(function(tab) {
-        chrome.tabs.create({ url: "chromepad.html", selected: true });
-    });
-  </script>
+    <head>
+        <script>
+        chrome.browserAction.onClicked.addListener(function(tab) {
+//            dropbox = new ModernDropbox("0660jgq6erg4h63", "0iyu9q1lnb56jyg");
+//            dropbox.initialize();
+            chrome.tabs.create({ url: "chromepad.html", selected: true });
+        });
+        </script>
+    </head>
 </html>

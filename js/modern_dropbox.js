@@ -95,15 +95,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 			}
 		}	
 	};
-	
-	var _isAccessGranted = function() {
-		return (_tokens["accessToken"] != null) && (_tokens["accessTokenSecret"] != null);
-	};
-	
-	var _isAuthorized = function() {
-		return (_tokens["requestToken"] != null) && (_tokens["requestTokenSecret"] != null);
-	};
-	
+		
 	var _createOauthRequest = function(url, options) {
 		if (!options) {
 			options = [];
@@ -192,79 +184,49 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 	
 	// Public
 	return ({
+		isAccessGranted: function() {
+			return (_tokens["accessToken"] != null) && (_tokens["accessTokenSecret"] != null);
+		},
+	
+		isAuthorized: function() {
+			return (_tokens["requestToken"] != null) && (_tokens["requestTokenSecret"] != null);
+		},
+		
 		initialize: function() {
 			_setupAuthStorage();
 
-			if (!_isAccessGranted()) {
-				if (!_isAuthorized()) {
-					var message = _createOauthRequest("http://api.getdropbox.com/" + _dropboxApiVersion + "/oauth/request_token");
-					
-					_sendOauthRequest(message, {
-						type: "text",
-						success: (function(data) {
-							if (!data) {
-								data = "";
-							}
-						
-							var tokenPairStrings = data.split("&");
-							var parsedTokenPairs = [];
-					
-							for (i in tokenPairStrings) {
-								var tokenPairs = tokenPairStrings[i].split("=");
-								parsedTokenPairs[tokenPairs[0]] = tokenPairs[1];
-							}
-					
-							var authTokens = {};
-							authTokens["requestToken"] = parsedTokenPairs["oauth_token"];
-							authTokens["requestTokenSecret"] = parsedTokenPairs["oauth_token_secret"];
-					
-							_storeAuth(authTokens);
-							
-							chrome.tabs.create({ url:  "http://api.getdropbox.com/" + _dropboxApiVersion + "/oauth/authorize?oauth_token=" 
-								+ authTokens["requestToken"] + "&oauth_callback=" + _authCallback }); 
-							
-							chrome.tabs.onUpdated.addListener((function(tabId, changeInfo, tab) {
-								console.log(tab);
-								
-								if (tab.url.match(/.*chromepad./)) {
-									console.log("HELLO");
-								}
-							}).bind(this));	
-								
-						}).bind(this)
-					});
-				} else {
-					var message = _createOauthRequest("https://api.getdropbox.com/" + _dropboxApiVersion + "/oauth/access_token", {
-						token: _tokens["requestToken"],
-						tokenSecret: _tokens["requestTokenSecret"]
-					});
-					
-					_sendOauthRequest(message, {
-						type: "text",
-						success: (function(data) {
-							if (!data) {
-								data = "";
-							}
-						
-							var tokenPairStrings = data.split("&");
-							var parsedTokenPairs = [];
-					
-							for (i in tokenPairStrings) {
-								var tokenPairs = tokenPairStrings[i].split("=");
-								parsedTokenPairs[tokenPairs[0]] = tokenPairs[1];
-							}
-					
-							var authTokens = {};
-							authTokens["accessToken"] = parsedTokenPairs["oauth_token"];
-							authTokens["accessTokenSecret"] = parsedTokenPairs["oauth_token_secret"];
-							
-							_storeAuth(authTokens);
-						}).bind(this)
-					});
-				}
-			}
-			
 			return this;
+		},
+
+		authorize: function(options) {
+			$.ajax({
+				type: 'GET',
+				url: "https://api.dropbox.com/" + _dropboxApiVersion + "/token",
+				data: {
+					email: options.email,
+					password: options.password,
+					oauth_consumer_key: _consumerKey
+				},
+				dataType: 'json',
+				success: (function(data) {
+					if (!data) {
+						data = "";
+					}
+				
+					var authTokens = {};
+					authTokens["accessToken"] = data["token"];
+					authTokens["accessTokenSecret"] = data["secret"];
+					
+					_storeAuth(authTokens);
+					
+					options.success(data);
+				}).bind(this),
+				error: options.error
+			});
+		},
+		
+		deauthorize: function() {
+			_clearAuthStorage();
 		},
 		
 		getAccountInfo: function(callback) {

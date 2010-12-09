@@ -1,0 +1,63 @@
+<html>
+<head>
+    <title>ChromePad Options</title>
+    <script src="js/jquery.js"></script>
+    <script src="js/oauth.js"></script>
+    <script src="js/sha1.js"></script>
+    <script src="js/modern_dropbox.js"></script>
+    <script>
+        var dropbox = new ModernDropbox("0660jgq6erg4h63", "0iyu9q1lnb56jyg") 
+    
+        function restore_options() {
+            if (dropbox.isAccessGranted()) {
+                $('#deauthorize').css("display", "block");
+            } else {
+                $('#authorize').css("display", "block");   
+            }
+        }
+        
+        function authorize() {
+            dropbox.authorize({
+                email: $('#email').val(), 
+                password: $('#password').val(),
+                success: (function(data) {
+                    window.location.reload(false);
+                }).bind(this),
+                error: (function(data) {
+                    window.location.reload(false);
+                }).bind(this)
+            });
+        }
+        
+        function deauthorize() {
+            dropbox.deauthorize();
+            window.location.reload(false);
+        }
+    </script>
+</head>
+<body>
+    <script>
+        $(document).ready(function() {
+            restore_options();
+        });
+    </script>
+    
+   
+    <div id="deauthorize" style="display:none;">
+        <p>Access has been granted by DropBox!</p>
+        
+        <p>You can <a href="javascript:deauthorize();">deauthorize</a></p>
+    </div>
+    <div id="authorize" style="display: none;">
+        <p>Please fill out the following to log into Dropbox.</p>
+    
+        <p><em>This process will authorize ChromePad to access your DropBox files, the
+        username and password will not be needed once the authorization process is complete.</em></p>
+    
+        Email <input type="text" name="email" id="email" /> <br />
+        Password <input type="password" name="password" id="password" /> <br />
+    
+        <button onclick="authorize()">Login to DropBox</button>
+    </div>
+</body>
+</html>
