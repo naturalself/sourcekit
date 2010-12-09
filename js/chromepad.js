@@ -5,7 +5,7 @@ var Chromepad = function(editorElement, dropbox) {
 	
 	return {
 		path: "",
-		
+		notification: null,
 		initialize: function() {
 			_editor = _editorElement.bespin.editor;
 			
@@ -14,13 +14,21 @@ var Chromepad = function(editorElement, dropbox) {
 					$('#save_dialog').dialog('open');
 				} else {
 					_dropbox.putFileContents(this.path, _editor.value, function() {
-						alert('saved!');
+						this.notification = webkitNotifications.createNotification(null, "Save File Notification", "File Saved!");
+						this.notification.show();
+						
+						window.setTimeout((function() { this.notification.cancel() }).bind(this), 1000);
 					});
 				}
 			}).bind(this);
 			
 			this.onLoad = (function() {
 				_dropbox.getFileContents(this.path, function(data) {
+					this.notification = webkitNotifications.createNotification(null, "Open File Notification", "File Opened!");
+					this.notification.show();
+					
+					window.setTimeout((function() { this.notification.cancel() }).bind(this), 1000);
+					
 					_editor.value = data;
 				});
 			}).bind(this);
@@ -78,7 +86,7 @@ $(document).ready(function() {
 				},
 				OK: function() {
 					$(this).dialog("close");
-					chromepad.path = $('#path').val();
+					chromepad.path = $('#save_path').val();
 					chromepad.onSave();
 				}
 			}
@@ -89,7 +97,17 @@ $(document).ready(function() {
 			resizable: false,
 			draggable: false,
 			modal: true,
-			title: "Open File From Dropbox"
+			title: "Open File From Dropbox",
+			buttons: {
+				Cancel: function() {
+					$(this).dialog("close");
+				},
+				OK: function() {
+					$(this).dialog("close");
+					chromepad.path = $('#open_path').val();
+					chromepad.onLoad();
+				}
+			}
 		});
 		
 		// Handle Save Event
@@ -97,10 +115,6 @@ $(document).ready(function() {
 		
 		// Handle Open Event
 		$('#open').click(function() {
-			$('#file_tree_container').fileTree({
-				script: function() {alert('hi')}
-			});
-			
 			$('#open_dialog').dialog('open');
 		});
 
