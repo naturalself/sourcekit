@@ -11,26 +11,22 @@ var Chromepad = function(editorElement, dropbox) {
 			
 			this.onSave = (function() {
 				if (this.path == "" || !this.path) {
-					$('#save_dialog').dialog('open');
-				} else {
-					_dropbox.putFileContents(this.path, _editor.value, function() {
-						this.notification = webkitNotifications.createNotification(null, "Save File Notification", "File Saved!");
-						this.notification.show();
-						
-						window.setTimeout((function() { this.notification.cancel() }).bind(this), 1000);
-					});
+					this.path = prompt("Choose a file name to save");
 				}
-			}).bind(this);
-			
-			this.onLoad = (function() {
-				_dropbox.getFileContents(this.path, function(data) {
-					this.notification = webkitNotifications.createNotification(null, "Open File Notification", "File Opened!");
+				
+				_dropbox.putFileContents(this.path, _editor.value, (function() {
+					this.notification = webkitNotifications.createNotification("images/check.png", "Save File Notification", "File Saved As " + this.path + "!");
 					this.notification.show();
 					
-					window.setTimeout((function() { this.notification.cancel() }).bind(this), 1000);
-					
+					window.setTimeout((function() { this.notification.cancel() }).bind(this), 5000);
+				}).bind(this));
+			}).bind(this);
+			
+			this.onLoad = (function() {	
+				this.path = prompt("Type in the name of file to load");
+				_dropbox.getFileContents(this.path, (function(data) {
 					_editor.value = data;
-				});
+				}).bind(this));
 			}).bind(this);
 		
 			this.onCreate = (function() {
@@ -73,50 +69,11 @@ $(document).ready(function() {
 		
 		chromepad.changeTheme("twilight");
 		
-		// Set up save dialog
-		$('#save_dialog').dialog({
-			autoOpen: false,
-			resizable: false,
-			draggable: false,
-			modal: true,
-			title: "Save File On Dropbox",
-			buttons: {
-				Cancel: function() {
-					$(this).dialog("close");
-				},
-				OK: function() {
-					$(this).dialog("close");
-					chromepad.path = $('#save_path').val();
-					chromepad.onSave();
-				}
-			}
-		});
-		
-		$('#open_dialog').dialog({
-			autoOpen: false,
-			resizable: false,
-			draggable: false,
-			modal: true,
-			title: "Open File From Dropbox",
-			buttons: {
-				Cancel: function() {
-					$(this).dialog("close");
-				},
-				OK: function() {
-					$(this).dialog("close");
-					chromepad.path = $('#open_path').val();
-					chromepad.onLoad();
-				}
-			}
-		});
-		
 		// Handle Save Event
 		$('#save').click(chromepad.onSave);
 		
 		// Handle Open Event
-		$('#open').click(function() {
-			$('#open_dialog').dialog('open');
-		});
+		$('#open').click(chromepad.onLoad);
 
 	    $("#logoff").click(function() {
 	        chromepad.onLogoffDropbox();

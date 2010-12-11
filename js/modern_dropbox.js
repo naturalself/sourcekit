@@ -266,7 +266,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		getFileContents: function(path, callback) {
 			var url = "https://api-content.dropbox.com/" + _dropboxApiVersion + "/files/dropbox/" + path;
 			var message = _createOauthRequest(url);
-			
+
 			_sendOauthRequest(message, {
 				type: "text",
 				success: (function(data) { callback(data); }).bind(this)

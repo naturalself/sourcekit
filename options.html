@@ -39,6 +39,7 @@
             window.location.reload(false);
         }
     </script>
+    <link rel="stylesheet" href="css/options.css" type="text/css" media="screen" title="no title" charset="utf-8">
 </head>
 <body>
     <script>
@@ -46,23 +47,26 @@
             restore_options();
         });
     </script>
-    <h1>ChromePad Options</h1>
+    <div id="main">
+        <h1>ChromePad Options</h1>
 
-    <div id="deauthorize" style="display:none;">
-        <p>Access has been granted by DropBox!</p>
+        <div id="deauthorize" style="display:none;">
+            <p>Access has been granted by DropBox!</p>
         
-        <p>You can <a href="javascript:deauthorize();">deauthorize</a></p>
-    </div>
-    <div id="authorize" style="display: none;">
-        <p>Please fill out the following to log into Dropbox.</p>
+            <p>You can <a href="javascript:deauthorize();">deauthorize</a> access to your Dropbox account</p>
+        </div>
+        <div id="authorize" style="display: none;">
+            <p>Please fill out the following to log into Dropbox.</p>
     
-        <p><em>This process will authorize ChromePad to access your DropBox files, the
-        username and password will not be needed once the authorization process is complete.</em></p>
+            <p><em>This process will authorize ChromePad to access your DropBox files, the
+            username and password will not be saved at all.</em></p>
     
-        Email <input type="text" name="email" id="email" /> <br />
-        Password <input type="password" name="password" id="password" /> <br />
+            <label>Email <input type="text" name="email" id="email" /></label>
+            
+            <label>Password <input type="password" name="password" id="password" /></label>
     
-        <button onclick="authorize()">Login to DropBox</button>
+            <button onclick="authorize()">Login to DropBox</button>
+        </div>
     </div>
 </body>
 </html>
