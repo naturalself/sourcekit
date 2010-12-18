@@ -1,7 +1,7 @@
 body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;}
 
 body {
-   background: #1A1A1A;
+  /*  background: #1A1A1A; */
    font-size: 14px;
    font-family: "Helvetica Neue", "ubuntu", "Segoe UI", "Arial", sans-serif;
 }
@@ -11,7 +11,9 @@ div.bespin { }
 div#toolbar {
   height: 18px;
   background: #333333;
-  border-bottom: #cccccc solid 1px;
+  border-top: #cccccc solid 1px;
+  text-align: right;
+  padding-right: 18px;
 }
 
 button {
@@ -20,4 +22,28 @@ button {
   margin: 0;
   background: none;
   border: none;
+}
+
+div#pad {
+  float: right;
+  display: block;
+  width: 80%;
+  height: 100%;
+}
+
+div#panel_resize {
+  background: blue;
+  width: 4px;
+  height: 100%;
+}
+
+div#sidebar {
+  float: left;
+  width: 20%;
+  height: 100%;
+  background: red;
+}
+
+.ui-layout-pane {
+  padding: 0;
 }

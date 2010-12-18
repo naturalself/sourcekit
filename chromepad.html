@@ -6,25 +6,23 @@
       <link rel="stylesheet" href="css/chromepad.css" type="text/css" media="screen" title="no title" charset="utf-8">
 
       <script src="chromepad_bespin/BespinEmbedded.js"></script>
-      <script src="js/jquery.js"></script>
+      <script src="js/jquery.min.js"></script>
+      <script src="js/jquery-ui.min.js"></script>
+      <script src="js/jquery.layout.js"></script>
       <script src="js/chromepad.js"></script>
-      
       <!-- Icons taken from http://somerandomdude.com/projects/sanscons/ -->
   </head>
   <body>
-    <div id="toolbar">
-        <img src="images/logo.png" />
-        <button id="open"><img src="images/open.png"/></button>
-        <button id="save"><img src="images/save.png"/></button>
+    <div id="sidebar" class="ui-layout-west">
+        <ul id="fileList"></ul>
     </div>
-    <div class="bespin" id="editor"></div>
-    
-    <div id="save_dialog" style="display: none;">
-        Enter full path <input type="text" name="save_path" id="save_path" />
-    </div>
-    
-    <div id="open_dialog" style="display: none;">
-        Open a file <input type="text" name="open_path" id="open_path" />
+    <div id="pad" class="ui-layout-center">
+        <div class="bespin" id="editor"></div>
+        <div id="toolbar">
+            <img src="images/logo.png" />
+            <button id="open"><img src="images/open.png"/></button>
+            <button id="save"><img src="images/save.png"/></button>
+        </div>
     </div>
   </body>
 </html>

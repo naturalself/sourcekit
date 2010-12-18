@@ -41,20 +41,28 @@ var Chromepad = function(editorElement, dropbox) {
 			
 			}).bind(this);
 		
-			this.onDimensionsChanged = (function() {
-				$("#editor").height($(window).height() - 19);
-				$("#editor").width($(window).width());
+			this.onWindowResized = (function() {
+				$("#pad").height($(window).height());
+				$("#editor").width($("#pad").width());
+				$("#editor").height($("#pad").height());
+				$("#editor").offset({top:0});
+				
+				$("#toolbar").offset({top:$("#pad").height() - 19});
+				$("#toolbar").width($("#pad").width());
+				
+				_editorElement.bespin.dimensionsChanged();
+			}).bind(this);
+		
+			this.onPaneResized = (function(pane, element, state, options, name) {
+				$("#editor").width($("#pad").width());				
+				$("#toolbar").width($("#pad").width());				
 				_editorElement.bespin.dimensionsChanged();
 			}).bind(this);
 			
 			this.changeTheme = (function(themeName) {
 				_editorElement.bespin.settings.set("theme", themeName);
 			}).bind(this);
-			
-			this.onDimensionsChanged();
-		},
-				
-	
+		}
 	};
 }
 
@@ -78,7 +86,21 @@ $(document).ready(function() {
 	    $("#logoff").click(function() {
 	        chromepad.onLogoffDropbox();
 	    });
-
-		$(window).resize(chromepad.onDimensionsChanged);
+	
+		$("#panel_resize").draggable({
+			axis: "x",
+			drag: chromepad.onDragResizePanel
+		});
+		
+		$('body').layout({ 
+			applyDefaultStyles: true,
+			center__applyDefaultStyles: false,
+			onresize: chromepad.onPaneResized
+		});
+		
+		$(window).resize(chromepad.onWindowResized);
+		chromepad.onWindowResized();
 	}
+	
+    
 });
