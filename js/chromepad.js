@@ -22,7 +22,7 @@ var Chromepad = function(editorElement, dropbox) {
 				}).bind(this));
 			}).bind(this);
 			
-			this.onLoad = (function() {	
+			this.onLoad = (function() {
 				this.path = prompt("Type in the name of file to load");
 				_dropbox.getFileContents(this.path, (function(data) {
 					_editor.value = data;
@@ -83,15 +83,7 @@ $(document).ready(function() {
 		// Handle Open Event
 		$('#open').click(chromepad.onLoad);
 
-	    $("#logoff").click(function() {
-	        chromepad.onLogoffDropbox();
-	    });
-	
-		$("#panel_resize").draggable({
-			axis: "x",
-			drag: chromepad.onDragResizePanel
-		});
-		
+	  
 		$('body').layout({ 
 			applyDefaultStyles: true,
 			center__applyDefaultStyles: false,
@@ -99,6 +91,16 @@ $(document).ready(function() {
 		});
 		
 		$(window).resize(chromepad.onWindowResized);
+		
+	  dropbox.getDirectoryContents('/', function(data) {	    
+      $.each(data.contents, function(index, file) {
+		            if (!file.is_dir) {
+		                $("<li><a href='javascript:chrome.tabs.create({\"url\": \"chromepad.html?path=" + file.path + "\"});'>" + file.path +"</a></li>").appendTo('#fileList');
+		            }
+		        });
+	  });
+
+		
 		chromepad.onWindowResized();
 	}
 	

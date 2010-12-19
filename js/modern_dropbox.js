@@ -239,12 +239,12 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		},
 		
 		getDirectoryContents: function(path, callback) {
-			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + path;
+			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox" + path;
 			var message = _createOauthRequest(url, {
 				file_limit: _fileListLimit,
 				list: "true"
 			});
-			
+
 			_sendOauthRequest(message, {
 				type: "json",
 				success: (function(data) { callback(data); }).bind(this)

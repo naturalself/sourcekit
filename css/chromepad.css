@@ -12,8 +12,8 @@ div#toolbar {
   height: 18px;
   background: #333333;
   border-top: #cccccc solid 1px;
-  text-align: right;
-  padding-right: 18px;
+/*  text-align: right; */
+  padding-right: 26px;
 }
 
 button {
@@ -31,17 +31,10 @@ div#pad {
   height: 100%;
 }
 
-div#panel_resize {
-  background: blue;
-  width: 4px;
-  height: 100%;
-}
-
 div#sidebar {
   float: left;
   width: 20%;
   height: 100%;
-  background: red;
 }
 
 .ui-layout-pane {
