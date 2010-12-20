@@ -98,12 +98,12 @@ $(document).ready(function() {
 			$.each(data.contents, function(index, file) {
         if (file.is_dir) {
           $('#filelist').jstree("create_node", "#filelist_root", "inside", {
-            data: file.path,
+            data: file.path.match(/([^\\\/]+)$/)[1],
             state: "closed"
           });
         } else {
           $('#filelist').jstree("create_node", "#filelist_root", "inside", {
-            data: file.path,
+            data: file.path.match(/([^\\\/]+)$/)[1],
             state: null,
             children: null,
             attr: {
