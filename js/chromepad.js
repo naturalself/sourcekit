@@ -10,6 +10,8 @@ var Chromepad = function(editorElement, dropbox) {
 			_editor = _editorElement.bespin.editor;
 			
 			this.onSave = (function() {
+			  console.log("saving " + this.path);
+			  
 				if (this.path == "" || !this.path) {
 					this.path = prompt("Choose a file name to save");
 				}
@@ -22,8 +24,8 @@ var Chromepad = function(editorElement, dropbox) {
 				}).bind(this));
 			}).bind(this);
 			
-			this.onLoad = (function() {
-				this.path = prompt("Type in the name of file to load");
+			this.onLoad = (function(path) {
+				this.path = path;
 				_dropbox.getFileContents(this.path, (function(data) {
 					_editor.value = data;
 				}).bind(this));
@@ -67,6 +69,7 @@ var Chromepad = function(editorElement, dropbox) {
 }
 
 $(document).ready(function() {
+  
 	var bgPage = chrome.extension.getBackgroundPage();
 	var dropbox = bgPage.dropbox;
 	
@@ -82,7 +85,6 @@ $(document).ready(function() {
 		
 		// Handle Open Event
 		$('#open').click(chromepad.onLoad);
-
 	  
 		$('body').layout({ 
 			applyDefaultStyles: true,
@@ -91,15 +93,46 @@ $(document).ready(function() {
 		});
 		
 		$(window).resize(chromepad.onWindowResized);
-		
-	  dropbox.getDirectoryContents('/', function(data) {	    
-      $.each(data.contents, function(index, file) {
-		            if (!file.is_dir) {
-		                $("<li><a href='javascript:chrome.tabs.create({\"url\": \"chromepad.html?path=" + file.path + "\"});'>" + file.path +"</a></li>").appendTo('#fileList');
-		            }
-		        });
-	  });
 
+		dropbox.getDirectoryContents('/', function(data) {
+			$.each(data.contents, function(index, file) {
+        if (file.is_dir) {
+          $('#filelist').jstree("create_node", "#filelist_root", "inside", {
+            data: file.path,
+            state: "closed"
+          });
+        } else {
+          $('#filelist').jstree("create_node", "#filelist_root", "inside", {
+            data: file.path,
+            state: null,
+            children: null,
+            attr: {
+              id: 'hi',
+              onclick: 'alert("hi");'
+            }
+          });
+        }
+			});
+		});
+		
+		$('#filelist').jstree({
+      plugins : [ "themes", "json_data", "ui"],
+      themes : {
+        "theme" : "apple",
+        "dots" : false,
+        "icons" : false
+      },
+      json_data: { 
+        data: [{
+        	data : "/", 
+        	attr : { id : "filelist_root" }, 
+        	state : "opened"
+        }]
+      },
+    }).bind("select_node.jstree", function(event, data) {
+      var path = data.inst.get_text(data.rslt.obj);
+      chromepad.onLoad(path);
+    });
 		
 		chromepad.onWindowResized();
 	}

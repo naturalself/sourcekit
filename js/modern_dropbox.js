@@ -239,7 +239,8 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		},
 		
 		getDirectoryContents: function(path, callback) {
-			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox" + path;
+		  var filename = path.replace(/^\//, '');
+			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + filename;
 			var message = _createOauthRequest(url, {
 				file_limit: _fileListLimit,
 				list: "true"
@@ -252,7 +253,8 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		},
 		
 		getDirectoryMetadata: function(path, callback) {
-			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + path;
+		  var filename = path.replace(/^\//, '');
+			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + filename;
 			var message = _createOauthRequest(url, {
 				list: "false"
 			});
@@ -264,7 +266,8 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		},
 		
 		getFileContents: function(path, callback) {
-			var url = "https://api-content.dropbox.com/" + _dropboxApiVersion + "/files/dropbox/" + path;
+		  var filename = path.replace(/^\//, '');
+			var url = "https://api-content.dropbox.com/" + _dropboxApiVersion + "/files/dropbox/" + filename;
 			var message = _createOauthRequest(url);
 
 			_sendOauthRequest(message, {
@@ -276,6 +279,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		putFileContents: function(path, content, callback) {
 			var filename = path.match(/([^\\\/]+)$/)[1];
 			var file_path = path.match(/^(.*?)[^\\\/]+$/)[1];
+			file_path = file_path.replace(/^\//, '')
 			var url = "https://api-content.dropbox.com/" + _dropboxApiVersion + "/files/dropbox/" + file_path + "?file=" + filename;
 			var message = _createOauthRequest(url, { method: "POST" });
 			
