@@ -4,23 +4,26 @@
       <title>Chrome Pad</title>
       <link id="bespin_base" href="chromepad_bespin/"/>
       <link rel="stylesheet" href="css/chromepad.css" type="text/css" media="screen" title="no title" charset="utf-8">
+      <link rel="stylesheet" href="js/themes/apple/style.css" type="text/css" media="screen" title="no title" charset="utf-8">
 
       <script src="chromepad_bespin/BespinEmbedded.js"></script>
       <script src="js/jquery.min.js"></script>
       <script src="js/jquery-ui.min.js"></script>
       <script src="js/jquery.layout.js"></script>
+      <script src="js/_lib/jquery.cookie.js"></script>
+      <script src="js/_lib/jquery.hotkeys.js"></script>
+      <script src="js/jquery.jstree.js"></script>
       <script src="js/chromepad.js"></script>
       <!-- Icons taken from http://somerandomdude.com/projects/sanscons/ -->
   </head>
   <body>
     <div id="sidebar" class="ui-layout-west">
-        <ul id="fileList"></ul>
+        <div id="filelist"></div>
     </div>
     <div id="pad" class="ui-layout-center">
         <div class="bespin" id="editor"></div>
         <div id="toolbar">
             <img src="images/logo.png" />
-            <button id="open"><img src="images/open.png"/></button>
             <button id="save"><img src="images/save.png"/></button>
         </div>
     </div>
