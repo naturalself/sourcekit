@@ -106,10 +106,6 @@ $(document).ready(function() {
             data: file.path.match(/([^\\\/]+)$/)[1],
             state: null,
             children: null,
-            attr: {
-              id: 'hi',
-              onclick: 'alert("hi");'
-            }
           });
         }
 			});
@@ -131,7 +127,36 @@ $(document).ready(function() {
       },
     }).bind("select_node.jstree", function(event, data) {
       var path = data.inst.get_text(data.rslt.obj);
-      chromepad.onLoad(path);
+      
+      if (data.inst.is_leaf(data.rslt.obj)) { // IS FILE
+        chromepad.onLoad(path); 
+      } else { // IS DIR
+        var parent_node = data.rslt.obj;
+        $("#" + $(parent_node).attr('id') + " ul").empty();
+        console.log("#" + $(parent_node).attr('id') + " ul");
+        dropbox.getDirectoryContents(path, function(data) {
+    			$.each(data.contents, function(index, file) {
+            if (file.is_dir) {
+              $('#filelist').jstree("create_node", parent_node, "inside", {
+                data: file.path.match(/([^\\\/]+)$/)[1],
+                state: "closed",
+                attr: { id: file.path.replace(/\//, '_') }
+              });
+            } else {
+              $('#filelist').jstree("create_node", parent_node, "inside", {
+                data: file.path.match(/([^\\\/]+)$/)[1],
+                state: null,
+                children: null,
+                attr: { id: file.path.replace(/\//, '_') }
+              });
+            }
+    			});
+    			
+    			$('#filelist').jstree("open_node", parent_node);
+		    });
+		    
+		    
+      }
     });
 		
 		chromepad.onWindowResized();
