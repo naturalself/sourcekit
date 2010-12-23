@@ -62,6 +62,16 @@ var Chromepad = function(editorElement, dropbox) {
 			this.changeTheme = (function(themeName) {
 				_editorElement.bespin.settings.set("theme", themeName);
 			}).bind(this);
+			
+			this.getDirectoryContents = (function(path) {
+				_dropbox.getDirectoryContents(path, function(data) {
+	        		$.each(data.contents, function(index, file) {
+			            if (!file.is_dir) {
+			                $("<li>" + file.path +"</li>").appendTo('#fileList');
+			            }
+			        });
+			    });
+			}).bind(this);
 		}
 	};
 }
@@ -86,11 +96,6 @@ $(document).ready(function() {
 	    $("#logoff").click(function() {
 	        chromepad.onLogoffDropbox();
 	    });
-	
-		$("#panel_resize").draggable({
-			axis: "x",
-			drag: chromepad.onDragResizePanel
-		});
 		
 		$('body').layout({ 
 			applyDefaultStyles: true,
@@ -99,8 +104,10 @@ $(document).ready(function() {
 		});
 		
 		$(window).resize(chromepad.onWindowResized);
+		
+		chromepad.getDirectoryContents("/");
+		console.log("HI");
+
 		chromepad.onWindowResized();
 	}
-	
-    
 });

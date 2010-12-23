@@ -10,7 +10,7 @@ var Sidebar = function(dropbox) {
 			_dropbox.getDirectoryContents(path, function(data) {
         		$.each(data.contents, function(index, file) {
 		            if (!file.is_dir) {
-		                $("<li><a href='javascript:chrome.tabs.create({\"url\": \"chromepad.html?path=" + file.path + "\"});'>" + file.path +"</a></li>").appendTo('#content');
+		                $("<li>" + file.path +"</li>").appendTo('#fileList');
 		            }
 		        });
 		    });
@@ -23,4 +23,6 @@ $(document).ready(function() {
 	var dropbox = bgPage.dropbox;
 	var sidebar = new Sidebar(dropbox);
 	sidebar.getContents();
+	
+	console.log("HI");
 });
