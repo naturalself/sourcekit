@@ -35,11 +35,9 @@ div#sidebar {
   float: left;
   width: 20%;
   height: 100%;
-<<<<<<< HEAD
-=======
 }
 
 .ui-layout-pane {
-  padding: 0;
->>>>>>> b1666c31bfb7c3d1858d59a61cf7b8a459104d9f
+  padding: 0 !important;
+  margin: 0;
 }

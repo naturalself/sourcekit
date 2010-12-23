@@ -1,5 +1,6 @@
 var Chromepad = function(editorElement, dropbox) {
 	var _dropbox = dropbox;
+
 	var _editorElement = editorElement;
 	var _editor;
 	
