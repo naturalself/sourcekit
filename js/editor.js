@@ -37,9 +37,6 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 			}).bind(this));
 			
 			EventBroker.subscribe('redraw.editor', (function(event) {
-				console.log(_statusBar.height());
-				console.log($(window).height());
-				
 				_layout.height($(window).height());
 
 				_editor.width(_layout.width());

@@ -1,17 +1,72 @@
-var Sidebar = function(dropbox) {
+var Sidebar = function(filelist, dropbox) {
 	var _dropbox = dropbox;
+	var _filelist = filelist;
 	
 	return {
 		initialize: function() {
-			this.getDirectoryContents = (function(path) {
-				_dropbox.getDirectoryContents(path, function(data) {
-	        		$.each(data.contents, function(index, file) {
-			            if (!file.is_dir) {
-			                $("<li>" + file.path +"</li>").appendTo('#fileList');
-			            }
-			        });
-			    });
-			}).bind(this);
+			EventBroker.subscribe("load.sidebar", (function(event, parentNode, path) {
+				$("#" + $(parentNode).attr('id') + " ul").empty();
+
+				dropbox.getDirectoryContents(path, function(data) {
+					$.each(data.contents,
+					function(index, file) {
+						if (file.is_dir) {
+							_filelist.jstree("create_node", parentNode, "inside", {
+								data: file.path.match(/([^\\\/]+)$/)[1],
+								state: "closed",
+								attr: {
+									id: file.path.replace(/\//g, '_'),
+									"data-object": data
+								}
+							});
+					
+							_filelist.jstree("open_node", parentNode);
+						} else {
+							_filelist.jstree("create_node", parentNode, "inside", {
+								data: file.path.match(/([^\\\/]+)$/)[1],
+								state: null,
+								children: null,
+								attr: {
+									id: file.path.replace(/\//g, '_'),
+									"data-object": data
+								}
+							});
+						}
+					});
+
+					$('#filelist').jstree("open_node", parentNode);
+				});
+			}).bind(this));
+			
+			// set up jstree
+			_filelist.jstree({
+				core: { animation: 0 },
+				plugins : [ "themes", "json_data", "ui"],
+				themes : {
+					"theme" : "apple",
+					"dots" : false,
+					"icons" : false
+				},
+				json_data: { 
+					data: [{
+						data : "/", 
+						attr : { id : "filelist_root" }, 
+						state : "closed"
+					}]
+				},
+			});
+			
+			_filelist.bind("select_node.jstree open_node.jstree", function(event, data) {
+				var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
+				var isFile = data.inst.is_leaf(data.rslt.obj);
+				var parentNode = data.rslt.obj;
+				
+				if (isFile) {
+					EventBroker.publish('load.editor', [path]);
+				} else {
+					EventBroker.publish('load.sidebar', [parentNode, path]);
+				}
+			});
 		}
 	}
 }
@@ -19,85 +74,6 @@ var Sidebar = function(dropbox) {
 $(document).ready(function() {
 	var bgPage = chrome.extension.getBackgroundPage();
 	var dropbox = bgPage.dropbox;
-	var sidebar = new Sidebar(dropbox);
+	var sidebar = new Sidebar($("#filelist"), dropbox);
 	sidebar.initialize();
-
-	dropbox.getDirectoryContents('/', function(data) {
-		$.each(data.contents, function(index, file) {
-			if (file.is_dir) {
-			  $('#filelist').jstree("create_node", "#filelist_root", "inside", {
-				data: file.path.match(/([^\\\/]+)$/)[1],
-				state: "closed"
-			  });
-			} else {
-			  $('#filelist').jstree("create_node", "#filelist_root", "inside", {
-				data: file.path.match(/([^\\\/]+)$/)[1],
-				state: null,
-				children: null,
-			  });
-			}
-		});
-	});
-	
-	$('#filelist').jstree({
-		core: { animation: 0 },
-		plugins : [ "themes", "json_data", "ui"],
-		themes : {
-			"theme" : "apple",
-			"dots" : false,
-			"icons" : false
-		},
-		json_data: { 
-			data: [{
-				data : "/", 
-				attr : { id : "filelist_root" }, 
-				state : "opened"
-			}]
-		},
-	}).bind("select_node.jstree", function(event, data) {
-		var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
-
-		if (data.inst.is_leaf(data.rslt.obj)) {
-			// IS FILE
-			EventBroker.publish('load.editor', [path]);
-		} else {
-			// IS DIR
-			var parent_node = data.rslt.obj;
-			$("#" + $(parent_node).attr('id') + " ul").empty();
-
-			dropbox.getDirectoryContents(path,
-
-			function(data) {
-				$.each(data.contents,
-				function(index, file) {
-					if (file.is_dir) {
-						$('#filelist').jstree("create_node", parent_node, "inside", {
-							data: file.path.match(/([^\\\/]+)$/)[1],
-							state: "closed",
-							attr: {
-								id: file.path.replace(/\//g, '_'),
-								"data-path": file
-							}
-						});
-						
-						$('#filelist').jstree("open_node", parent_node);
-					} else {
-						$('#filelist').jstree("create_node", parent_node, "inside", {
-							data: file.path.match(/([^\\\/]+)$/)[1],
-							state: null,
-							children: null,
-							attr: {
-								id: file.path.replace(/\//g, '_'),
-								"data-path": file
-							}
-						});
-						
-
-					}
-				});
-
-				$('#filelist').jstree("open_node", parent_node);
-			});
-		}
-	});
 });
