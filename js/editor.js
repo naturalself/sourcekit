@@ -5,6 +5,8 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 	var _editor = editor;
 	var _statusBar = statusBar;
 	
+	var _acceptedMimeTypes = {"text/plain": "", "application/javascript": "js"}
+	
 	var _editorLibrary;
 	
 	return {
@@ -25,16 +27,24 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 			
 			EventBroker.subscribe('load.editor', (function(event, path) {
 				this.path = path;
-				
-				_dropbox.getFileContents(this.path, (function(data) {
-					if (data) {
-						document.title = this.path;
-						_editorLibrary.editor.value = data;
+
+				_dropbox.getMetadata(this.path, (function(data) {					
+					if (_acceptedMimeTypes[data.mime_type] != null) {
+						var syntax = _acceptedMimeTypes[data.mime_type];
+						_dropbox.getFileContents(this.path, (function(data) {
+							if (data) {
+								document.title = this.path;
+								_editorLibrary.editor.value = data;
+								_editorLibrary.editor.syntax = syntax;
+
+							} else {
+								_editorLibrary.editor.value = "";
+							}
+						}).bind(this));
 					} else {
-						_editorLibrary.editor.value = "";
+						Notification.notify("images/check.png", "Error loading file", "Not a supported file format!");
 					}
 				}).bind(this));
-				
 			}).bind(this));
 			
 			EventBroker.subscribe('redraw.editor', (function(event) {

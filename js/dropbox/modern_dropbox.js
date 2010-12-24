@@ -252,7 +252,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 			});
 		},
 		
-		getDirectoryMetadata: function(path, callback) {
+		getMetadata: function(path, callback) {
 		  var filename = path.replace(/^\//, '');
 			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + filename;
 			var message = _createOauthRequest(url, {
