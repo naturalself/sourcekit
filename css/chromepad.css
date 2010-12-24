@@ -8,11 +8,10 @@ body {
 
 div.bespin { }
 
-div#toolbar {
+div.status-bar {
   height: 18px;
   background: #333333;
   border-top: #cccccc solid 1px;
-/*  text-align: right; */
   padding-right: 26px;
 }
 
@@ -24,18 +23,16 @@ button {
   border: none;
 }
 
-div#pad {
-  float: right;
-  display: block;
+.ui-layout-center {
   width: 80%;
   height: 100%;
 }
 
-div#sidebar {
+/*div#sidebar {
   float: left;
   width: 20%;
   height: 100%;
-}
+}*/
 
 .ui-layout-pane {
   padding: 0 !important;

@@ -1,78 +1,82 @@
-var Editor = function(editorElement, dropbox) {
+var Editor = function(layout, editor, statusBar, dropbox) {
 	var _dropbox = dropbox;
-	var _editorElement = editorElement;
-	var _editor;
+	
+	var _layout = layout;
+	var _editor = editor;
+	var _statusBar = statusBar;
+	
+	var _editorLibrary;
 	
 	return {
 		path: "",
-		notification: null,
 		initialize: function() {
-			_editor = _editorElement.bespin.editor;
-			
-			
-			$(this).bind('editor.save', function() {			  
+			_editorLibrary = _editor.get(0).bespin;
+
+			// Hooking up global events
+			EventBroker.subscribe('save.editor', (function(event) {
 				if (this.path == "" || !this.path) {
 					this.path = prompt("Choose a file name to save");
 				}
 				
-				_dropbox.putFileContents(this.path, _editor.value, (function() {
-					this.notification = webkitNotifications.createNotification("images/check.png", "Save File Notification", "File Saved As " + this.path + "!");
-					this.notification.show();
-					
-					window.setTimeout((function() { this.notification.cancel() }).bind(this), 5000);
+				_dropbox.putFileContents(this.path, _editorLibrary.editor.value, (function(data) {
+					Notification.notify("images/check.png", "Save File Notification", "File Saved As " + this.path + "!");
 				}).bind(this));
-			});
+			}).bind(this));
 			
-			this.onLoad = (function(path) {
+			
+			EventBroker.subscribe('load.editor', (function(event, path) {
 				this.path = path;
+				
 				_dropbox.getFileContents(this.path, (function(data) {
-					_editor.value = data;
+					if (data) {
+						_editorLibrary.editor.value = data;
+					} else {
+						_editorLibrary.editor.value = "";
+					}
 				}).bind(this));
-			}).bind(this);
-		
-			this.onCreate = (function() {
+			}).bind(this));
 			
-			}).bind(this);
-		
-			this.onLogoffDropbox = (function() {
-				_dropbox.logOutDropbox();
-			}).bind(this);
-		
-			this.onDrawerToggle = (function() {
-			
-			}).bind(this);
-		
-			this.onWindowResized = (function() {
-				$("#pad").height($(window).height());
-				$("#editor").width($("#pad").width());
-				$("#editor").height($("#pad").height());
-				$("#editor").offset({top:0});
+			EventBroker.subscribe('redraw.editor', (function(event) {
+				_layout.height($(window).height());
 				
-				$("#toolbar").offset({top:$("#pad").height() - 19});
-				$("#toolbar").width($("#pad").width());
+				_editor.width(_layout.width());
+				_editor.height($(window).height());
+				_editor.offset({top:0});
 				
-				_editorElement.bespin.dimensionsChanged();
-			}).bind(this);
-		
-			this.onPaneResized = (function(pane, element, state, options, name) {
-				$("#editor").width($("#pad").width());				
-				$("#toolbar").width($("#pad").width());				
-				_editorElement.bespin.dimensionsChanged();
-			}).bind(this);
+				_statusBar.offset({top:_layout.height() - _statusBar.height() + 3});
+				_statusBar.width(_layout.width());
+				
+				_editorLibrary.dimensionsChanged();
+			}).bind(this));
 			
-			this.changeTheme = (function(themeName) {
+			EventBroker.subscribe('change-theme.editor', (function(themeName) {
 				_editorElement.bespin.settings.set("theme", themeName);
-			}).bind(this);
+			}).bind(this));
 			
-			this.getDirectoryContents = (function(path) {
-				_dropbox.getDirectoryContents(path, function(data) {
-	        		$.each(data.contents, function(index, file) {
-			            if (!file.is_dir) {
-			                $("<li>" + file.path +"</li>").appendTo('#fileList');
-			            }
-			        });
-			    });
-			}).bind(this);
+			// Fire a redraw event
+			EventBroker.publish("redraw.editor");
+			
+			// Set up a keydown event catcher for the editor (e.g. saving)
+			_editor.keydown(function(event) {
+				if (event.metaKey && event.keyCode == 83) { // Ctrl or Meta-S
+					EventBroker.publish("save.editor");
+					event.preventDefault();
+				}
+			});
 		}
 	};
 }
+
+// Set up the editor
+$(document).ready(function() {
+	var bgPage = chrome.extension.getBackgroundPage();
+	var dropbox = bgPage.dropbox;
+	var editor = new Editor($("#pad"), $("#editor"), $("#status-bar"), dropbox);
+	window.onBespinLoad = function() {
+		editor.initialize();
+	
+		$("#save").click(function() {
+			EventBroker.publish("save.editor");
+		});
+	}
+});

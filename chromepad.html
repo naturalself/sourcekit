@@ -4,7 +4,6 @@
       <title>Chrome Pad</title>
       <link id="bespin_base" href="bespin/"/>
       <link rel="stylesheet" href="css/chromepad.css" type="text/css" media="screen" title="no title" charset="utf-8">
-      <link rel="stylesheet" href="js/themes/apple/style.css" type="text/css" media="screen" title="no title" charset="utf-8">
 
       <script src="bespin/BespinEmbedded.js"></script>
       
@@ -15,16 +14,21 @@
       <script src="js/jquery/jquery.hotkeys.js"></script>
       <script src="js/jquery/jquery.jstree.js"></script>
       
+      <script src="js/event_broker.js"></script>
+      <script src="js/editor.js"></script>
+      <script src="js/sidebar.js"></script>
+      <script src="js/notification.js"></script>
       <script src="js/chromepad.js"></script>
+      
       <!-- Icons taken from http://somerandomdude.com/projects/sanscons/ -->
   </head>
   <body>
     <div id="sidebar" class="ui-layout-west">
         <div id="filelist"></div>
     </div>
-    <div id="pad" class="ui-layout-center">
+    <div class="ui-layout-center" id="pad">
         <div class="bespin" id="editor"></div>
-        <div id="toolbar">
+        <div id="status-bar">
             <img src="images/logo.png" />
             <button id="save"><img src="images/save.png"/></button>
         </div>

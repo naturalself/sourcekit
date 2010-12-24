@@ -45,7 +45,7 @@ var Chromepad = function(editorElement, dropbox) {
 			}).bind(this);
 		
 			this.onWindowResized = (function() {
-				$("#pad").height($(window).height());
+				$("div.ui-layout-center").height($(window).height());
 				$("#editor").width($("#pad").width());
 				$("#editor").height($("#pad").height());
 				$("#editor").offset({top:0});
@@ -86,24 +86,16 @@ $(document).ready(function() {
 	
 	var chromepad = new Chromepad(document.getElementById("editor"), dropbox);
 	
-	window.onBespinLoad = function() {
+	$('body').layout({ 
+		applyDefaultStyles: true,
+		center__applyDefaultStyles: false,
+		onresize: function() { EventBroker.publish("redraw.editor"); }
+	});
+	
+	/*window.onBespinLoad = function() {
 		chromepad.initialize();
 		
 		chromepad.changeTheme("twilight");
-		
-		// Handle Save Event
-		$('#save').click(chromepad.onSave);
-		
-		// Handle Open Event
-		$('#open').click(chromepad.onLoad);
-
-		$('body').layout({ 
-			applyDefaultStyles: true,
-			center__applyDefaultStyles: false,
-			onresize: chromepad.onPaneResized
-		});
-		
-		$(window).resize(chromepad.onWindowResized);
 		
 		chromepad.getDirectoryContents("/");
 
@@ -190,5 +182,5 @@ $(document).ready(function() {
 		});
 
 		chromepad.onWindowResized();
-	}
+	}*/
 });
