@@ -1,18 +1,22 @@
 body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;}
 
 body {
-  /*  background: #1A1A1A; */
    font-size: 14px;
    font-family: "Helvetica Neue", "ubuntu", "Segoe UI", "Arial", sans-serif;
 }
 
 div.bespin { }
 
-div.status-bar {
+div#status-bar {
   height: 18px;
-  background: #333333;
+  background: #eee;
   border-top: #cccccc solid 1px;
-  padding-right: 26px;
+  padding: 0;
+  display: block;
+}
+
+div#sidebar {
+  width: 100%;
 }
 
 button {
@@ -24,15 +28,7 @@ button {
 }
 
 .ui-layout-center {
-  width: 80%;
-  height: 100%;
 }
-
-/*div#sidebar {
-  float: left;
-  width: 20%;
-  height: 100%;
-}*/
 
 .ui-layout-pane {
   padding: 0 !important;

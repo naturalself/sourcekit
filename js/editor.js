@@ -37,13 +37,16 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 			}).bind(this));
 			
 			EventBroker.subscribe('redraw.editor', (function(event) {
-				_layout.height($(window).height());
+				console.log(_statusBar.height());
+				console.log($(window).height());
 				
+				_layout.height($(window).height());
+
 				_editor.width(_layout.width());
-				_editor.height($(window).height());
+				_editor.height($(window).height() - _statusBar.height());
 				_editor.offset({top:0});
 				
-				_statusBar.offset({top:_layout.height() - _statusBar.height() + 3});
+				_statusBar.offset({top:$(window).height() - _statusBar.height()});
 				_statusBar.width(_layout.width());
 				
 				_editorLibrary.dimensionsChanged();
@@ -52,10 +55,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 			EventBroker.subscribe('change-theme.editor', (function(themeName) {
 				_editorElement.bespin.settings.set("theme", themeName);
 			}).bind(this));
-			
-			// Fire a redraw event
-			EventBroker.publish("redraw.editor");
-			
+		
 			// Set up a keydown event catcher for the editor (e.g. saving)
 			_editor.keydown(function(event) {
 				if (event.metaKey && event.keyCode == 83) { // Ctrl or Meta-S
@@ -63,6 +63,8 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 					event.preventDefault();
 				}
 			});
+			
+			EventBroker.publish("ready.editor");
 		}
 	};
 }
