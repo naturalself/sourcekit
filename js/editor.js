@@ -23,17 +23,18 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 				}).bind(this));
 			}).bind(this));
 			
-			
 			EventBroker.subscribe('load.editor', (function(event, path) {
 				this.path = path;
 				
 				_dropbox.getFileContents(this.path, (function(data) {
 					if (data) {
+						document.title = this.path;
 						_editorLibrary.editor.value = data;
 					} else {
 						_editorLibrary.editor.value = "";
 					}
 				}).bind(this));
+				
 			}).bind(this));
 			
 			EventBroker.subscribe('redraw.editor', (function(event) {

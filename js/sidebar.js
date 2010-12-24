@@ -5,11 +5,9 @@ var Sidebar = function(filelist, dropbox) {
 	return {
 		initialize: function() {
 			EventBroker.subscribe("load.sidebar", (function(event, parentNode, path) {
-				$("#" + $(parentNode).attr('id') + " ul").empty();
-
 				dropbox.getDirectoryContents(path, function(data) {
-					$.each(data.contents,
-					function(index, file) {
+					$("#" + $(parentNode).attr('id') + " ul").empty();
+					$.each(data.contents, function(index, file) {
 						if (file.is_dir) {
 							_filelist.jstree("create_node", parentNode, "inside", {
 								data: file.path.match(/([^\\\/]+)$/)[1],
@@ -56,16 +54,26 @@ var Sidebar = function(filelist, dropbox) {
 				},
 			});
 			
-			_filelist.bind("select_node.jstree open_node.jstree", function(event, data) {
+			_filelist.bind("select_node.jstree", (function(event, data) {
 				var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
 				var isFile = data.inst.is_leaf(data.rslt.obj);
 				var parentNode = data.rslt.obj;
-				
+
 				if (isFile) {
 					EventBroker.publish('load.editor', [path]);
 				} else {
-					EventBroker.publish('load.sidebar', [parentNode, path]);
+					if (!data.inst.is_open()) {
+						_filelist.jstree("open_node", parentNode);
+					} else {
+						_filelist.jstree("close_node", parentNode);
+					}
 				}
+			}).bind(this));
+			
+			_filelist.bind("open_node.jstree", function(event, data) {
+				var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
+				var parentNode = data.rslt.obj;
+				EventBroker.publish('load.sidebar', [parentNode, path]);
 			});
 		}
 	}
