@@ -80,6 +80,7 @@ var ModernDropbox = function(consumerKey, consumerSecret) {
 		for (i in keys) {
 			var key = keys[i];
 			localStorage.removeItem(_storagePrefix + key);
+			_tokens = {};
 		}
 	};
 	

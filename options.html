@@ -1,12 +1,10 @@
 <html>
 <head>
     <title>ChromePad Options</title>
-    <script src="js/jquery.js"></script>
-    <script src="js/oauth.js"></script>
-    <script src="js/sha1.js"></script>
-    <script src="js/modern_dropbox.js"></script>
+    <script src="js/jquery/jquery.js"></script>
     <script>
-        var dropbox = new ModernDropbox("0660jgq6erg4h63", "0iyu9q1lnb56jyg") 
+        var bgPage = chrome.extension.getBackgroundPage();
+	    var dropbox = bgPage.dropbox;
     
         function restore_options() {
             if (dropbox.isAccessGranted()) {
@@ -22,7 +20,7 @@
                 password: $('#password').val(),
                 success: (function(data) {
                     chrome.tabs.getCurrent(function(tab) {
-                        chrome.tabs.create({ url: "chromepad.html", selected: true });
+                        chrome.tabs.create({ url: "application.html", selected: true });
                         chrome.tabs.remove(tab.id);
                     });
                     
@@ -59,7 +57,7 @@
             <p>Please fill out the following to log into Dropbox.</p>
     
             <p><em>This process will authorize ChromePad to access your DropBox files, the
-            username and password will not be saved at all.</em></p>
+            username and password will not be saved locally at all.</em></p>
     
             <label>Email <input type="text" name="email" id="email" /></label>
             
