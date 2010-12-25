@@ -15,6 +15,19 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 			_editorLibrary = _editor.get(0).bespin;
 
 			// Hooking up global events
+			EventBroker.subscribe('new.editor', (function(event, path) {
+				defaultPath = path;
+				
+				if (path == null) {
+					defaultPath = "/";
+				}
+				
+				this.path = prompt("Choose a file name to save", defaultPath);
+				
+				_editorLibrary.editor.value = "";
+				_editorLibrary.editor.syntax = "";
+			}).bind(this));
+			
 			EventBroker.subscribe('save.editor', (function(event) {
 				if (this.path == "" || !this.path) {
 					this.path = prompt("Choose a file name to save");
@@ -42,7 +55,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 							}
 						}).bind(this));
 					} else {
-						Notification.notify("images/check.png", "Error loading file", "Not a supported file format!");
+						Notification.notify("images/close.png", "Error loading file", "Not a supported file format!");
 					}
 				}).bind(this));
 			}).bind(this));
@@ -52,11 +65,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 
 				_editor.width(_layout.width());
 				_editor.height(_layout.height() - _statusBar.height());
-				/*_editor.offset({top:0}); */
-				
-/*				_statusBar.offset({top:$(window).height() - _statusBar.height()}); */
-//				_statusBar.width(_layout.width());
-				
+	
 				_editorLibrary.dimensionsChanged();
 			}).bind(this));
 			

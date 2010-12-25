@@ -13,8 +13,7 @@ var Sidebar = function(filelist, dropbox) {
 								data: file.path.match(/([^\\\/]+)$/)[1],
 								state: "closed",
 								attr: {
-									id: file.path.replace(/\//g, '_'),
-									"data-object": data
+									id: file.path.replace(/\//g, '_')
 								}
 							});
 					
@@ -25,8 +24,7 @@ var Sidebar = function(filelist, dropbox) {
 								state: null,
 								children: null,
 								attr: {
-									id: file.path.replace(/\//g, '_'),
-									"data-object": data
+									id: file.path.replace(/\//g, '_')
 								}
 							});
 						}
@@ -75,6 +73,23 @@ var Sidebar = function(filelist, dropbox) {
 				var parentNode = data.rslt.obj;
 				EventBroker.publish('load.sidebar', [parentNode, path]);
 			});
+			
+			$("#new-file").click((function() {
+				var node;
+				var nodes = _filelist.jstree("get_selected");
+				
+				if (nodes != null && nodes[0] != null) {
+					node = nodes[0];
+				}
+				
+				var path = _filelist.jstree("get_path", node).join('/').replace(/^\/\//, '/');
+				
+				if (_filelist.jstree("is_leaf", node)) {
+					path = path.match(/^(.*?)[^\\\/]+$/)[1];
+				}
+				
+				EventBroker.publish("new.editor", [path]);
+			}).bind(this));
 		}
 	}
 }
@@ -84,4 +99,6 @@ $(document).ready(function() {
 	var dropbox = bgPage.dropbox;
 	var sidebar = new Sidebar($("#filelist"), dropbox);
 	sidebar.initialize();
+	
+
 });

@@ -34,6 +34,8 @@ button {
 .ui-layout-pane {
 	padding: 0 !important;
 	margin: 0;
+	height: 100%;
+	overflow: hidden;
 }
 
 div {
@@ -43,23 +45,26 @@ div {
 .wrapper {
 	height: 100%;
 	margin-bottom: -23px;
+	min-height: 100%;
+	height: auto !important;
+	overflow: hidden;
 }
 
 footer, .push {
 	height: 23px;
-	background: #eee;
 }
 
 footer {
 	background-image: url(../images/footer-bg.png);
 	background-repeat: repeat-x;
 	line-height: 23px;
+	height: 23px;
 }
 
 footer button {
-
-}
-
-footer button:after {
-	content: url(../images/footer-button-end.png);
+  padding: 0 6px 0 6px;
+  background-image: url(../images/footer-button-end.png);
+	background-repeat: no-repeat;
+	background-position: 100%;
+	height: 23px;
 }
