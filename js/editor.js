@@ -51,11 +51,11 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 				_layout.height($(window).height());
 
 				_editor.width(_layout.width());
-				_editor.height($(window).height() - _statusBar.height());
-				_editor.offset({top:0});
+				_editor.height(_layout.height() - _statusBar.height());
+				/*_editor.offset({top:0}); */
 				
-				_statusBar.offset({top:$(window).height() - _statusBar.height()});
-				_statusBar.width(_layout.width());
+/*				_statusBar.offset({top:$(window).height() - _statusBar.height()}); */
+//				_statusBar.width(_layout.width());
 				
 				_editorLibrary.dimensionsChanged();
 			}).bind(this));
@@ -81,7 +81,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 $(document).ready(function() {
 	var bgPage = chrome.extension.getBackgroundPage();
 	var dropbox = bgPage.dropbox;
-	var editor = new Editor($("#pad"), $("#editor"), $("#status-bar"), dropbox);
+	var editor = new Editor($("#main"), $("#editor"), $("#main footer"), dropbox);
 	window.onBespinLoad = function() {
 		editor.initialize();
 	

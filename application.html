@@ -1,34 +1,44 @@
 <!DOCTYPE html>
 <html>
   <head>
-      <title>Chrome Pad</title>
-      <link id="bespin_base" href="bespin/"/>
-      <link rel="stylesheet" href="css/application.css" type="text/css" media="screen" title="no title" charset="utf-8">
+	  <title>Chrome Pad</title>
+	  <link id="bespin_base" href="bespin/"/>
+	  <link rel="stylesheet" href="css/application.css" type="text/css" media="screen" title="no title" charset="utf-8">
 
-      <script src="bespin/BespinEmbedded.js"></script>
-      
-      <script src="js/jquery/jquery.min.js"></script>
-      <script src="js/jquery/jquery-ui.min.js"></script>
-      <script src="js/jquery/jquery.layout.js"></script>
-      <script src="js/jquery/jquery.cookie.js"></script>
-      <script src="js/jquery/jquery.hotkeys.js"></script>
-      <script src="js/jquery/jquery.jstree.js"></script>
-      
-      <script src="js/event_broker.js"></script>
-      <script src="js/editor.js"></script>
-      <script src="js/sidebar.js"></script>
-      <script src="js/notification.js"></script>
-      <script src="js/application.js"></script>
-      
-      <!-- Icons taken from http://somerandomdude.com/projects/sanscons/ -->
+	  <script src="bespin/BespinEmbedded.js"></script>
+	  
+	  <script src="js/jquery/jquery.min.js"></script>
+	  <script src="js/jquery/jquery-ui.min.js"></script>
+	  <script src="js/jquery/jquery.layout.js"></script>
+	  <script src="js/jquery/jquery.cookie.js"></script>
+	  <script src="js/jquery/jquery.hotkeys.js"></script>
+	  <script src="js/jquery/jquery.jstree.js"></script>
+	  
+	  <script src="js/event_broker.js"></script>
+	  <script src="js/editor.js"></script>
+	  <script src="js/sidebar.js"></script>
+	  <script src="js/notification.js"></script>
+	  <script src="js/application.js"></script>
+	  
+	  <!-- Icons taken from http://somerandomdude.com/projects/sanscons/ -->
   </head>
   <body>
-        <div class="ui-layout-west" id="sidebar" >
-            <div id="filelist"></div>
-        </div>
-        <div class="ui-layout-center" id="pad">
-            <div class="bespin" id="editor" data-bespinoptions='{ "settings": { "strictlines": true, "tabstop": 4 }, "stealFocus": true }'></div>
-            <div id="status-bar"><button id="save"><img src="images/save.png"/></button></div>
-        </div>
+		<div class="ui-layout-west" id="sidebar" >
+			<div class="wrapper">
+				<div id="filelist"></div>
+				<div class="push"></div>
+			</div>
+			<footer>
+				<button id="create-file">+ file</button>
+				<button>+ dir</button>
+			</footer>
+		</div>
+		<div class="ui-layout-center" id="main">
+			<div class="wrapper">
+				<div class="bespin" id="editor" data-bespinoptions='{ "settings": { "tabstop": 4 }, "stealFocus": true }'></div>
+				<div class="push"></div>
+			</div>
+			<footer><button id="save"><img src="images/save.png"/></button></footer>
+		</div>
   </body>
 </html>
