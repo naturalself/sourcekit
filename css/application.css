@@ -59,12 +59,19 @@ footer {
 	background-repeat: repeat-x;
 	line-height: 23px;
 	height: 23px;
+	overflow: hidden;
 }
 
 footer button {
-  padding: 0 6px 0 6px;
-  background-image: url(../images/footer-button-end.png);
+	margin: 0;
+	padding: 0 6px 0 6px;
+	background-image: url(../images/footer-button-end.png);
 	background-repeat: no-repeat;
 	background-position: 100%;
 	height: 23px;
+}
+
+footer button img {
+	border: none;
+	
 }
