@@ -1,6 +1,6 @@
 {
   "name": "ChromePad - Text Editor Inside Chrome",
-  "version": "0.2.1",
+  "version": "0.3",
   "incognito": "split",
   "icons": { "128": "icon.png" },
   "browser_action": {

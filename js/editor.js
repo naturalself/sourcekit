@@ -15,10 +15,8 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 			_editorLibrary = _editor.get(0).bespin;
 
 			// Hooking up global events
-			EventBroker.subscribe('new.editor', (function(event, path) {
-				defaultPath = path;
-				
-				if (path == null) {
+			EventBroker.subscribe('new.editor', (function(event, defaultPath) {
+				if (defaultPath == null) {
 					defaultPath = "/";
 				}
 				
