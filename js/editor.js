@@ -5,7 +5,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 	var _editor = editor;
 	var _statusBar = statusBar;
 	
-	var _acceptedMimeTypes = {"text/plain": "", "application/javascript": "js"}
+	var _acceptedMimeTypes = {"text/plain": "", "text/html": "html", "application/octet-stream": "", "application/javascript": "js"}
 	
 	var _editorLibrary;
 	
@@ -53,7 +53,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 							}
 						}).bind(this));
 					} else {
-						Notification.notify("images/close.png", "Error loading file", "Not a supported file format!");
+						Notification.notify("images/close.png", "Error loading file", "Not a supported file format! " + data.mime_type);
 					}
 				}).bind(this));
 			}).bind(this));

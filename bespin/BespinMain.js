@@ -5875,6 +5875,124 @@ exports.TextInput.prototype = {
 bespin.tiki.module("text_editor:index",function(require,exports,module) {
 
 });
+;bespin.tiki.register("::markdown", {
+    name: "markdown",
+    dependencies: { "markdown_js": "0.0.0" }
+});
+bespin.tiki.module("markdown:index",function(require,exports,module) {
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Bespin.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Bespin Team (bespin@mozilla.com)
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+"define metadata";
+({
+    "dependencies": {
+        "markdown_js": "0.1.2"
+    },
+    "provides": [
+        {
+            "ep": "command",
+            "name": "markdown",
+            "description": "commands for working with markdown files"
+        },
+        {
+            "ep": "command",
+            "name": "markdown preview",
+            "description": "preview the HTML form of this markdown text",
+            "key": "ctrl_shift_p",
+            "pointer": "#preview"
+        },
+        {
+            "ep": "command",
+            "name": "markdown convert",
+            "description": "convert the selected text to HTML",
+            "pointer": "#convert"
+        }
+    ],
+    "version": "1.0.0",
+    "maintainers": [
+        {
+            "name": "Kevin Dangoor",
+            "email": "kid@blazingthings.com",
+            "web": "http://blueskyonmars.com/"
+        }
+    ],
+    "licenses": [
+        {
+            "type": "MPL",
+            "url": "http://www.mozilla.org/MPL/MPL-1.1.html"
+        },
+        {
+            "type": "GPL",
+            "url": "http://creativecommons.org/licenses/GPL/2.0/"
+        },
+        {
+            "type": "LGPL",
+            "url": "http://creativecommons.org/licenses/LGPL/2.1/"
+        }
+    ]
+});
+"end";
+
+var env = require('environment').env;
+var markdown = require("markdown_js");
+
+exports.preview = function(args, request) {
+    var text = env.editor.selectedText;
+    if (!text) {
+        text = env.editor.value;
+    }
+    var popup = window.open("", "_blank", "location=no,menubar=no");
+    popup.document.body.innerHTML = markdown.toHTML(text);
+    request.done();
+};
+
+exports.convert = function(args, request) {
+    var allOrSelection = 'selectedText';
+    var text = env.editor.selectedText;
+    if (!text) {
+        allOrSelection = 'value';
+        text = env.editor.value;
+    }
+    var html = markdown.toHTML(text);
+    env.editor[allOrSelection] = html;
+    request.done();
+};
+
+});
 ;bespin.tiki.register("::less", {
     name: "less",
     dependencies: {  }
@@ -8035,6 +8153,1498 @@ less.Parser.importer = function (path, paths, callback) {
 // --- End less.js ---
 
 });
+;bespin.tiki.register("::markdown_js", {
+    name: "markdown_js",
+    dependencies: {  }
+});
+bespin.tiki.module("markdown_js:index",function(require,exports,module) {
+// imported from http://github.com/evilstreak/markdown-js
+
+"define metadata";
+({
+  "name" : "markdown-js",
+  "version" : "0.1.2",
+  "description" : "A Markdown parser for javascript",
+  "keywords" : [ "markdown", "text processing" ],
+  "maintainers" : [
+    {
+      "name" : "Dominic Baggott",
+      "email" : "dominic.baggott@gmail.com",
+      "web" : "http://evilstreak.co.uk"
+    },
+    {
+      "name" : "Ash Berlin",
+      "email" : "ash_markdownjs@firemirror.com",
+      "web" : "http://ashberlin.com"
+    }
+  ],
+  "contributors" : [
+    {
+      "name" : "Dominic Baggott",
+      "email" : "dominic.baggott@gmail.com",
+      "web" : "http://evilstreak.co.uk"
+    },
+    {
+      "name" : "Ash Berlin",
+      "email" : "ash_markdownjs@firemirror.com",
+      "web" : "http://ashberlin.com"
+    }
+  ],
+  "bugs" : "http://github.com/evilstreak/markdown-js/issues",
+  "licenses" : [
+    {
+      "type" : "MIT",
+      "url" : "http://www.opensource.org/licenses/mit-license.php"
+    }
+  ],
+  "repositories" : [
+    {
+      "type" : "git",
+      "url" : "http://github.com/evilstreak/markdown-js"
+    }
+  ]
+});
+"end";
+
+
+// Released under MIT license
+// Copyright (c) 2009-2010 Dominic Baggott
+// Copyright (c) 2009-2010 Ash Berlin
+
+var expose = exports;
+
+/**
+ *  class Markdown
+ *
+ *  Markdown processing in Javascript done right. We have very particular views
+ *  on what constitutes 'right' which include:
+ *
+ *  - produces well-formed HTML (this means that em and strong nesting is
+ *    important)
+ *
+ *  - has an intermediate representation to allow processing of parsed data (We
+ *    in fact have two, both as [JsonML]: a markdown tree and an HTML tree).
+ *
+ *  - is easily extensible to add new dialects without having to rewrite the
+ *    entire parsing mechanics
+ *
+ *  - has a good test suite
+ *
+ *  This implementation fulfills all of these (except that the test suite could
+ *  do with expanding to automatically run all the fixtures from other Markdown
+ *  implementations.)
+ *
+ *  ##### Intermediate Representation
+ *
+ *  *TODO* Talk about this :) Its JsonML, but document the node names we use.
+ *
+ *  [JsonML]: http://jsonml.org/ "JSON Markup Language"
+ **/
+var Markdown = expose.Markdown = function Markdown(dialect) {
+  switch (typeof dialect) {
+    case "undefined":
+      this.dialect = Markdown.dialects.Gruber;
+      break;
+    case "object":
+      this.dialect = dialect;
+      break;
+    default:
+      if (dialect in Markdown.dialects) {
+        this.dialect = Markdown.dialects[dialect];
+      }
+      else {
+        throw new Error("Unknown Markdown dialect '" + String(dialect) + "'");
+      }
+      break;
+  }
+  this.em_state = [];
+  this.strong_state = [];
+  this.debug_indent = "";
+}
+
+/**
+ *  parse( markdown, [dialect] ) -> JsonML
+ *  - markdown (String): markdown string to parse
+ *  - dialect (String | Dialect): the dialect to use, defaults to gruber
+ *
+ *  Parse `markdown` and return a markdown document as a Markdown.JsonML tree.
+ **/
+expose.parse = function( source, dialect ) {
+  // dialect will default if undefined
+  var md = new Markdown( dialect );
+  return md.toTree( source );
+}
+
+/**
+ *  toHTML( markdown ) -> String
+ *  toHTML( md_tree ) -> String
+ *  - markdown (String): markdown string to parse
+ *  - md_tree (Markdown.JsonML): parsed markdown tree
+ *
+ *  Take markdown (either as a string or as a JsonML tree) and run it through
+ *  [[toHTMLTree]] then turn it into a well-formated HTML fragment.
+ **/
+expose.toHTML = function toHTML( source ) {
+  var input = expose.toHTMLTree( source );
+
+  return expose.renderJsonML( input );
+}
+
+/**
+ *  toHTMLTree( markdown, [dialect] ) -> JsonML
+ *  toHTMLTree( md_tree ) -> JsonML
+ *  - markdown (String): markdown string to parse
+ *  - dialect (String | Dialect): the dialect to use, defaults to gruber
+ *  - md_tree (Markdown.JsonML): parsed markdown tree
+ *
+ *  Turn markdown into HTML, represented as a JsonML tree. If a string is given
+ *  to this function, it is first parsed into a markdown tree by calling
+ *  [[parse]].
+ **/
+expose.toHTMLTree = function toHTMLTree( input, dialect ) {
+  // convert string input to an MD tree
+  if ( typeof input ==="string" ) input = this.parse( input, dialect );
+
+  // Now convert the MD tree to an HTML tree
+
+  // remove references from the tree
+  var attrs = extract_attr( input ),
+      refs = {};
+
+  if ( attrs && attrs.references ) {
+    refs = attrs.references;
+  }
+
+  var html = convert_tree_to_html( input, refs );
+  merge_text_nodes( html );
+  return html;
+}
+
+var mk_block = Markdown.mk_block = function(block, trail, line) {
+  // Be helpful for default case in tests.
+  if ( arguments.length == 1 ) trail = "\n\n";
+
+  var s = new String(block);
+  s.trailing = trail;
+  // To make it clear its not just a string
+  s.toSource = function() {
+    return "Markdown.mk_block( " +
+            uneval(block) +
+            ", " +
+            uneval(trail) +
+            ", " +
+            uneval(line) +
+            " )"
+  }
+
+  if (line != undefined)
+    s.lineNumber = line;
+
+  return s;
+}
+
+function count_lines( str ) {
+  var n = 0, i = -1;;
+  while ( ( i = str.indexOf('\n', i+1) ) != -1) n++;
+  return n;
+}
+
+// Internal - split source into rough blocks
+Markdown.prototype.split_blocks = function splitBlocks( input, startLine ) {
+  // [\s\S] matches _anything_ (newline or space)
+  var re = /([\s\S]+?)($|\n(?:\s*\n|$)+)/g,
+      blocks = [],
+      m;
+
+  var line_no = 1;
+
+  if ( ( m = (/^(\s*\n)/)(input) ) != null ) {
+    // skip (but count) leading blank lines
+    line_no += count_lines( m[0] );
+    re.lastIndex = m[0].length;
+  }
+
+  while ( ( m = re(input) ) != null ) {
+    blocks.push( mk_block( m[1], m[2], line_no ) );
+    line_no += count_lines( m[0] );
+  }
+
+  return blocks;
+}
+
+/**
+ *  Markdown#processBlock( block, next ) -> undefined | [ JsonML, ... ]
+ *  - block (String): the block to process
+ *  - next (Array): the following blocks
+ *
+ * Process `block` and return an array of JsonML nodes representing `block`.
+ *
+ * It does this by asking each block level function in the dialect to process
+ * the block until one can. Succesful handling is indicated by returning an
+ * array (with zero or more JsonML nodes), failure by a false value.
+ *
+ * Blocks handlers are responsible for calling [[Markdown#processInline]]
+ * themselves as appropriate.
+ *
+ * If the blocks were split incorrectly or adjacent blocks need collapsing you
+ * can adjust `next` in place using shift/splice etc.
+ *
+ * If any of this default behaviour is not right for the dialect, you can
+ * define a `__call__` method on the dialect that will get invoked to handle
+ * the block processing.
+ */
+Markdown.prototype.processBlock = function processBlock( block, next ) {
+  var cbs = this.dialect.block,
+      ord = cbs.__order__;
+
+  if ( "__call__" in cbs ) {
+    return cvs.__call__.call(this, block, next);
+  }
+
+  for ( var i = 0; i < ord.length; i++ ) {
+    //D:this.debug( "Testing", ord[i] );
+    var res = cbs[ ord[i] ].call( this, block, next );
+    if ( res ) {
+      //D:this.debug("  matched");
+      if ( !res instanceof Array || ( res.length > 0 && !( res[0] instanceof Array ) ) )
+        this.debug(ord[i], "didn't return a proper array");
+      //D:this.debug( "" );
+      return res;
+    }
+  }
+
+  // Uhoh! no match! Should we throw an error?
+  return [];
+}
+
+Markdown.prototype.processInline = function processInline( block ) {
+  return this.dialect.inline.__call__.call( this, String( block ) );
+}
+
+/**
+ *  Markdown#toTree( source ) -> JsonML
+ *  - source (String): markdown source to parse
+ *
+ *  Parse `source` into a JsonML tree representing the markdown document.
+ **/
+// custom_tree means set this.tree to `custom_tree` and restore old value on return
+Markdown.prototype.toTree = function toTree( source, custom_root ) {
+  var blocks = source instanceof Array
+             ? source
+             : this.split_blocks( source );
+
+  // Make tree a member variable so its easier to mess with in extensions
+  var old_tree = this.tree;
+  try {
+    this.tree = custom_root || this.tree || [ "markdown" ];
+
+    blocks:
+    while ( blocks.length ) {
+      var b = this.processBlock( blocks.shift(), blocks );
+
+      // Reference blocks and the like won't return any content
+      if ( !b.length ) continue blocks;
+
+      this.tree.push.apply( this.tree, b );
+    }
+    return this.tree;
+  }
+  finally {
+    if ( custom_root )
+      this.tree = old_tree;
+  }
+
+}
+
+// Noop by default
+Markdown.prototype.debug = function () {
+  var args = Array.prototype.slice.call( arguments);
+  args.unshift(this.debug_indent);
+  print.apply( print, args );
+}
+
+Markdown.prototype.loop_re_over_block = function( re, block, cb ) {
+  // Dont use /g regexps with this
+  var m,
+      b = block.valueOf();
+
+  while ( b.length && (m = re(b) ) != null) {
+    b = b.substr( m[0].length );
+    cb.call(this, m);
+  }
+  return b;
+}
+
+/**
+ * Markdown.dialects
+ *
+ * Namespace of built-in dialects.
+ **/
+Markdown.dialects = {};
+
+/**
+ * Markdown.dialects.Gruber
+ *
+ * The default dialect that follows the rules set out by John Gruber's
+ * markdown.pl as closely as possible. Well actually we follow the behaviour of
+ * that script which in some places is not exactly what the syntax web page
+ * says.
+ **/
+Markdown.dialects.Gruber = {
+  block: {
+    atxHeader: function atxHeader( block, next ) {
+      var m = block.match( /^(#{1,6})\s*(.*?)\s*#*\s*(?:\n|$)/ );
+
+      if ( !m ) return undefined;
+
+      var header = [ "header", { level: m[ 1 ].length }, m[ 2 ] ];
+
+      if ( m[0].length < block.length )
+        next.unshift( mk_block( block.substr( m[0].length ), block.trailing, block.lineNumber + 2 ) );
+
+      return [ header ];
+    },
+
+    setextHeader: function setextHeader( block, next ) {
+      var m = block.match( /^(.*)\n([-=])\2\2+(?:\n|$)/ );
+
+      if ( !m ) return undefined;
+
+      var level = ( m[ 2 ] === "=" ) ? 1 : 2;
+      var header = [ "header", { level : level }, m[ 1 ] ];
+
+      if ( m[0].length < block.length )
+        next.unshift( mk_block( block.substr( m[0].length ), block.trailing, block.lineNumber + 2 ) );
+
+      return [ header ];
+    },
+
+    code: function code( block, next ) {
+      // |    Foo
+      // |bar
+      // should be a code block followed by a paragraph. Fun
+      //
+      // There might also be adjacent code block to merge.
+
+      var ret = [],
+          re = /^(?: {0,3}\t| {4})(.*)\n?/,
+          lines;
+
+      // 4 spaces + content
+      var m = block.match( re );
+
+      if ( !m ) return undefined;
+
+      block_search:
+      do {
+        // Now pull out the rest of the lines
+        var b = this.loop_re_over_block(
+                  re, block.valueOf(), function( m ) { ret.push( m[1] ) } );
+
+        if (b.length) {
+          // Case alluded to in first comment. push it back on as a new block
+          next.unshift( mk_block(b, block.trailing) );
+          break block_search;
+        }
+        else if (next.length) {
+          // Check the next block - it might be code too
+          var m = next[0].match( re );
+
+          if ( !m ) break block_search;
+
+          // Pull how how many blanks lines follow - minus two to account for .join
+          ret.push ( block.trailing.replace(/[^\n]/g, '').substring(2) );
+
+          block = next.shift();
+        }
+        else
+          break block_search;
+      } while (true);
+
+      return [ [ "code_block", ret.join("\n") ] ];
+    },
+
+    horizRule: function horizRule( block, next ) {
+      // this needs to find any hr in the block to handle abutting blocks
+      var m = block.match( /^(?:([\s\S]*?)\n)?[ \t]*([-_*])(?:[ \t]*\2){2,}[ \t]*(?:\n([\s\S]*))?$/ );
+
+      if ( !m ) {
+        return undefined;
+      }
+
+      var jsonml = [ [ "hr" ] ];
+
+      // if there's a leading abutting block, process it
+      if ( m[ 1 ] ) {
+        jsonml.unshift.apply( jsonml, this.processBlock( m[ 1 ], [] ) );
+      }
+
+      // if there's a trailing abutting block, stick it into next
+      if ( m[ 3 ] ) {
+        next.unshift( mk_block( m[ 3 ] ) );
+      }
+
+      return jsonml;
+    },
+
+    // There are two types of lists. Tight and loose. Tight lists have no whitespace
+    // between the items (and result in text just in the <li>) and loose lists,
+    // which have an empty line between list items, resulting in (one or more)
+    // paragraphs inside the <li>.
+    //
+    // There are all sorts weird edge cases about the original markdown.pl's
+    // handling of lists:
+    //
+    // * Nested lists are supposed to be indented by four chars per level. But
+    //   if they aren't, you can get a nested list by indenting by less than
+    //   four so long as the indent doesn't match an indent of an existing list
+    //   item in the 'nest stack'.
+    //
+    // * The type of the list (bullet or number) is controlled just by the
+    //    first item at the indent. Subsequent changes are ignored unless they
+    //    are for nested lists
+    //
+    lists: (function( ) {
+      // Use a closure to hide a few variables.
+      var any_list = "[*+-]|\\d\\.",
+          bullet_list = /[*+-]/,
+          number_list = /\d+\./,
+          // Capture leading indent as it matters for determining nested lists.
+          is_list_re = new RegExp( "^( {0,3})(" + any_list + ")[ \t]+" ),
+          indent_re = "(?: {0,3}\\t| {4})";
+
+      // TODO: Cache this regexp for certain depths.
+      // Create a regexp suitable for matching an li for a given stack depth
+      function regex_for_depth( depth ) {
+
+        return new RegExp(
+          // m[1] = indent, m[2] = list_type
+          "(?:^(" + indent_re + "{0," + depth + "} {0,3})(" + any_list + ")\\s+)|" +
+          // m[3] = cont
+          "(^" + indent_re + "{0," + (depth-1) + "}[ ]{0,4})"
+        );
+      }
+      function expand_tab( input ) {
+        return input.replace( / {0,3}\t/g, "    " );
+      }
+
+      // Add inline content `inline` to `li`. inline comes from processInline
+      // so is an array of content
+      function add(li, loose, inline, nl) {
+        if (loose) {
+            li.push( [ "para" ].concat(inline) );
+          return;
+        }
+        // Hmmm, should this be any block level element or just paras?
+        var add_to = li[li.length -1] instanceof Array && li[li.length - 1][0] == "para"
+                   ? li[li.length -1]
+                   : li;
+
+        // If there is already some content in this list, add the new line in
+        if (nl && li.length > 1) inline.unshift(nl);
+
+        for (var i=0; i < inline.length; i++) {
+          var what = inline[i],
+              is_str = typeof what == "string";
+          if (is_str && add_to.length > 1 && typeof add_to[add_to.length-1] == "string" )
+          {
+            add_to[ add_to.length-1 ] += what;
+          }
+          else {
+            add_to.push( what );
+          }
+        }
+      }
+
+      // contained means have an indent greater than the current one. On
+      // *every* line in the block
+      function get_contained_blocks( depth, blocks ) {
+
+        var re = new RegExp( "^(" + indent_re + "{" + depth + "}.*?\\n?)*$" ),
+            replace = new RegExp("^" + indent_re + "{" + depth + "}", "gm"),
+            ret = [];
+
+        while ( blocks.length > 0 ) {
+          if ( re( blocks[0] ) ) {
+            var b = blocks.shift(),
+                // Now remove that indent
+                x = b.replace( replace, "");
+
+            ret.push( mk_block( x, b.trailing, b.lineNumber ) );
+          }
+          break;
+        }
+        return ret;
+      }
+
+      // passed to stack.forEach to turn list items up the stack into paras
+      function paragraphify(s, i, stack) {
+        var list = s.list;
+        var last_li = list[list.length-1];
+
+        if (last_li[1] instanceof Array && last_li[1][0] == "para") {
+          return;
+        }
+        if (i+1 == stack.length) {
+          // Last stack frame
+          // Keep the same array, but replace the contents
+          last_li.push( ["para"].concat( last_li.splice(1) ) );
+        }
+        else {
+          var sublist = last_li.pop();
+          last_li.push( ["para"].concat( last_li.splice(1) ), sublist );
+        }
+      }
+
+      // The matcher function
+      return function( block, next ) {
+        var m = block.match( is_list_re );
+        if ( !m ) return undefined;
+
+        function make_list( m ) {
+          var list = bullet_list( m[2] )
+                   ? ["bulletlist"]
+                   : ["numberlist"];
+
+          stack.push( { list: list, indent: m[1] } );
+          return list;
+        }
+
+
+        var stack = [], // Stack of lists for nesting.
+            list = make_list( m ),
+            last_li,
+            loose = false,
+            ret = [ stack[0].list ];
+
+        // Loop to search over block looking for inner block elements and loose lists
+        loose_search:
+        while( true ) {
+          // Split into lines preserving new lines at end of line
+          var lines = block.split( /(?=\n)/ );
+
+          // We have to grab all lines for a li and call processInline on them
+          // once as there are some inline things that can span lines.
+          var li_accumulate = "";
+
+          // Loop over the lines in this block looking for tight lists.
+          tight_search:
+          for (var line_no=0; line_no < lines.length; line_no++) {
+            var nl = "",
+                l = lines[line_no].replace(/^\n/, function(n) { nl = n; return "" });
+
+            // TODO: really should cache this
+            var line_re = regex_for_depth( stack.length );
+
+            m = l.match( line_re );
+            //print( "line:", uneval(l), "\nline match:", uneval(m) );
+
+            // We have a list item
+            if ( m[1] !== undefined ) {
+              // Process the previous list item, if any
+              if ( li_accumulate.length ) {
+                add( last_li, loose, this.processInline( li_accumulate ), nl );
+                // Loose mode will have been dealt with. Reset it
+                loose = false;
+                li_accumulate = "";
+              }
+
+              m[1] = expand_tab( m[1] );
+              var wanted_depth = Math.floor(m[1].length/4)+1;
+              //print( "want:", wanted_depth, "stack:", stack.length);
+              if ( wanted_depth > stack.length ) {
+                // Deep enough for a nested list outright
+                //print ( "new nested list" );
+                list = make_list( m );
+                last_li.push( list );
+                last_li = list[1] = [ "listitem" ];
+              }
+              else {
+                // We aren't deep enough to be strictly a new level. This is
+                // where Md.pl goes nuts. If the indent matches a level in the
+                // stack, put it there, else put it one deeper then the
+                // wanted_depth deserves.
+                var found = stack.some(function(s, i) {
+                  if ( s.indent != m[1] ) return false;
+                  list = s.list;     // Found the level we want
+                  stack.splice(i+1); // Remove the others
+                  //print("found");
+                  return true;       // And stop looping
+                });
+
+                if (!found) {
+                  //print("not found. l:", uneval(l));
+                  wanted_depth++;
+                  if (wanted_depth <= stack.length) {
+                    stack.splice(wanted_depth);
+                    //print("Desired depth now", wanted_depth, "stack:", stack.length);
+                    list = stack[wanted_depth-1].list;
+                    //print("list:", uneval(list) );
+                  }
+                  else {
+                    //print ("made new stack for messy indent");
+                    list = make_list(m);
+                    last_li.push(list);
+                  }
+                }
+
+                //print( uneval(list), "last", list === stack[stack.length-1].list );
+                last_li = [ "listitem" ];
+                list.push(last_li);
+              } // end depth of shenegains
+              nl = "";
+            }
+
+            // Add content
+            if (l.length > m[0].length) {
+              li_accumulate += nl + l.substr( m[0].length );
+            }
+          } // tight_search
+
+          if ( li_accumulate.length ) {
+            add( last_li, loose, this.processInline( li_accumulate ), nl );
+            // Loose mode will have been dealt with. Reset it
+            loose = false;
+            li_accumulate = "";
+          }
+
+          // Look at the next block - we might have a loose list. Or an extra
+          // paragraph for the current li
+          var contained = get_contained_blocks( stack.length, next );
+
+          // Deal with code blocks or properly nested lists
+          if (contained.length > 0) {
+            // Make sure all listitems up the stack are paragraphs
+            stack.forEach( paragraphify, this );
+
+            last_li.push.apply( last_li, this.toTree( contained, [] ) );
+          }
+
+          var next_block = next[0] && next[0].valueOf() || "";
+
+          if ( next_block.match(is_list_re) || next_block.match( /^ / ) ) {
+            block = next.shift();
+
+            // Check for an HR following a list: features/lists/hr_abutting
+            var hr = this.dialect.block.horizRule( block, next );
+
+            if (hr) {
+              ret.push.apply(ret, hr);
+              break;
+            }
+
+            // Make sure all listitems up the stack are paragraphs
+            stack.forEach( paragraphify , this );
+
+            loose = true;
+            continue loose_search;
+          }
+          break;
+        } // loose_search
+
+        return ret;
+      }
+    })(),
+
+    blockquote: function blockquote( block, next ) {
+      if ( !block.match( /^>/m ) )
+        return undefined;
+
+      var jsonml = [];
+
+      // separate out the leading abutting block, if any
+      if ( block[ 0 ] != ">" ) {
+        var lines = block.split( /\n/ ),
+            prev = [];
+
+        // keep shifting lines until you find a crotchet
+        while ( lines.length && lines[ 0 ][ 0 ] != ">" ) {
+            prev.push( lines.shift() );
+        }
+
+        // reassemble!
+        block = lines.join( "\n" );
+        jsonml.push.apply( jsonml, this.processBlock( prev.join( "\n" ), [] ) );
+      }
+
+      // if the next block is also a blockquote merge it in
+      while ( next.length && next[ 0 ][ 0 ] == ">" ) {
+        var b = next.shift();
+        block += block.trailing + b;
+        block.trailing = b.trailing;
+      }
+
+      // Strip off the leading "> " and re-process as a block.
+      var input = block.replace( /^> ?/gm, '' ),
+          old_tree = this.tree;
+      jsonml.push( this.toTree( input, [ "blockquote" ] ) );
+
+      return jsonml;
+    },
+
+    referenceDefn: function referenceDefn( block, next) {
+      var re = /^\s*\[(.*?)\]:\s*(\S+)(?:\s+(?:(['"])(.*?)\3|\((.*?)\)))?\n?/;
+      // interesting matches are [ , ref_id, url, , title, title ]
+
+      if ( !block.match(re) )
+        return undefined;
+
+      // make an attribute node if it doesn't exist
+      if ( !extract_attr( this.tree ) ) {
+        this.tree.splice( 1, 0, {} );
+      }
+
+      var attrs = extract_attr( this.tree );
+
+      // make a references hash if it doesn't exist
+      if ( attrs.references === undefined ) {
+        attrs.references = {};
+      }
+
+      var b = this.loop_re_over_block(re, block, function( m ) {
+
+        if ( m[2] && m[2][0] == '<' && m[2][m[2].length-1] == '>' )
+          m[2] = m[2].substring( 1, m[2].length - 1 );
+
+        var ref = attrs.references[ m[1].toLowerCase() ] = {
+          href: m[2]
+        };
+
+        if (m[4] !== undefined)
+          ref.title = m[4];
+        else if (m[5] !== undefined)
+          ref.title = m[5];
+
+      } );
+
+      if (b.length)
+        next.unshift( mk_block( b, block.trailing ) );
+
+      return [];
+    },
+
+    para: function para( block, next ) {
+      // everything's a para!
+      return [ ["para"].concat( this.processInline( block ) ) ];
+    }
+  }
+}
+
+Markdown.dialects.Gruber.inline = {
+    __call__: function inline( text, patterns ) {
+      // Hmmm - should this function be directly in Md#processInline, or
+      // conversely, should Md#processBlock be moved into block.__call__ too
+      var out = [ ],
+          m,
+          // Look for the next occurange of a special character/pattern
+          re = new RegExp( "([\\s\\S]*?)(" + (patterns.source || patterns) + ")", "g" ),
+          lastIndex = 0;
+
+      //D:var self = this;
+      //D:self.debug("processInline:", uneval(text) );
+      function add(x) {
+        //D:self.debug("  adding output", uneval(x));
+        if (typeof x == "string" && typeof out[out.length-1] == "string")
+          out[ out.length-1 ] += x;
+        else
+          out.push(x);
+      }
+
+      while ( ( m = re.exec(text) ) != null) {
+        if ( m[1] ) add( m[1] ); // Some un-interesting text matched
+        else        m[1] = { length: 0 }; // Or there was none, but make m[1].length == 0
+
+        var res;
+        if ( m[2] in this.dialect.inline ) {
+          res = this.dialect.inline[ m[2] ].call(
+                    this,
+                    text.substr( m.index + m[1].length ), m, out );
+        }
+        // Default for now to make dev easier. just slurp special and output it.
+        res = res || [ m[2].length, m[2] ];
+
+        var len = res.shift();
+        // Update how much input was consumed
+        re.lastIndex += ( len - m[2].length );
+
+        // Add children
+        res.forEach(add);
+
+        lastIndex = re.lastIndex;
+      }
+
+      // Add last 'boring' chunk
+      if ( text.length > lastIndex )
+        add( text.substr( lastIndex ) );
+
+      return out;
+    },
+
+    "\\": function escaped( text ) {
+      // [ length of input processed, node/children to add... ]
+      // Only esacape: \ ` * _ { } [ ] ( ) # * + - . !
+      if ( text.match( /^\\[\\`\*_{}\[\]()#\+.!\-]/ ) )
+        return [ 2, text[1] ];
+      else
+        // Not an esacpe
+        return [ 1, "\\" ];
+    },
+
+    "![": function image( text ) {
+      // ![Alt text](/path/to/img.jpg "Optional title")
+      //      1          2            3       4         <--- captures
+      var m = text.match( /^!\[(.*?)\][ \t]*\([ \t]*(\S*)(?:[ \t]+(["'])(.*?)\3)?[ \t]*\)/ );
+
+      if ( m ) {
+        if ( m[2] && m[2][0] == '<' && m[2][m[2].length-1] == '>' )
+          m[2] = m[2].substring( 1, m[2].length - 1 );
+
+        m[2] == this.dialect.inline.__call__.call( this, m[2], /\\/ )[0];
+
+        var attrs = { alt: m[1], href: m[2] || "" };
+        if ( m[4] !== undefined)
+          attrs.title = m[4];
+
+        return [ m[0].length, [ "img", attrs ] ];
+      }
+
+      // ![Alt text][id]
+      m = text.match( /^!\[(.*?)\][ \t]*\[(.*?)\]/ );
+
+      if ( m ) {
+        // We can't check if the reference is known here as it likely wont be
+        // found till after. Check it in md tree->hmtl tree conversion
+        return [ m[0].length, [ "img_ref", { alt: m[1], ref: m[2].toLowerCase(), text: m[0] } ] ];
+      }
+
+      // Just consume the '!['
+      return [ 2, "![" ];
+    },
+
+    "[": function link( text ) {
+      // [link text](/path/to/img.jpg "Optional title")
+      //      1          2            3       4         <--- captures
+      var m = text.match( /^\[([\s\S]*?)\][ \t]*\([ \t]*(\S+)(?:[ \t]+(["'])(.*?)\3)?[ \t]*\)/ );
+
+      if ( m ) {
+        if ( m[2] && m[2][0] == '<' && m[2][m[2].length-1] == '>' )
+          m[2] = m[2].substring( 1, m[2].length - 1 );
+
+        // Process escapes only
+        m[2] = this.dialect.inline.__call__.call( this, m[2], /\\/ )[0];
+
+        var attrs = { href: m[2] || "" };
+        if ( m[4] !== undefined)
+          attrs.title = m[4];
+
+        return [ m[0].length, [ "link", attrs, m[1] ] ];
+      }
+
+      // [Alt text][id]
+      // [Alt text] [id]
+      // [id]
+      m = text.match( /^\[([\s\S]*?)\](?: ?\[(.*?)\])?/ );
+
+      if ( m ) {
+        // [id] case, text == id
+        if ( m[2] === undefined || m[2] === "" ) m[2] = m[1];
+
+        // We can't check if the reference is known here as it likely wont be
+        // found till after. Check it in md tree->hmtl tree conversion.
+        // Store the original so that conversion can revert if the ref isn't found.
+        return [
+          m[ 0 ].length,
+          [
+            "link_ref",
+            {
+              ref: m[ 2 ].toLowerCase(),
+              original: m[ 0 ]
+            },
+            m[ 1 ]
+          ]
+        ];
+      }
+
+      // Just consume the '['
+      return [ 1, "[" ];
+    },
+
+
+    "<": function autoLink( text ) {
+      var m;
+
+      if ( ( m = text.match( /^<(?:((https?|ftp|mailto):[^>]+)|(.*?@.*?\.[a-zA-Z]+))>/ ) ) != null ) {
+        if ( m[3] ) {
+          return [ m[0].length, [ "link", { href: "mailto:" + m[3] }, m[3] ] ];
+
+        }
+        else if ( m[2] == "mailto" ) {
+          return [ m[0].length, [ "link", { href: m[1] }, m[1].substr("mailto:".length ) ] ];
+        }
+        else
+          return [ m[0].length, [ "link", { href: m[1] }, m[1] ] ];
+      }
+
+      return [ 1, "<" ];
+    },
+
+    "`": function inlineCode( text ) {
+      // Inline code block. as many backticks as you like to start it
+      // Always skip over the opening ticks.
+      var m = text.match( /(`+)(([\s\S]*?)\1)/ );
+
+      if ( m && m[2] )
+        return [ m[1].length + m[2].length, [ "inlinecode", m[3] ] ];
+      else {
+        // TODO: No matching end code found - warn!
+        return [ 1, "`" ];
+      }
+    },
+
+    "  \n": function lineBreak( text ) {
+      return [ 3, [ "linebreak" ] ];
+    }
+
+}
+
+// Meta Helper/generator method for em and strong handling
+function strong_em( tag, md ) {
+
+  var state_slot = tag + "_state",
+      other_slot = tag == "strong" ? "em_state" : "strong_state";
+
+  function CloseTag(len) {
+    this.len_after = len;
+    this.name = "close_" + md;
+  }
+
+  return function ( text, orig_match ) {
+
+    if (this[state_slot][0] == md) {
+      // Most recent em is of this type
+      //D:this.debug("closing", md);
+      this[state_slot].shift();
+
+      // "Consume" everything to go back to the recrusion in the else-block below
+      return[ text.length, new CloseTag(text.length-md.length) ];
+    }
+    else {
+      // Store a clone of the em/strong states
+      var other = this[other_slot].slice(),
+          state = this[state_slot].slice();
+
+      this[state_slot].unshift(md);
+
+      //D:this.debug_indent += "  ";
+
+      // Recurse
+      var res = this.processInline( text.substr( md.length ) );
+      //D:this.debug_indent = this.debug_indent.substr(2);
+
+      var last = res[res.length - 1];
+
+      //D:this.debug("processInline from", tag + ": ", uneval( res ) );
+
+      var check = this[state_slot].shift();
+      if (last instanceof CloseTag) {
+        res.pop();
+        // We matched! Huzzah.
+        var consumed = text.length - last.len_after;
+        return [ consumed, [ tag ].concat(res) ];
+      }
+      else {
+        // Restore the state of the other kind. We might have mistakenly closed it.
+        this[other_slot] = other;
+        this[state_slot] = state;
+
+        // We can't reuse the processed result as it could have wrong parsing contexts in it.
+        return [ md.length, md ];
+      }
+    }
+  } // End returned function
+}
+
+Markdown.dialects.Gruber.inline["**"] = strong_em("strong", "**");
+Markdown.dialects.Gruber.inline["__"] = strong_em("strong", "__");
+Markdown.dialects.Gruber.inline["*"]  = strong_em("em", "*");
+Markdown.dialects.Gruber.inline["_"]  = strong_em("em", "_");
+
+
+// Build default order from insertion order.
+Markdown.buildBlockOrder = function(d) {
+  var ord = [];
+  for ( var i in d ) {
+    if ( i == "__order__" || i == "__call__" ) continue;
+    ord.push( i );
+  }
+  d.__order__ = ord;
+}
+
+// Build patterns for inline matcher
+Markdown.buildInlinePatterns = function(d) {
+  var patterns = [];
+
+  for ( var i in d ) {
+    if (i == "__call__") continue;
+    var l = i.replace( /([\\.*+?|()\[\]{}])/g, "\\$1" )
+             .replace( /\n/, "\\n" );
+    patterns.push( i.length == 1 ? l : "(?:" + l + ")" );
+  }
+
+  patterns = patterns.join("|");
+  //print("patterns:", uneval( patterns ) );
+
+  var fn = d.__call__;
+  d.__call__ = function(text, pattern) {
+    if (pattern != undefined)
+      return fn.call(this, text, pattern);
+    else
+      return fn.call(this, text, patterns);
+  }
+}
+
+// Helper function to make sub-classing a dialect easier
+Markdown.subclassDialect = function( d ) {
+  function Block() {};
+  Block.prototype = d.block;
+  function Inline() {};
+  Inline.prototype = d.inline;
+
+  return { block: new Block(), inline: new Inline() };
+}
+
+Markdown.buildBlockOrder ( Markdown.dialects.Gruber.block );
+Markdown.buildInlinePatterns( Markdown.dialects.Gruber.inline );
+
+Markdown.dialects.Maruku = Markdown.subclassDialect( Markdown.dialects.Gruber );
+
+Markdown.dialects.Maruku.block.document_meta = function document_meta( block, next ) {
+  // we're only interested in the first block
+  if ( block.lineNumber > 1 ) return undefined;
+
+  // document_meta blocks consist of one or more lines of `Key: Value\n`
+  if ( ! block.match( /^(?:\w+:.*\n)*\w+:.*$/ ) ) return undefined;
+
+  // make an attribute node if it doesn't exist
+  if ( !extract_attr( this.tree ) ) {
+    this.tree.splice( 1, 0, {} );
+  }
+
+  var pairs = block.split( /\n/ );
+  for ( p in pairs ) {
+    var m = pairs[ p ].match( /(\w+):\s*(.*)$/ ),
+        key = m[ 1 ].toLowerCase(),
+        value = m[ 2 ];
+
+    this.tree[ 1 ][ key ] = value;
+  }
+
+  // document_meta produces no content!
+  return [];
+}
+
+Markdown.dialects.Maruku.block.block_meta = function block_meta( block, next ) {
+  // check if the last line of the block is an meta hash
+  var m = block.match( /(^|\n) {0,3}\{:\s*((?:\\\}|[^\}])*)\s*\}$/ );
+  if ( !m ) return undefined;
+
+  // process the meta hash
+  var attr = process_meta_hash( m[ 2 ] );
+
+  // if we matched ^ then we need to apply meta to the previous block
+  if ( m[ 1 ] === "" ) {
+    var node = this.tree[ this.tree.length - 1 ],
+        hash = extract_attr( node );
+
+    // if the node is a string (rather than JsonML), bail
+    if ( typeof node === "string" ) return undefined;
+
+    // create the attribute hash if it doesn't exist
+    if ( !hash ) {
+      hash = {};
+      node.splice( 1, 0, hash );
+    }
+
+    // add the attributes in
+    for ( a in attr ) {
+      hash[ a ] = attr[ a ];
+    }
+
+    // return nothing so the meta hash is removed
+    return [];
+  }
+
+  // pull the meta hash off the block and process what's left
+  var b = block.replace( /\n.*$/, "" ),
+      result = this.processBlock( b, [] );
+
+  // get or make the attributes hash
+  var hash = extract_attr( result[ 0 ] );
+  if ( !hash ) {
+    hash = {};
+    result[ 0 ].splice( 1, 0, hash );
+  }
+
+  // attach the attributes to the block
+  for ( a in attr ) {
+    hash[ a ] = attr[ a ];
+  }
+
+  return result;
+}
+
+Markdown.dialects.Maruku.block.definition_list = function definition_list( block, next ) {
+  // one or more terms followed by one or more definitions, in a single block
+  var tight = /^((?:[^\s:].*\n)+):\s+([^]+)$/,
+      list = [ "dl" ];
+
+  // see if we're dealing with a tight or loose block
+  if ( ( m = block.match( tight ) ) ) {
+    // pull subsequent tight DL blocks out of `next`
+    var blocks = [ block ];
+    while ( next.length && tight.exec( next[ 0 ] ) ) {
+      blocks.push( next.shift() );
+    }
+
+    for ( var b = 0; b < blocks.length; ++b ) {
+      var m = blocks[ b ].match( tight ),
+          terms = m[ 1 ].replace( /\n$/, "" ).split( /\n/ ),
+          defns = m[ 2 ].split( /\n:\s+/ );
+
+      // print( uneval( m ) );
+
+      for ( var i = 0; i < terms.length; ++i ) {
+        list.push( [ "dt", terms[ i ] ] );
+      }
+
+      for ( var i = 0; i < defns.length; ++i ) {
+        // run inline processing over the definition
+        list.push( [ "dd" ].concat( this.processInline( defns[ i ].replace( /(\n)\s+/, "$1" ) ) ) );
+      }
+    }
+  }
+  else {
+    return undefined;
+  }
+
+  return [ list ];
+}
+
+Markdown.dialects.Maruku.inline[ "{:" ] = function inline_meta( text, matches, out ) {
+  if ( !out.length ) {
+    return [ 2, "{:" ];
+  }
+
+  // get the preceeding element
+  var before = out[ out.length - 1 ];
+
+  if ( typeof before === "string" ) {
+    return [ 2, "{:" ];
+  }
+
+  // match a meta hash
+  var m = text.match( /^\{:\s*((?:\\\}|[^\}])*)\s*\}/ );
+
+  // no match, false alarm
+  if ( !m ) {
+    return [ 2, "{:" ];
+  }
+
+  // attach the attributes to the preceeding element
+  var meta = process_meta_hash( m[ 1 ] ),
+      attr = extract_attr( before );
+
+  if ( !attr ) {
+    attr = {};
+    before.splice( 1, 0, attr );
+  }
+
+  for ( var k in meta ) {
+    attr[ k ] = meta[ k ];
+  }
+
+  // cut out the string and replace it with nothing
+  return [ m[ 0 ].length, "" ];
+}
+
+Markdown.buildBlockOrder ( Markdown.dialects.Maruku.block );
+Markdown.buildInlinePatterns( Markdown.dialects.Maruku.inline );
+
+function extract_attr( jsonml ) {
+  return jsonml instanceof Array
+      && jsonml.length > 1
+      && typeof jsonml[ 1 ] === "object"
+      && !( jsonml[ 1 ] instanceof Array )
+      ? jsonml[ 1 ]
+      : undefined;
+}
+
+function process_meta_hash( meta_string ) {
+  var meta = split_meta_hash( meta_string ),
+      attr = {};
+
+  for ( var i = 0; i < meta.length; ++i ) {
+    // id: #foo
+    if ( /^#/.test( meta[ i ] ) ) {
+      attr.id = meta[ i ].substring( 1 );
+    }
+    // class: .foo
+    else if ( /^\./.test( meta[ i ] ) ) {
+      // if class already exists, append the new one
+      if ( attr['class'] ) {
+        attr['class'] = attr['class'] + meta[ i ].replace( /./, " " );
+      }
+      else {
+        attr['class'] = meta[ i ].substring( 1 );
+      }
+    }
+    // attribute: foo=bar
+    else if ( /=/.test( meta[ i ] ) ) {
+      var s = meta[ i ].split( /=/ );
+      attr[ s[ 0 ] ] = s[ 1 ];
+    }
+  }
+
+  return attr;
+}
+
+function split_meta_hash( meta_string ) {
+  var meta = meta_string.split( "" ),
+      parts = [ "" ],
+      in_quotes = false;
+
+  while ( meta.length ) {
+    var letter = meta.shift();
+    switch ( letter ) {
+      case " " :
+        // if we're in a quoted section, keep it
+        if ( in_quotes ) {
+          parts[ parts.length - 1 ] += letter;
+        }
+        // otherwise make a new part
+        else {
+          parts.push( "" );
+        }
+        break;
+      case "'" :
+      case '"' :
+        // reverse the quotes and move straight on
+        in_quotes = !in_quotes;
+        break;
+      case "\\" :
+        // shift off the next letter to be used straight away.
+        // it was escaped so we'll keep it whatever it is
+        letter = meta.shift();
+      default :
+        parts[ parts.length - 1 ] += letter;
+        break;
+    }
+  }
+
+  return parts;
+}
+
+/**
+ *  renderJsonML( jsonml[, options] ) -> String
+ *  - jsonml (Array): JsonML array to render to XML
+ *  - options (Object): options
+ *
+ *  Converts the given JsonML into well-formed XML.
+ *
+ *  The options currently understood are:
+ *
+ *  - root (Boolean): wether or not the root node should be included in the
+ *    output, or just its children. The default `false` is to not include the
+ *    root itself.
+ */
+expose.renderJsonML = function( jsonml, options ) {
+  options = options || {};
+  // include the root element in the rendered output?
+  options.root = options.root || false;
+
+  var content = [];
+
+  if ( options.root ) {
+    content.push( render_tree( jsonml ) );
+  }
+  else {
+    jsonml.shift(); // get rid of the tag
+    if ( jsonml.length && typeof jsonml[ 0 ] === "object" && !( jsonml[ 0 ] instanceof Array ) ) {
+      jsonml.shift(); // get rid of the attributes
+    }
+
+    while ( jsonml.length ) {
+      content.push( render_tree( jsonml.shift() ) );
+    }
+  }
+
+  return content.join( "\n\n" );
+}
+
+function render_tree( jsonml ) {
+  // basic case
+  if ( typeof jsonml === "string" ) {
+    return jsonml.replace( /&/g, "&amp;" )
+                 .replace( /</g, "&lt;" )
+                 .replace( />/g, "&gt;" );
+  }
+
+  var tag = jsonml.shift(),
+      attributes = {},
+      content = [];
+
+  if ( jsonml.length && typeof jsonml[ 0 ] === "object" && !( jsonml[ 0 ] instanceof Array ) ) {
+    attributes = jsonml.shift();
+  }
+
+  while ( jsonml.length ) {
+    content.push( arguments.callee( jsonml.shift() ) );
+  }
+
+  var tag_attrs = "";
+  for ( var a in attributes ) {
+    tag_attrs += " " + a + '="' + attributes[ a ] + '"';
+  }
+
+  // be careful about adding whitespace here for inline elements
+  return "<"+ tag + tag_attrs + ">" + content.join( "" ) + "</" + tag + ">";
+}
+
+function convert_tree_to_html( tree, references ) {
+  // shallow clone
+  var jsonml = tree.slice( 0 );
+
+  // Clone attributes if the exist
+  var attrs = extract_attr( jsonml );
+  if ( attrs ) {
+    jsonml[ 1 ] = {};
+    for ( var i in attrs ) {
+      jsonml[ 1 ][ i ] = attrs[ i ];
+    }
+    attrs = jsonml[ 1 ];
+  }
+
+  // basic case
+  if ( typeof jsonml === "string" ) {
+    return jsonml;
+  }
+
+  // convert this node
+  switch ( jsonml[ 0 ] ) {
+    case "header":
+      jsonml[ 0 ] = "h" + jsonml[ 1 ].level;
+      delete jsonml[ 1 ].level;
+      break;
+    case "bulletlist":
+      jsonml[ 0 ] = "ul";
+      break;
+    case "numberlist":
+      jsonml[ 0 ] = "ol";
+      break;
+    case "listitem":
+      jsonml[ 0 ] = "li";
+      break;
+    case "para":
+      jsonml[ 0 ] = "p";
+      break;
+    case "markdown":
+      jsonml[ 0 ] = "html";
+      if ( attrs ) delete attrs.references;
+      break;
+    case "code_block":
+      jsonml[ 0 ] = "pre";
+      var i = attrs ? 2 : 1;
+      var code = [ "code" ];
+      code.push.apply( code, jsonml.splice( i ) );
+      jsonml[ i ] = code;
+      break;
+    case "inlinecode":
+      jsonml[ 0 ] = "code";
+      break;
+    case "img":
+      jsonml[ 1 ].src = jsonml[ 1 ].href;
+      delete jsonml[ 1 ].href;
+      break;
+    case "linebreak":
+      jsonml[0] = "br";
+    break;
+    case "link":
+      jsonml[ 0 ] = "a";
+      break;
+    case "link_ref":
+      jsonml[ 0 ] = "a";
+
+      // grab this ref and clean up the attribute node
+      var ref = references[ attrs.ref ];
+
+      // if the reference exists, make the link
+      if ( ref ) {
+        delete attrs.ref;
+
+        // add in the href and title, if present
+        attrs.href = ref.href;
+        if ( ref.title ) {
+          attrs.title = ref.title;
+        }
+
+        // get rid of the unneeded original text
+        delete attrs.original;
+      }
+      // the reference doesn't exist, so revert to plain text
+      else {
+        return attrs.original;
+      }
+      break;
+  }
+
+  // convert all the children
+  var i = 1;
+
+  // deal with the attribute node, if it exists
+  if ( attrs ) {
+    // if there are keys, skip over it
+    for ( var key in jsonml[ 1 ] ) {
+      i = 2;
+    }
+    // if there aren't, remove it
+    if ( i === 1 ) {
+      jsonml.splice( i, 1 );
+    }
+  }
+
+  for ( ; i < jsonml.length; ++i ) {
+    jsonml[ i ] = arguments.callee( jsonml[ i ], references );
+  }
+
+  return jsonml;
+}
+
+
+// merges adjacent text nodes into a single node
+function merge_text_nodes( jsonml ) {
+  // skip the tag name and attribute hash
+  var i = extract_attr( jsonml ) ? 2 : 1;
+
+  while ( i < jsonml.length ) {
+    // if it's a string check the next item too
+    if ( typeof jsonml[ i ] === "string" ) {
+      if ( i + 1 < jsonml.length && typeof jsonml[ i + 1 ] === "string" ) {
+        // merge the second string into the first and remove it
+        jsonml[ i ] += jsonml.splice( i + 1, 1 )[ 0 ];
+      }
+      else {
+        ++i;
+      }
+    }
+    // if it's not a string recurse
+    else {
+      arguments.callee( jsonml[ i ] );
+      ++i;
+    }
+  }
+}
+
+});
 ;bespin.tiki.register("::theme_manager_base", {
     name: "theme_manager_base",
     dependencies: {  }
@@ -8133,968 +9743,6 @@ bespin.tiki.module("theme_manager_base:index",function(require,exports,module) {
     ]
 })
 "end";
-
-});
-;bespin.tiki.register("::canon", {
-    name: "canon",
-    dependencies: { "environment": "0.0.0", "events": "0.0.0", "settings": "0.0.0" }
-});
-bespin.tiki.module("canon:history",function(require,exports,module) {
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Bespin.
- *
- * The Initial Developer of the Original Code is
- * Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Bespin Team (bespin@mozilla.com)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
-var Trace = require('bespin:util/stacktrace').Trace;
-var catalog = require('bespin:plugins').catalog;
-var console = require('bespin:console').console;
-
-/**
- * Current requirements are around displaying the command line, and provision
- * of a 'history' command and cursor up|down navigation of history.
- * <p>Future requirements could include:
- * <ul>
- * <li>Multiple command lines
- * <li>The ability to recall key presses (i.e. requests with no output) which
- * will likely be needed for macro recording or similar
- * <li>The ability to store the command history either on the server or in the
- * browser local storage.
- * </ul>
- * <p>The execute() command doesn't really live here, except as part of that
- * last future requirement, and because it doesn't really have anywhere else to
- * live.
- */
-
-/**
- * The array of requests that wish to announce their presence
- */
-exports.requests = [];
-
-/**
- * How many requests do we store?
- */
-var maxRequestLength = 100;
-
-/**
- * Called by Request instances when some output (or a cell to async() happens)
- */
-exports.addRequestOutput = function(request) {
-    exports.requests.push(request);
-    // This could probably be optimized with some maths, but 99.99% of the
-    // time we will only be off by one, and I'm feeling lazy.
-    while (exports.requests.length > maxRequestLength) {
-        exports.requests.shiftObject();
-    }
-
-    catalog.publish(this, 'addedRequestOutput', null, request);
-};
-
-/**
- * Execute a new command.
- * This is basically an error trapping wrapper around request.command(...)
- */
-exports.execute = function(args, request) {
-    // Check the function pointed to in the meta-data exists
-    if (!request.command) {
-        request.doneWithError('Command not found.');
-        return;
-    }
-
-    try {
-        request.command(args, request);
-    } catch (ex) {
-        var trace = new Trace(ex, true);
-        console.group('Error executing command \'' + request.typed + '\'');
-        console.log('command=', request.commandExt);
-        console.log('args=', args);
-        console.error(ex);
-        trace.log(3);
-        console.groupEnd();
-
-        request.doneWithError(ex);
-    }
-};
-
-});
-
-bespin.tiki.module("canon:request",function(require,exports,module) {
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Bespin.
- *
- * The Initial Developer of the Original Code is
- * Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Bespin Team (bespin@mozilla.com)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
-var Event = require('events').Event;
-var history = require('canon:history');
-
-/**
- * To create an invocation, you need to do something like this (all the ctor
- * args are optional):
- * <pre>
- * var request = new Request({
- *     command: command,
- *     commandExt: commandExt,
- *     args: args,
- *     typed: typed
- * });
- * </pre>
- */
-exports.Request = function(options) {
-    options = options || {};
-
-    // Will be used in the keyboard case and the cli case
-    this.command = options.command;
-    this.commandExt = options.commandExt;
-
-    // Will be used only in the cli case
-    this.args = options.args;
-    this.typed = options.typed;
-
-    // Have we been initialized?
-    this._begunOutput = false;
-
-    this.start = new Date();
-    this.end = null;
-    this.completed = false;
-    this.error = false;
-
-    this.changed = new Event();
-};
-
-/**
- * Lazy init to register with the history should only be done on output.
- * init() is expensive, and won't be used in the majority of cases
- */
-exports.Request.prototype._beginOutput = function() {
-    this._begunOutput = true;
-    this.outputs = [];
-
-    history.addRequestOutput(this);
-};
-
-/**
- * Sugar for:
- * <pre>request.error = true; request.done(output);</pre>
- */
-exports.Request.prototype.doneWithError = function(content) {
-    this.error = true;
-    this.done(content);
-};
-
-/**
- * Declares that this function will not be automatically done when
- * the command exits
- */
-exports.Request.prototype.async = function() {
-    if (!this._begunOutput) {
-        this._beginOutput();
-    }
-};
-
-/**
- * Complete the currently executing command with successful output.
- * @param output Either DOM node, an SproutCore element or something that
- * can be used in the content of a DIV to create a DOM node.
- */
-exports.Request.prototype.output = function(content) {
-    if (!this._begunOutput) {
-        this._beginOutput();
-    }
-
-    if (typeof content !== 'string' && !(content instanceof Node)) {
-        content = content.toString();
-    }
-
-    this.outputs.push(content);
-    this.changed();
-
-    return this;
-};
-
-/**
- * All commands that do output must call this to indicate that the command
- * has finished execution.
- */
-exports.Request.prototype.done = function(content) {
-    this.completed = true;
-    this.end = new Date();
-    this.duration = this.end.getTime() - this.start.getTime();
-
-    if (content) {
-        this.output(content);
-    } else {
-        this.changed();
-    }
-};
-
-});
-
-bespin.tiki.module("canon:index",function(require,exports,module) {
-
-});
-;bespin.tiki.register("::traits", {
-    name: "traits",
-    dependencies: {  }
-});
-bespin.tiki.module("traits:index",function(require,exports,module) {
-// Copyright (C) 2010 Google Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// See http://code.google.com/p/es-lab/wiki/Traits
-// for background on traits and a description of this library
-
-"define metadata";
-({
-    "description": "Traits library, traitsjs.org",
-    "dependencies": {},
-    "provides": []
-});
-"end";
-
-// --- Begin traits-0.3.js ---
-
-// Copyright (C) 2010 Google Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// See http://code.google.com/p/es-lab/wiki/Traits
-// for background on traits and a description of this library
-
-var Trait = (function(){
-
-  // == Ancillary functions ==
-  
-  var SUPPORTS_DEFINEPROP = (function() {
-    try {
-      var test = {};
-      Object.defineProperty(test, 'x', {get: function() { return 0; } } );
-      return test.x === 0;
-    } catch(e) {
-      return false;
-    }
-  })();
-  
-  // IE8 implements Object.defineProperty and Object.getOwnPropertyDescriptor
-  // only for DOM objects. These methods don't work on plain objects.
-  // Hence, we need a more elaborate feature-test to see whether the
-  // browser truly supports these methods:
-  function supportsGOPD() {
-    try {
-      if (Object.getOwnPropertyDescriptor) {
-        var test = {x:0};
-        return !!Object.getOwnPropertyDescriptor(test,'x');        
-      }
-    } catch(e) {}
-    return false;
-  };
-  function supportsDP() {
-    try {
-      if (Object.defineProperty) {
-        var test = {};
-        Object.defineProperty(test,'x',{value:0});
-        return test.x === 0;
-      }
-    } catch(e) {}
-    return false;
-  };
-
-  var call = Function.prototype.call;
-
-  /**
-   * An ad hoc version of bind that only binds the 'this' parameter.
-   */
-  var bindThis = Function.prototype.bind ?
-    function(fun, self) { return Function.prototype.bind.call(fun, self); } :
-    function(fun, self) {
-      function funcBound(var_args) {
-        return fun.apply(self, arguments);
-      }
-      return funcBound;
-    };
-
-  var hasOwnProperty = bindThis(call, Object.prototype.hasOwnProperty);
-  var slice = bindThis(call, Array.prototype.slice);
-    
-  // feature testing such that traits.js runs on both ES3 and ES5
-  var forEach = Array.prototype.forEach ?
-      bindThis(call, Array.prototype.forEach) :
-      function(arr, fun) {
-        for (var i = 0, len = arr.length; i < len; i++) { fun(arr[i]); }
-      };
-  
-  // on v8 version 2.3.4.1, Object.freeze(obj) returns undefined instead of obj
-  var freeze = (Object.freeze ? function(obj) { Object.freeze(obj); return obj; }
-                              : function(obj) { return obj; });
-  var getPrototypeOf = Object.getPrototypeOf || function(obj) { 
-    return Object.prototype;
-  };
-  var getOwnPropertyNames = Object.getOwnPropertyNames ||
-      function(obj) {
-        var props = [];
-        for (var p in obj) { if (hasOwnProperty(obj,p)) { props.push(p); } }
-        return props;
-      };
-  var getOwnPropertyDescriptor = supportsGOPD() ?
-      Object.getOwnPropertyDescriptor :
-      function(obj, name) {
-        return {
-          value: obj[name],
-          enumerable: true,
-          writable: true,
-          configurable: true
-        };
-      };
-  var defineProperty = supportsDP() ? Object.defineProperty :
-      function(obj, name, pd) {
-        obj[name] = pd.value;
-      };
-  var defineProperties = Object.defineProperties ||
-      function(obj, propMap) {
-        for (var name in propMap) {
-          if (hasOwnProperty(propMap, name)) {
-            defineProperty(obj, name, propMap[name]);
-          }
-        }
-      };
-  var Object_create = Object.create ||
-      function(proto, propMap) {
-        var self;
-        function dummy() {};
-        dummy.prototype = proto || Object.prototype;
-        self = new dummy();
-        if (propMap) {
-          defineProperties(self, propMap);          
-        }
-        return self;
-      };
-  var getOwnProperties = Object.getOwnProperties ||
-      function(obj) {
-        var map = {};
-        forEach(getOwnPropertyNames(obj), function (name) {
-          map[name] = getOwnPropertyDescriptor(obj, name);
-        });
-        return map;
-      };
-  
-  // end of ES3 - ES5 compatibility functions
-  
-  function makeConflictAccessor(name) {
-    var accessor = function(var_args) {
-      throw new Error("Conflicting property: "+name);
-    };
-    freeze(accessor.prototype);
-    return freeze(accessor);
-  };
-
-  function makeRequiredPropDesc(name) {
-    return freeze({
-      value: undefined,
-      enumerable: false,
-      required: true
-    });
-  }
-  
-  function makeConflictingPropDesc(name) {
-    var conflict = makeConflictAccessor(name);
-    if (SUPPORTS_DEFINEPROP) {
-      return freeze({
-       get: conflict,
-       set: conflict,
-       enumerable: false,
-       conflict: true
-      }); 
-    } else {
-      return freeze({
-        value: conflict,
-        enumerable: false,
-        conflict: true
-      });
-    }
-  }
-  
-  /**
-   * Are x and y not observably distinguishable?
-   */
-  function identical(x, y) {
-    if (x === y) {
-      // 0 === -0, but they are not identical
-      return x !== 0 || 1/x === 1/y;
-    } else {
-      // NaN !== NaN, but they are identical.
-      // NaNs are the only non-reflexive value, i.e., if x !== x,
-      // then x is a NaN.
-      return x !== x && y !== y;
-    }
-  }
-
-  // Note: isSameDesc should return true if both
-  // desc1 and desc2 represent a 'required' property
-  // (otherwise two composed required properties would be turned into
-  // a conflict) 
-  function isSameDesc(desc1, desc2) {
-    // for conflicting properties, don't compare values because
-    // the conflicting property values are never equal
-    if (desc1.conflict && desc2.conflict) {
-      return true;
-    } else {
-      return (   desc1.get === desc2.get
-              && desc1.set === desc2.set
-              && identical(desc1.value, desc2.value)
-              && desc1.enumerable === desc2.enumerable
-              && desc1.required === desc2.required
-              && desc1.conflict === desc2.conflict); 
-    }
-  }
-  
-  function freezeAndBind(meth, self) {
-    return freeze(bindThis(meth, self));
-  }
-
-  /* makeSet(['foo', ...]) => { foo: true, ...}
-   *
-   * makeSet returns an object whose own properties represent a set.
-   *
-   * Each string in the names array is added to the set.
-   *
-   * To test whether an element is in the set, perform:
-   *   hasOwnProperty(set, element)
-   */
-  function makeSet(names) {
-    var set = {};
-    forEach(names, function (name) {
-      set[name] = true;
-    });
-    return freeze(set);
-  }
-
-  // == singleton object to be used as the placeholder for a required
-  // property == 
-  
-  var required = freeze({ 
-    toString: function() { return '<Trait.required>'; } 
-  });
-
-  // == The public API methods ==
-
-  /**
-   * var newTrait = trait({ foo:required, ... })
-   *
-   * @param object an object record (in principle an object literal)
-   * @returns a new trait describing all of the own properties of the object
-   *          (both enumerable and non-enumerable)
-   *
-   * As a general rule, 'trait' should be invoked with an object
-   * literal, since the object merely serves as a record
-   * descriptor. Both its identity and its prototype chain are
-   * irrelevant.
-   * 
-   * Data properties bound to function objects in the argument will be
-   * flagged as 'method' properties. The prototype of these function
-   * objects is frozen.
-   * 
-   * Data properties bound to the 'required' singleton exported by
-   * this module will be marked as 'required' properties.
-   *
-   * The <tt>trait</tt> function is pure if no other code can witness
-   * the side-effects of freezing the prototypes of the methods. If
-   * <tt>trait</tt> is invoked with an object literal whose methods
-   * are represented as in-place anonymous functions, this should
-   * normally be the case.
-   */
-  function trait(obj) {
-    var map = {};
-    forEach(getOwnPropertyNames(obj), function (name) {
-      var pd = getOwnPropertyDescriptor(obj, name);
-      if (pd.value === required) {
-        pd = makeRequiredPropDesc(name);
-      } else if (typeof pd.value === 'function') {
-        pd.method = true;
-        if ('prototype' in pd.value) {
-          freeze(pd.value.prototype);
-        }
-      } else {
-        if (pd.get && pd.get.prototype) { freeze(pd.get.prototype); }
-        if (pd.set && pd.set.prototype) { freeze(pd.set.prototype); }
-      }
-      map[name] = pd;
-    });
-    return map;
-  }
-
-  /**
-   * var newTrait = compose(trait_1, trait_2, ..., trait_N)
-   *
-   * @param trait_i a trait object
-   * @returns a new trait containing the combined own properties of
-   *          all the trait_i.
-   * 
-   * If two or more traits have own properties with the same name, the new
-   * trait will contain a 'conflict' property for that name. 'compose' is
-   * a commutative and associative operation, and the order of its
-   * arguments is not significant.
-   *
-   * If 'compose' is invoked with < 2 arguments, then:
-   *   compose(trait_1) returns a trait equivalent to trait_1
-   *   compose() returns an empty trait
-   */
-  function compose(var_args) {
-    var traits = slice(arguments, 0);
-    var newTrait = {};
-    
-    forEach(traits, function (trait) {
-      forEach(getOwnPropertyNames(trait), function (name) {
-        var pd = trait[name];
-        if (hasOwnProperty(newTrait, name) &&
-            !newTrait[name].required) {
-          
-          // a non-required property with the same name was previously
-          // defined this is not a conflict if pd represents a
-          // 'required' property itself:
-          if (pd.required) {
-            return; // skip this property, the required property is
-   	            // now present 
-          }
-            
-          if (!isSameDesc(newTrait[name], pd)) {
-            // a distinct, non-required property with the same name
-            // was previously defined by another trait => mark as
-	    // conflicting property
-            newTrait[name] = makeConflictingPropDesc(name); 
-          } // else,
-          // properties are not in conflict if they refer to the same value
-          
-        } else {
-          newTrait[name] = pd;
-        }
-      });
-    });
-    
-    return freeze(newTrait);
-  }
-
-  /* var newTrait = exclude(['name', ...], trait)
-   *
-   * @param names a list of strings denoting property names.
-   * @param trait a trait some properties of which should be excluded.
-   * @returns a new trait with the same own properties as the original trait,
-   *          except that all property names appearing in the first argument
-   *          are replaced by required property descriptors.
-   *
-   * Note: exclude(A, exclude(B,t)) is equivalent to exclude(A U B, t)
-   */
-  function exclude(names, trait) {
-    var exclusions = makeSet(names);
-    var newTrait = {};
-    
-    forEach(getOwnPropertyNames(trait), function (name) {
-      // required properties are not excluded but ignored
-      if (!hasOwnProperty(exclusions, name) || trait[name].required) {
-        newTrait[name] = trait[name];
-      } else {
-        // excluded properties are replaced by required properties
-        newTrait[name] = makeRequiredPropDesc(name);
-      }
-    });
-    
-    return freeze(newTrait);
-  }
-
-  /**
-   * var newTrait = override(trait_1, trait_2, ..., trait_N)
-   *
-   * @returns a new trait with all of the combined properties of the
-   *          argument traits.  In contrast to 'compose', 'override'
-   *          immediately resolves all conflicts resulting from this
-   *          composition by overriding the properties of later
-   *          traits. Trait priority is from left to right. I.e. the
-   *          properties of the leftmost trait are never overridden.
-   *
-   *  override is associative:
-   *    override(t1,t2,t3) is equivalent to override(t1, override(t2, t3)) or
-   *    to override(override(t1, t2), t3)
-   *  override is not commutative: override(t1,t2) is not equivalent
-   *    to override(t2,t1)
-   *
-   * override() returns an empty trait
-   * override(trait_1) returns a trait equivalent to trait_1
-   */
-  function override(var_args) {
-    var traits = slice(arguments, 0);
-    var newTrait = {};
-    forEach(traits, function (trait) {
-      forEach(getOwnPropertyNames(trait), function (name) {
-        var pd = trait[name];
-        // add this trait's property to the composite trait only if
-        // - the trait does not yet have this property
-        // - or, the trait does have the property, but it's a required property
-        if (!hasOwnProperty(newTrait, name) || newTrait[name].required) {
-          newTrait[name] = pd;
-        }
-      });
-    });
-    return freeze(newTrait);
-  }
-  
-  /**
-   * var newTrait = override(dominantTrait, recessiveTrait)
-   *
-   * @returns a new trait with all of the properties of dominantTrait
-   *          and all of the properties of recessiveTrait not in dominantTrait
-   *
-   * Note: override is associative:
-   *   override(t1, override(t2, t3)) is equivalent to
-   *   override(override(t1, t2), t3) 
-   */
-  /*function override(frontT, backT) {
-    var newTrait = {};
-    // first copy all of backT's properties into newTrait
-    forEach(getOwnPropertyNames(backT), function (name) {
-      newTrait[name] = backT[name];
-    });
-    // now override all these properties with frontT's properties
-    forEach(getOwnPropertyNames(frontT), function (name) {
-      var pd = frontT[name];
-      // frontT's required property does not override the provided property
-      if (!(pd.required && hasOwnProperty(newTrait, name))) {
-        newTrait[name] = pd; 
-      }      
-    });
-    
-    return freeze(newTrait);
-  }*/
-
-  /**
-   * var newTrait = rename(map, trait)
-   *
-   * @param map an object whose own properties serve as a mapping from
-            old names to new names.
-   * @param trait a trait object
-   * @returns a new trait with the same properties as the original trait,
-   *          except that all properties whose name is an own property
-   *          of map will be renamed to map[name], and a 'required' property
-   *          for name will be added instead.
-   *
-   * rename({a: 'b'}, t) eqv compose(exclude(['a'],t),
-   *                                 { a: { required: true },
-   *                                   b: t[a] })
-   *
-   * For each renamed property, a required property is generated.  If
-   * the map renames two properties to the same name, a conflict is
-   * generated.  If the map renames a property to an existing
-   * unrenamed property, a conflict is generated.
-   *
-   * Note: rename(A, rename(B, t)) is equivalent to rename(\n ->
-   * A(B(n)), t) Note: rename({...},exclude([...], t)) is not eqv to
-   * exclude([...],rename({...}, t))
-   */
-  function rename(map, trait) {
-    var renamedTrait = {};
-    forEach(getOwnPropertyNames(trait), function (name) {
-      // required props are never renamed
-      if (hasOwnProperty(map, name) && !trait[name].required) {
-        var alias = map[name]; // alias defined in map
-        if (hasOwnProperty(renamedTrait, alias) && 
-	    !renamedTrait[alias].required) {
-          // could happen if 2 props are mapped to the same alias
-          renamedTrait[alias] = makeConflictingPropDesc(alias);
-        } else {
-          // add the property under an alias
-          renamedTrait[alias] = trait[name];
-        }
-        // add a required property under the original name
-        // but only if a property under the original name does not exist
-        // such a prop could exist if an earlier prop in the trait was
-        // previously aliased to this name
-        if (!hasOwnProperty(renamedTrait, name)) {
-          renamedTrait[name] = makeRequiredPropDesc(name);     
-        }
-      } else { // no alias defined
-        if (hasOwnProperty(renamedTrait, name)) {
-          // could happen if another prop was previously aliased to name
-          if (!trait[name].required) {
-            renamedTrait[name] = makeConflictingPropDesc(name);            
-          }
-          // else required property overridden by a previously aliased
-          // property and otherwise ignored
-        } else {
-          renamedTrait[name] = trait[name];
-        }
-      }
-    });
-    
-    return freeze(renamedTrait);
-  }
-  
-  /**
-   * var newTrait = resolve({ oldName: 'newName', excludeName:
-   * undefined, ... }, trait)
-   *
-   * This is a convenience function combining renaming and
-   * exclusion. It can be implemented as <tt>rename(map,
-   * exclude(exclusions, trait))</tt> where map is the subset of
-   * mappings from oldName to newName and exclusions is an array of
-   * all the keys that map to undefined (or another falsy value).
-   *
-   * @param resolutions an object whose own properties serve as a
-            mapping from old names to new names, or to undefined if
-            the property should be excluded
-   * @param trait a trait object
-   * @returns a resolved trait with the same own properties as the
-   * original trait.
-   *
-   * In a resolved trait, all own properties whose name is an own property
-   * of resolutions will be renamed to resolutions[name] if it is truthy,
-   * or their value is changed into a required property descriptor if
-   * resolutions[name] is falsy.
-   *
-   * Note, it's important to _first_ exclude, _then_ rename, since exclude
-   * and rename are not associative, for example:
-   * rename({a: 'b'}, exclude(['b'], trait({ a:1,b:2 }))) eqv trait({b:1})
-   * exclude(['b'], rename({a: 'b'}, trait({ a:1,b:2 }))) eqv
-   * trait({b:Trait.required}) 
-   *
-   * writing resolve({a:'b', b: undefined},trait({a:1,b:2})) makes it
-   * clear that what is meant is to simply drop the old 'b' and rename
-   * 'a' to 'b'
-   */
-  function resolve(resolutions, trait) {
-    var renames = {};
-    var exclusions = [];
-    // preprocess renamed and excluded properties
-    for (var name in resolutions) {
-      if (hasOwnProperty(resolutions, name)) {
-        if (resolutions[name]) { // old name -> new name
-          renames[name] = resolutions[name];
-        } else { // name -> undefined
-          exclusions.push(name);
-        }
-      }
-    }
-    return rename(renames, exclude(exclusions, trait));
-  }
-
-  /**
-   * var obj = create(proto, trait)
-   *
-   * @param proto denotes the prototype of the completed object
-   * @param trait a trait object to be turned into a complete object
-   * @returns an object with all of the properties described by the trait.
-   * @throws 'Missing required property' the trait still contains a
-   *         required property.
-   * @throws 'Remaining conflicting property' if the trait still
-   *         contains a conflicting property. 
-   *
-   * Trait.create is like Object.create, except that it generates
-   * high-integrity or final objects. In addition to creating a new object
-   * from a trait, it also ensures that:
-   *    - an exception is thrown if 'trait' still contains required properties
-   *    - an exception is thrown if 'trait' still contains conflicting
-   *      properties 
-   *    - the object is and all of its accessor and method properties are frozen
-   *    - the 'this' pseudovariable in all accessors and methods of
-   *      the object is bound to the composed object.
-   *
-   *  Use Object.create instead of Trait.create if you want to create
-   *  abstract or malleable objects. Keep in mind that for such objects:
-   *    - no exception is thrown if 'trait' still contains required properties
-   *      (the properties are simply dropped from the composite object)
-   *    - no exception is thrown if 'trait' still contains conflicting
-   *      properties (these properties remain as conflicting
-   *      properties in the composite object) 
-   *    - neither the object nor its accessor and method properties are frozen
-   *    - the 'this' pseudovariable in all accessors and methods of
-   *      the object is left unbound.
-   */
-  function create(proto, trait) {
-    var self = Object_create(proto);
-    var properties = {};
-  
-    forEach(getOwnPropertyNames(trait), function (name) {
-      var pd = trait[name];
-      // check for remaining 'required' properties
-      // Note: it's OK for the prototype to provide the properties
-      if (pd.required) {
-        if (!(name in proto)) {
-          throw new Error('Missing required property: '+name);
-        }
-      } else if (pd.conflict) { // check for remaining conflicting properties
-        throw new Error('Remaining conflicting property: '+name);
-      } else if ('value' in pd) { // data property
-        // freeze all function properties and their prototype
-        if (pd.method) { // the property is meant to be used as a method
-          // bind 'this' in trait method to the composite object
-          properties[name] = {
-            value: freezeAndBind(pd.value, self),
-            enumerable: pd.enumerable,
-            configurable: pd.configurable,
-            writable: pd.writable
-          };
-        } else {
-          properties[name] = pd;
-        }
-      } else { // accessor property
-        properties[name] = {
-          get: pd.get ? freezeAndBind(pd.get, self) : undefined,
-          set: pd.set ? freezeAndBind(pd.set, self) : undefined,
-          enumerable: pd.enumerable,
-          configurable: pd.configurable,
-          writable: pd.writable            
-        };
-      }
-    });
-
-    defineProperties(self, properties);
-    return freeze(self);
-  }
-
-  /** A shorthand for create(Object.prototype, trait({...}), options) */
-  function object(record, options) {
-    return create(Object.prototype, trait(record), options);
-  }
-
-  /**
-   * Tests whether two traits are equivalent. T1 is equivalent to T2 iff
-   * both describe the same set of property names and for all property
-   * names n, T1[n] is equivalent to T2[n]. Two property descriptors are
-   * equivalent if they have the same value, accessors and attributes.
-   *
-   * @return a boolean indicating whether the two argument traits are
-   *         equivalent.
-   */
-  function eqv(trait1, trait2) {
-    var names1 = getOwnPropertyNames(trait1);
-    var names2 = getOwnPropertyNames(trait2);
-    var name;
-    if (names1.length !== names2.length) {
-      return false;
-    }
-    for (var i = 0; i < names1.length; i++) {
-      name = names1[i];
-      if (!trait2[name] || !isSameDesc(trait1[name], trait2[name])) {
-        return false;
-      }
-    }
-    return true;
-  }
-  
-  // if this code is ran in ES3 without an Object.create function, this
-  // library will define it on Object:
-  if (!Object.create) {
-    Object.create = Object_create;
-  }
-  // ES5 does not by default provide Object.getOwnProperties
-  // if it's not defined, the Traits library defines this utility
-  // function on Object 
-  if(!Object.getOwnProperties) {
-    Object.getOwnProperties = getOwnProperties;
-  }
-  
-  // expose the public API of this module
-  function Trait(record) {
-    // calling Trait as a function creates a new atomic trait
-    return trait(record);
-  }
-  Trait.required = freeze(required);
-  Trait.compose = freeze(compose);
-  Trait.resolve = freeze(resolve);
-  Trait.override = freeze(override);
-  Trait.create = freeze(create);
-  Trait.eqv = freeze(eqv);
-  Trait.object = freeze(object); // not essential, cf. create + trait
-  return freeze(Trait);
-  
-})();
-
-if (typeof exports !== "undefined") { // CommonJS module support
-  exports.Trait = Trait;
-}
-
-// --- End traits-0.3.js ---
-
 
 });
 ;bespin.tiki.register("::keyboard", {
@@ -9807,244 +10455,6 @@ exports.addKeyDownListener = function(element, boundFunction) {
 bespin.tiki.module("keyboard:index",function(require,exports,module) {
 
 });
-;bespin.tiki.register("::worker_manager", {
-    name: "worker_manager",
-    dependencies: { "canon": "0.0.0", "events": "0.0.0", "underscore": "0.0.0" }
-});
-bespin.tiki.module("worker_manager:index",function(require,exports,module) {
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Bespin.
- *
- * The Initial Developer of the Original Code is
- * Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Bespin Team (bespin@mozilla.com)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
-"define metadata";
-({
-    "description": "Manages a web worker on the browser side",
-    "dependencies": {
-        "canon": "0.0.0",
-        "events": "0.0.0",
-        "underscore": "0.0.0"
-    },
-    "provides": [
-        {
-            "ep": "command",
-            "name": "worker",
-            "description": "Low-level web worker control (for plugin development)"
-        },
-        {
-            "ep": "command",
-            "name": "worker restart",
-            "description": "Restarts all web workers (for plugin development)",
-            "pointer": "#workerRestartCommand"
-        }
-    ]
-});
-"end";
-
-if (window == null) {
-    throw new Error('The "worker_manager" plugin can only be loaded in the ' +
-        'browser, not a web worker. Use "worker" instead.');
-}
-
-var proxy = require('bespin:proxy');
-var plugins = require('bespin:plugins');
-var console = require('bespin:console').console;
-var _ = require('underscore')._;
-var Event = require('events').Event;
-var Promise = require('bespin:promise').Promise;
-var env = require('environment').env;
-
-var workerManager = {
-    _workers: [],
-
-    add: function(workerSupervisor) {
-        this._workers.push(workerSupervisor);
-    },
-
-    remove: function(workerSupervisor) {
-        this._workers = _(this._workers).without(workerSupervisor);
-    },
-
-    restartAll: function() {
-        var workers = this._workers;
-        _(workers).invoke('kill');
-        _(workers).invoke('start');
-    }
-};
-
-function WorkerSupervisor(pointer) {
-    var m = /^([^#:]+)(?::([^#:]+))?#([^#:]+)$/.exec(pointer);
-    if (m == null) {
-        throw new Error('WorkerSupervisor: invalid pointer specification: "' +
-            pointer + '"');
-    }
-
-    var packageId = m[1], target = m[3];
-    var moduleId = packageId + ":" + (m[2] != null ? m[2] : "index");
-    var base = bespin != null && bespin.base != null ? bespin.base : "";
-
-    this._packageId = packageId;
-    this._moduleId = moduleId;
-    this._base = base;
-    this._target = target;
-
-    this._worker = null;
-    this._currentId = 0;
-
-    this.started = new Event();
-}
-
-WorkerSupervisor.prototype = {
-    _onError: function(ev) {
-        this._worker = null;
-        workerManager.remove(this);
-
-        console.error("WorkerSupervisor: worker failed at file " +
-            ev.filename + ":" + ev.lineno + "; fix the worker and use " +
-            "'worker restart' to restart it");
-    },
-
-    _onMessage: function(ev) {
-        var msg = JSON.parse(ev.data);
-        switch (msg.op) {
-        case 'finish':
-            if (msg.id === this._currentId) {
-                var promise = this._promise;
-
-                // We have to set the promise to null first, in case the user's
-                // then() handler on the promise decides to send another
-                // message to the object.
-                this._promise = null;
-
-                promise.resolve(msg.result);
-            }
-            break;
-
-        case 'log':
-            console[msg.method].apply(console, msg.args);
-            break;
-        }
-    },
-
-    _promise: null,
-
-    /** An event that fires whenever the worker is started or restarted. */
-    started: null,
-
-    /**
-     * Terminates the worker. After this call, the worker can be restarted via
-     * a call to start().
-     */
-    kill: function() {
-        var oldPromise = this._promise;
-        if (oldPromise != null) {
-            oldPromise.reject("killed");
-            this._promise = null;
-        }
-
-        this._worker.terminate();
-        this._worker = null;
-        workerManager.remove(this);
-    },
-
-    /**
-     * Invokes a method on the target running in the worker and returns a
-     * promise that will resolve to the result of that method.
-     */
-    send: function(method, args) {
-        var oldPromise = this._promise;
-        if (oldPromise != null) {
-            oldPromise.reject("interrupted");
-            this._currentId++;
-        }
-
-        var id = this._currentId;
-        var promise = new Promise();
-        this._promise = promise;
-
-        var msg = { op: 'invoke', id: id, method: method, args: args };
-        this._worker.postMessage(JSON.stringify(msg));
-
-        return promise;
-    },
-
-    /**
-     * Starts the worker. Immediately after this method is called, the
-     * "started" event will fire.
-     */
-    start: function() {
-        if (this._worker != null) {
-            throw new Error("WorkerSupervisor: worker already started");
-        }
-
-        var base = this._base, target = this._target;
-        var packageId = this._packageId, moduleId = this._moduleId;
-
-        var worker = new proxy.Worker(base + "BespinEmbedded.js");
-
-        worker.onmessage = this._onMessage.bind(this);
-        worker.onerror = this._onError.bind(this);
-
-        var msg = {
-            op:     'load',
-            base:   base,
-            pkg:    packageId,
-            module: moduleId,
-            target: target
-        };
-        worker.postMessage(JSON.stringify(msg));
-
-        this._worker = worker;
-        this._currentId = 0;
-
-        workerManager.add(this);
-
-        this.started();
-    }
-};
-
-function workerRestartCommand(args, req) {
-    workerManager.restartAll();
-}
-
-exports.WorkerSupervisor = WorkerSupervisor;
-exports.workerManager = workerManager;
-exports.workerRestartCommand = workerRestartCommand;
-
-
-});
 ;bespin.tiki.register("::edit_session", {
     name: "edit_session",
     dependencies: { "events": "0.0.0" }
@@ -10174,375 +10584,6 @@ exports.createSession = function(view, user) {
     }
     return session;
 };
-
-});
-;bespin.tiki.register("::syntax_manager", {
-    name: "syntax_manager",
-    dependencies: { "worker_manager": "0.0.0", "syntax_directory": "0.0.0", "events": "0.0.0", "underscore": "0.0.0", "settings": "0.0.0" }
-});
-bespin.tiki.module("syntax_manager:index",function(require,exports,module) {
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Bespin.
- *
- * The Initial Developer of the Original Code is
- * Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Bespin Team (bespin@mozilla.com)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
-var _ = require('underscore')._;
-var Event = require('events').Event;
-var WorkerSupervisor = require('worker_manager').WorkerSupervisor;
-var console = require('bespin:console').console;
-var rangeutils = require('rangeutils:utils/range');
-var settings = require('settings').settings;
-var syntaxDirectory = require('syntax_directory').syntaxDirectory;
-
-// The number of lines to highlight at once.
-var GRANULARITY = 100;
-
-// Replaces elements at position i in dest with the elements of src. If i is
-// beyond the end of dest, expands dest with copies of fill.
-function replace(dest, i, src, fill) {
-    while (dest.length < i) {
-        dest.push(_(fill).clone());
-    }
-
-    var args = [ i, src.length ].concat(src);
-    Array.prototype.splice.apply(dest, args);
-    return dest;
-}
-
-// A simple key-value store in which each key is paired with a corresponding
-// line. When the syntax information is updated for a line, the symbols from
-// those lines are wiped out and replaced with the new symbols.
-function Symbols() {
-    this._lines = [];
-    this._syms = {};
-}
-
-Symbols.prototype = {
-    get: function(sym) {
-        return this._syms["-" + sym];
-    },
-
-    replaceLine: function(row, newSymbols) {
-        var lines = this._lines, syms = this._syms;
-        if (row < lines.length && _(lines[row]).isArray()) {
-            _(lines[row]).each(function(ident) { delete syms["-" + ident]; });
-        }
-
-        function stripLeadingDash(s) { return s.substring(1); }
-        lines[row] = _(newSymbols).keys().map(stripLeadingDash);
-
-        _(syms).extend(newSymbols);
-    }
-};
-
-function Context(syntaxInfo, syntaxManager) {
-    this._syntaxInfo = syntaxInfo;
-    this._syntaxManager = syntaxManager;
-
-    this._invalidRow = 0;
-    this._states = [];
-    this._active = false;
-
-    this.symbols = new Symbols;
-}
-
-Context.prototype = {
-    _annotate: function() {
-        if (this._invalidRow == null) {
-            throw new Error("syntax_manager.Context: attempt to annotate " +
-                "without any invalid row");
-        }
-        if (!this._active) {
-            throw new Error("syntax_manager.Context: attempt to annotate " +
-                "while inactive");
-        }
-
-        if (this._worker == null) {
-            this._createWorker();
-            return;
-        }
-
-        var lines = this._syntaxManager.getTextLines();
-        var row = this._invalidRow;
-        var state = row === 0 ? this.getName() + ':start' : this._states[row];
-        var lastRow = Math.min(lines.length, row + GRANULARITY);
-        lines = lines.slice(row, lastRow);
-
-        var runRange = {
-            start: { row: row, col: 0 },
-            end: { row: lastRow - 1, col: _(lines).last().length }
-        };
-
-        var pr = this._worker.send('annotate', [ state, lines, runRange ]);
-        pr.then(_(this._annotationFinished).bind(this, row, lastRow));
-    },
-
-    _annotationFinished: function(row, lastRow, result) {
-        if (!this._active) {
-            return;
-        }
-
-        var syntaxManager = this._syntaxManager;
-        syntaxManager.mergeAttrs(row, result.attrs);
-        syntaxManager.mergeSymbols(row, result.symbols);
-
-        replace(this._states, row, result.states);
-
-        if (lastRow >= this._getRowCount()) {
-            this._invalidRow = null;    // We're done!
-            this._active = false;
-            return;
-        }
-
-        this._invalidRow = lastRow;
-        this._annotate();
-    },
-
-    _createWorker: function() {
-        var syntaxInfo = this._syntaxInfo;
-        if (syntaxInfo == null) {
-            return false;
-        }
-
-        var worker = new WorkerSupervisor("syntax_worker#syntaxWorker");
-        this._worker = worker;
-
-        worker.started.add(this._workerStarted.bind(this));
-        worker.start();
-
-        return true;
-    },
-
-    _getRowCount: function() {
-        return this._syntaxManager.getTextLines().length;
-    },
-
-    _workerStarted: function() {
-        this._syntaxInfo.settings.forEach(function(name) {
-            var value = settings.get(name);
-            this._worker.send('setSyntaxSetting', [ name, value ]);
-        }, this);
-
-        this._worker.send('loadSyntax', [ this._syntaxInfo.name ]);
-
-        if (this._active) {
-            this._annotate();
-        }
-    },
-
-    // Switches on this syntax context and begins annotation. It is the
-    // caller's responsibility to ensure that there exists an invalid row
-    // before calling this. (Typically the caller ensures this by calling cut()
-    // first.)
-    activateAndAnnotate: function() {
-        this._active = true;
-        this._annotate();
-    },
-
-    contextsAtPosition: function(pos) {
-        var syntaxInfo = this._syntaxInfo;
-        if (syntaxInfo == null) {
-            return [ 'plain' ];
-        }
-
-        return [ syntaxInfo.name ];             // FIXME
-    },
-
-    // Invalidates the syntax context at a row.
-    cut: function(row) {
-        var endRow = this._getRowCount();
-        if (row < 0 || row >= endRow) {
-            throw new Error("Attempt to cut the context at an invalid row");
-        }
-
-        if (this._invalidRow != null && this._invalidRow < row) {
-            return;
-        }
-        this._invalidRow = row;
-
-        // Mark ourselves as inactive, so that if the web worker was working on
-        // a series of rows we know to discard its results.
-        this._active = false;
-    },
-
-    getName: function() {
-        return this._syntaxInfo.name;
-    },
-
-    kill: function() {
-        var worker = this._worker;
-        if (worker == null) {
-            return;
-        }
-
-        worker.kill();
-        this._worker = null;
-    }
-};
-
-/**
- * The syntax manager coordinates a series of syntax contexts, each run in a
- * separate web worker. It receives text editing notifications, updates and
- * stores the relevant syntax attributes, and provides marked-up text as the
- * layout manager requests it.
- *
- * @constructor
- * @exports SyntaxManager as syntax_manager:SyntaxManager
- */
-function SyntaxManager(layoutManager) {
-    this.layoutManager = layoutManager;
-
-    /** Called whenever the attributes have been updated. */
-    this.attrsChanged = new Event;
-
-    /** Called whenever the syntax (file type) has been changed. */
-    this.syntaxChanged = new Event;
-
-    this._context = null;
-    this._invalidRows = null;
-    this._contextRanges = null;
-    this._attrs = [];
-    this._symbols = new Symbols;
-    this._syntax = 'plain';
-
-    this._reset();
-}
-
-SyntaxManager.prototype = {
-    /** @lends SyntaxManager */
-
-    _getTextStorage: function() {
-        return this.layoutManager.textStorage;
-    },
-
-    // Invalidates all the highlighting and recreates the workers.
-    _reset: function() {
-        var ctx = this._context;
-        if (ctx != null) {
-            ctx.kill();
-            this._context = null;
-        }
-
-        var syn = this._syntax;
-        var syntaxInfo = syn === 'plain' ? null : syntaxDirectory.get(syn);
-
-        ctx = new Context(syntaxInfo, this);
-        this._context = ctx;
-        ctx.activateAndAnnotate();
-    },
-
-    attrsChanged: null,
-    syntaxChanged: null,
-
-    /** Returns the contexts that are active at the position pos. */
-    contextsAtPosition: function(pos) {
-        return this._context.contextsAtPosition(pos);
-    },
-
-    /**
-     * Returns the attributes most recently delivered from the syntax engine.
-     * Does not instruct the engine to perform any work; use invalidateRow()
-     * for that.
-     */
-    getAttrsForRows: function(startRow, endRow) {
-        return this._attrs.slice(startRow, endRow);
-    },
-
-    /**
-     * Returns the metadata currently associated with the given symbol, or null
-     * if the symbol is unknown.
-     */
-    getSymbol: function(ident) {
-        return this._symbols.get(ident);
-    },
-
-    /** Returns the current syntax. */
-    getSyntax: function() {
-        return this._syntax;
-    },
-
-    /** A convenience function to return the lines from the text storage. */
-    getTextLines: function() {
-        return this._getTextStorage().lines;
-    },
-
-    /** Marks the text as needing an update starting at the given row. */
-    invalidateRow: function(row) {
-        var ctx = this._context;
-        ctx.cut(row);
-        ctx.activateAndAnnotate();
-    },
-
-    /**
-     * Merges the supplied attributes into the text, overwriting the attributes
-     * that were there previously.
-     */
-    mergeAttrs: function(startRow, newAttrs) {
-        replace(this._attrs, startRow, newAttrs, []);
-        this.attrsChanged(startRow, startRow + newAttrs.length);
-    },
-
-    /**
-     * Merges the supplied symbols into the symbol store, overwriting any
-     * symbols previously defined on those lines.
-     */
-    mergeSymbols: function(startRow, newSymbols) {
-        var symbols = this._symbols;
-        _(newSymbols).each(function(lineSyms, i) {
-            symbols.replaceLine(startRow + i, lineSyms);
-        });
-    },
-
-    /**
-     * Sets the syntax and invalidates all the highlighting. If no syntax
-     * plugin is available, sets the syntax to "plain".
-     */
-    setSyntax: function(syntax) {
-        this._syntax = syntaxDirectory.hasSyntax(syntax) ? syntax : 'plain';
-        this.syntaxChanged(syntax);
-        this._reset();
-    },
-
-    /** Sets the syntax appropriately for a file extension. */
-    setSyntaxFromFileExt: function(fileExt) {
-        return this.setSyntax(syntaxDirectory.syntaxForFileExt(fileExt));
-    }
-};
-
-exports.SyntaxManager = SyntaxManager;
-
 
 });
 ;bespin.tiki.register("::completion", {
@@ -11292,218 +11333,6 @@ exports.global = new exports.UndoManager();
 exports.undoManagerCommand = function(args, request) {
     exports.global[request.commandExt.name]();
 };
-
-});
-;bespin.tiki.register("::environment", {
-    name: "environment",
-    dependencies: { "settings": "0.0.0" }
-});
-bespin.tiki.module("environment:index",function(require,exports,module) {
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Bespin.
- *
- * The Initial Developer of the Original Code is
- * Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Bespin Team (bespin@mozilla.com)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
-"define metadata";
-({
-    "dependencies": {
-        "settings": "0.0.0"
-    }
-});
-"end";
-
-var util = require('bespin:util/util');
-var console = require('bespin:console').console;
-var catalog = require("bespin:plugins").catalog;
-var settings = require('settings').settings;
-
-/**
- * The environment plays a similar role to the environment under unix.
- * Bespin does not currently have a concept of variables, (i.e. things the user
- * directly changes, however it does have a number of pre-defined things that
- * are changed by the system.
- * <p>The role of the Environment is likely to be expanded over time.
- */
-exports.Environment = function() {
-    // The current command line pushes this value into here
-    this.commandLine = null;
-
-    // Fire the sizeChanged event when the window is resized.
-    window.addEventListener('resize', this.dimensionsChanged.bind(this), false);
-};
-
-Object.defineProperties(exports.Environment.prototype, {
-
-    /**
-     * Provides a get() and set() function to set and get settings.
-     */
-    settings: {
-        value: {
-            set: function(key, value) {
-                if (util.none(key)) {
-                    throw new Error('setSetting(): key must be supplied');
-                }
-                if (util.none(value)) {
-                    throw new Error('setSetting(): value must be supplied');
-                }
-
-                settings.set(key, value);
-            },
-            
-            get: function(key) {
-                if (util.none(key)) {
-                    throw new Error('getSetting(): key must be supplied');
-                }
-                return settings.get(key);
-            }
-        }
-    },
-
-    dimensionsChanged: {
-        value: function() {
-            catalog.publish(this, 'dimensionsChanged');
-        }
-    },
-
-    /**
-     * Retrieves the EditSession
-     */
-    session: {
-        get: function() {
-            return catalog.getObject('session');
-        }
-    },
-
-    /**
-     * Gets the currentView from the session.
-     */
-    view: {
-        get: function() {
-            if (!this.session) {
-                // This can happen if the session is being reloaded.
-                return null;
-            }
-            return this.session.currentView;
-        }
-    },
-
-    /**
-     * Gets the currentEditor from the session.
-     */
-    editor: {
-        get: function() {
-            if (!this.session) {
-                // This can happen if the session is being reloaded.
-                return null;
-            }
-            return this.session.currentView.editor;
-        }
-    },
-
-    /**
-     * Returns the currently-active syntax contexts.
-     */
-    contexts: {
-        get: function() {
-            // when editorapp is being refreshed, the textView is not available.
-            if (!this.view) {
-                return [];
-            }
-
-            var syntaxManager = this.view.editor.layoutManager.syntaxManager;
-            var pos = this.view.getSelectedRange().start;
-            return syntaxManager.contextsAtPosition(pos);
-        }
-    },
-
-    /**
-     * The current Buffer from the session
-     */
-    buffer: {
-        get: function() {
-            if (!this.session) {
-                console.error("command attempted to get buffer but there's no session");
-                return undefined;
-            }
-            return this.view.editor.buffer;
-        }
-    },
-
-    /**
-     * The current editor model might not always be easy to find so you should
-     * use <code>instruction.model</code> to access the view where
-     * possible.
-     */
-    model: {
-        get: function() {
-            if (!this.buffer) {
-                console.error('Session has no current buffer');
-                return undefined;
-            }
-            return this.view.editor.layoutManager.textStorage;
-        }
-    },
-
-    /**
-     * gets the current file from the session
-     */
-    file: {
-        get: function() {
-            if (!this.buffer) {
-                console.error('Session has no current buffer');
-                return undefined;
-            }
-            return this.buffer.file;
-        }
-    },
-
-    /**
-     * If files are available, this will get them. Perhaps we need some other
-     * mechanism for populating these things from the catalog?
-     */
-    files: {
-        get: function() {
-            return catalog.getObject('files');
-        }
-    }
-});
-
-/**
- * The global environment used throughout this Bespin instance.
- */
-exports.env = new exports.Environment();
 
 });
 ;bespin.tiki.register("::ctags", {
@@ -19625,88 +19454,6 @@ var generateGUI = function(catalog, config, pr) {
 };
 
 });
-;bespin.tiki.register("::events", {
-    name: "events",
-    dependencies: { "traits": "0.0.0" }
-});
-bespin.tiki.module("events:index",function(require,exports,module) {
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Bespin.
- *
- * The Initial Developer of the Original Code is
- * Mozilla.
- * Portions created by the Initial Developer are Copyright (C) 2009
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Bespin Team (bespin@mozilla.com)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
-exports.Event = function() {
-    var handlers = [];
-    var evt = function() {
-        var args = arguments;
-        handlers.forEach(function(handler) { handler.func.apply(null, args); });
-    };
-
-    /**
-     * Adds a new handler via
-     *  a) evt.add(handlerFunc)
-     *  b) evt.add(reference, handlerFunc)
-     */
-    evt.add = function() {
-        if (arguments.length == 1) {
-            handlers.push({
-                ref: arguments[0],
-                func: arguments[0]
-            });
-        } else {
-            handlers.push({
-                ref: arguments[0],
-                func: arguments[1]
-            });
-        }
-    };
-
-    evt.remove = function(ref) {
-        var notEqual = function(other) { return ref !== other.ref; };
-        handlers = handlers.filter(notEqual);
-    };
-
-    evt.removeAll = function() {
-        handlers = [];
-    };
-
-    return evt;
-};
-
-
-});
 ;bespin.tiki.register("::screen_theme", {
     name: "screen_theme",
     dependencies: { "theme_manager": "0.0.0" }
@@ -19718,7 +19465,7 @@ bespin.tiki.module("screen_theme:index",function(require,exports,module) {
 (function() {
 var $ = bespin.tiki.require("jquery").$;
 $(document).ready(function() {
-    bespin.tiki.require("bespin:plugins").catalog.registerMetadata({"text_editor": {"resourceURL": "resources/text_editor/", "description": "Canvas-based text editor component and many common editing commands", "dependencies": {"completion": "0.0.0", "undomanager": "0.0.0", "settings": "0.0.0", "canon": "0.0.0", "rangeutils": "0.0.0", "traits": "0.0.0", "theme_manager": "0.0.0", "keyboard": "0.0.0", "edit_session": "0.0.0", "syntax_manager": "0.0.0"}, "testmodules": ["tests/controllers/testLayoutmanager", "tests/models/testTextstorage", "tests/testScratchcanvas", "tests/utils/testRect"], "provides": [{"action": "new", "pointer": "views/editor#EditorView", "ep": "factory", "name": "text_editor"}, {"predicates": {"isTextView": true}, "pointer": "commands/editing#backspace", "ep": "command", "key": "backspace", "name": "backspace"}, {"predicates": {"isTextView": true}, "pointer": "commands/editing#deleteCommand", "ep": "command", "key": "delete", "name": "delete"}, {"description": "Delete all lines currently selected", "key": "ctrl_d", "predicates": {"isTextView": true}, "pointer": "commands/editing#deleteLines", "ep": "command", "name": "deletelines"}, {"description": "Create a new, empty line below the current one", "key": "ctrl_return", "predicates": {"isTextView": true}, "pointer": "commands/editing#openLine", "ep": "command", "name": "openline"}, {"description": "Join the current line with the following", "key": "ctrl_shift_j", "predicates": {"isTextView": true}, "pointer": "commands/editing#joinLines", "ep": "command", "name": "joinline"}, {"params": [{"defaultValue": "", "type": "text", "name": "text", "description": "The text to insert"}], "pointer": "commands/editing#insertText", "ep": "command", "name": "insertText"}, {"predicates": {"completing": false, "isTextView": true}, "pointer": "commands/editing#newline", "ep": "command", "key": "return", "name": "newline"}, {"predicates": {"completing": false, "isTextView": true}, "pointer": "commands/editing#tab", "ep": "command", "key": "tab", "name": "tab"}, {"predicates": {"isTextView": true}, "pointer": "commands/editing#untab", "ep": "command", "key": "shift_tab", "name": "untab"}, {"predicates": {"isTextView": true}, "ep": "command", "name": "move"}, {"description": "Repeat the last search (forward)", "pointer": "commands/editor#findNextCommand", "ep": "command", "key": "ctrl_g", "name": "findnext"}, {"description": "Repeat the last search (backward)", "pointer": "commands/editor#findPrevCommand", "ep": "command", "key": "ctrl_shift_g", "name": "findprev"}, {"predicates": {"completing": false, "isTextView": true}, "pointer": "commands/movement#moveDown", "ep": "command", "key": "down", "name": "move down"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveLeft", "ep": "command", "key": "left", "name": "move left"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveRight", "ep": "command", "key": "right", "name": "move right"}, {"predicates": {"completing": false, "isTextView": true}, "pointer": "commands/movement#moveUp", "ep": "command", "key": "up", "name": "move up"}, {"predicates": {"isTextView": true}, "ep": "command", "name": "select"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectDown", "ep": "command", "key": "shift_down", "name": "select down"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectLeft", "ep": "command", "key": "shift_left", "name": "select left"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectRight", "ep": "command", "key": "shift_right", "name": "select right"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectUp", "ep": "command", "key": "shift_up", "name": "select up"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveLineEnd", "ep": "command", "key": ["end", "ctrl_right"], "name": "move lineend"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectLineEnd", "ep": "command", "key": ["shift_end", "ctrl_shift_right"], "name": "select lineend"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveDocEnd", "ep": "command", "key": "ctrl_down", "name": "move docend"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectDocEnd", "ep": "command", "key": "ctrl_shift_down", "name": "select docend"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveLineStart", "ep": "command", "key": ["home", "ctrl_left"], "name": "move linestart"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectLineStart", "ep": "command", "key": ["shift_home", "ctrl_shift_left"], "name": "select linestart"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveDocStart", "ep": "command", "key": "ctrl_up", "name": "move docstart"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectDocStart", "ep": "command", "key": "ctrl_shift_up", "name": "select docstart"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveNextWord", "ep": "command", "key": ["alt_right"], "name": "move nextword"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectNextWord", "ep": "command", "key": ["alt_shift_right"], "name": "select nextword"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#movePreviousWord", "ep": "command", "key": ["alt_left"], "name": "move prevword"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectPreviousWord", "ep": "command", "key": ["alt_shift_left"], "name": "select prevword"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectAll", "ep": "command", "key": ["ctrl_a", "meta_a"], "name": "select all"}, {"predicates": {"isTextView": true}, "ep": "command", "name": "scroll"}, {"predicates": {"isTextView": true}, "pointer": "commands/scrolling#scrollDocStart", "ep": "command", "key": "ctrl_home", "name": "scroll start"}, {"predicates": {"isTextView": true}, "pointer": "commands/scrolling#scrollDocEnd", "ep": "command", "key": "ctrl_end", "name": "scroll end"}, {"predicates": {"isTextView": true}, "pointer": "commands/scrolling#scrollPageDown", "ep": "command", "key": "pagedown", "name": "scroll down"}, {"predicates": {"isTextView": true}, "pointer": "commands/scrolling#scrollPageUp", "ep": "command", "key": "pageup", "name": "scroll up"}, {"pointer": "commands/editor#lcCommand", "description": "Change all selected text to lowercase", "withKey": "CMD SHIFT L", "ep": "command", "name": "lc"}, {"pointer": "commands/editor#detabCommand", "description": "Convert tabs to spaces.", "params": [{"defaultValue": null, "type": "text", "name": "tabsize", "description": "Optionally, specify a tab size. (Defaults to setting.)"}], "ep": "command", "name": "detab"}, {"pointer": "commands/editor#entabCommand", "description": "Convert spaces to tabs.", "params": [{"defaultValue": null, "type": "text", "name": "tabsize", "description": "Optionally, specify a tab size. (Defaults to setting.)"}], "ep": "command", "name": "entab"}, {"pointer": "commands/editor#trimCommand", "description": "trim trailing or leading whitespace from each line in selection", "params": [{"defaultValue": "both", "type": {"data": [{"name": "left"}, {"name": "right"}, {"name": "both"}], "name": "selection"}, "name": "side", "description": "Do we trim from the left, right or both"}], "ep": "command", "name": "trim"}, {"pointer": "commands/editor#ucCommand", "description": "Change all selected text to uppercase", "withKey": "CMD SHIFT U", "ep": "command", "name": "uc"}, {"predicates": {"isTextView": true}, "pointer": "controllers/undo#undoManagerCommand", "ep": "command", "key": ["ctrl_shift_z"], "name": "redo"}, {"predicates": {"isTextView": true}, "pointer": "controllers/undo#undoManagerCommand", "ep": "command", "key": ["ctrl_z"], "name": "undo"}, {"description": "The distance in characters between each tab", "defaultValue": 8, "type": "number", "ep": "setting", "name": "tabstop"}, {"description": "Customize the keymapping", "defaultValue": "{}", "type": "text", "ep": "setting", "name": "customKeymapping"}, {"description": "The keymapping to use", "defaultValue": "standard", "type": "text", "ep": "setting", "name": "keymapping"}, {"description": "The editor font size in pixels", "defaultValue": 14, "type": "number", "ep": "setting", "name": "fontsize"}, {"description": "The editor font face", "defaultValue": "Monaco, Lucida Console, monospace", "type": "text", "ep": "setting", "name": "fontface"}, {"defaultValue": {"color": "#e5c138", "paddingLeft": 5, "backgroundColor": "#4c4a41", "paddingRight": 10}, "ep": "themevariable", "name": "gutter"}, {"defaultValue": {"color": "#e6e6e6", "selectedTextBackgroundColor": "#526da5", "backgroundColor": "#2a211c", "cursorColor": "#879aff", "unfocusedCursorBackgroundColor": "#73171e", "unfocusedCursorColor": "#ff0033"}, "ep": "themevariable", "name": "editor"}, {"defaultValue": {"comment": "#666666", "directive": "#999999", "keyword": "#42A8ED", "addition": "#FFFFFF", "plain": "#e6e6e6", "module": "#BA4946", "specialmodule": "#C741BB", "builtin": "#307BAD", "deletion": "#FFFFFF", "error": "#ff0000", "operator": "#88BBFF", "identifier": "#D841FF", "string": "#039A0A"}, "ep": "themevariable", "name": "highlighterFG"}, {"defaultValue": {"addition": "#008000", "deletion": "#800000"}, "ep": "themevariable", "name": "highlighterBG"}, {"defaultValue": {"nibStrokeStyle": "rgb(150, 150, 150)", "fullAlpha": 1.0, "barFillStyle": "rgb(0, 0, 0)", "particalAlpha": 0.29999999999999999, "barFillGradientBottomStop": "rgb(44, 44, 44)", "backgroundStyle": "#2A211C", "thickness": 17, "padding": 5, "trackStrokeStyle": "rgb(150, 150, 150)", "nibArrowStyle": "rgb(255, 255, 255)", "barFillGradientBottomStart": "rgb(22, 22, 22)", "barFillGradientTopStop": "rgb(40, 40, 40)", "barFillGradientTopStart": "rgb(90, 90, 90)", "nibStyle": "rgb(100, 100, 100)", "trackFillStyle": "rgba(50, 50, 50, 0.8)"}, "ep": "themevariable", "name": "scroller"}, {"description": "Event: Notify when something within the editor changed.", "params": [{"required": true, "name": "pointer", "description": "Function that is called whenever a change happened."}], "ep": "extensionpoint", "name": "editorChange"}, {"description": "Decoration for the gutter", "ep": "extensionpoint", "name": "gutterDecoration"}, {"description": "Line number decoration for the gutter", "pointer": "views/gutter#lineNumbers", "ep": "gutterDecoration", "name": "lineNumbers"}], "type": "plugins/supported", "name": "text_editor"}, "less": {"resourceURL": "resources/less/", "description": "Leaner CSS", "contributors": [], "author": "Alexis Sellier <self@cloudhead.net>", "url": "http://lesscss.org", "version": "1.0.11", "dependencies": {}, "testmodules": [], "provides": [], "keywords": ["css", "parser", "lesscss", "browser"], "type": "plugins/thirdparty", "name": "less"}, "diff_syntax": {"resourceURL": "resources/diff_syntax/", "name": "diff_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#DiffSyntax", "ep": "syntax", "fileexts": ["diff", "patch"], "name": "diff"}], "type": "plugins/supported", "description": "Diff syntax highlighter"}, "theme_manager_base": {"resourceURL": "resources/theme_manager_base/", "name": "theme_manager_base", "share": true, "environments": {"main": true}, "dependencies": {}, "testmodules": [], "provides": [{"description": "(Less)files holding the CSS style information for the UI.", "params": [{"required": true, "name": "url", "description": "Name of the ThemeStylesFile - can also be an array of files."}], "ep": "extensionpoint", "name": "themestyles"}, {"description": "Event: Notify when the theme(styles) changed.", "params": [{"required": true, "name": "pointer", "description": "Function that is called whenever the theme is changed."}], "ep": "extensionpoint", "name": "themeChange"}, {"indexOn": "name", "description": "A theme is a way change the look of the application.", "params": [{"required": false, "name": "url", "description": "Name of a ThemeStylesFile that holds theme specific CSS rules - can also be an array of files."}, {"required": true, "name": "pointer", "description": "Function that returns the ThemeData"}], "ep": "extensionpoint", "name": "theme"}], "type": "plugins/supported", "description": "Defines extension points required for theming"}, "canon": {"resourceURL": "resources/canon/", "name": "canon", "environments": {"main": true, "worker": false}, "dependencies": {"environment": "0.0.0", "events": "0.0.0", "settings": "0.0.0"}, "testmodules": [], "provides": [{"indexOn": "name", "description": "A command is a bit of functionality with optional typed arguments which can do something small like moving the cursor around the screen, or large like cloning a project from VCS.", "ep": "extensionpoint", "name": "command"}, {"description": "An extension point to be called whenever a new command begins output.", "ep": "extensionpoint", "name": "addedRequestOutput"}, {"description": "A dimensionsChanged is a way to be notified of changes to the dimension of Bespin", "ep": "extensionpoint", "name": "dimensionsChanged"}, {"description": "How many typed commands do we recall for reference?", "defaultValue": 50, "type": "number", "ep": "setting", "name": "historyLength"}, {"action": "create", "pointer": "history#InMemoryHistory", "ep": "factory", "name": "history"}], "type": "plugins/supported", "description": "Manages commands"}, "traits": {"resourceURL": "resources/traits/", "description": "Traits library, traitsjs.org", "dependencies": {}, "testmodules": [], "provides": [], "type": "plugins/thirdparty", "name": "traits"}, "keyboard": {"resourceURL": "resources/keyboard/", "description": "Keyboard shortcuts", "dependencies": {"canon": "0.0", "settings": "0.0"}, "testmodules": ["tests/testKeyboard"], "provides": [{"description": "A keymapping defines how keystrokes are interpreted.", "params": [{"required": true, "name": "states", "description": "Holds the states and all the informations about the keymapping. See docs: pluginguide/keymapping"}], "ep": "extensionpoint", "name": "keymapping"}], "type": "plugins/supported", "name": "keyboard"}, "worker_manager": {"resourceURL": "resources/worker_manager/", "description": "Manages a web worker on the browser side", "dependencies": {"canon": "0.0.0", "events": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "provides": [{"description": "Low-level web worker control (for plugin development)", "ep": "command", "name": "worker"}, {"description": "Restarts all web workers (for plugin development)", "pointer": "#workerRestartCommand", "ep": "command", "name": "worker restart"}], "type": "plugins/supported", "name": "worker_manager"}, "edit_session": {"resourceURL": "resources/edit_session/", "description": "Ties together the files being edited with the views on screen", "dependencies": {"events": "0.0.0"}, "testmodules": ["tests/testSession"], "provides": [{"action": "call", "pointer": "#createSession", "ep": "factory", "name": "session"}], "type": "plugins/supported", "name": "edit_session"}, "syntax_manager": {"resourceURL": "resources/syntax_manager/", "name": "syntax_manager", "environments": {"main": true, "worker": false}, "dependencies": {"worker_manager": "0.0.0", "syntax_directory": "0.0.0", "events": "0.0.0", "underscore": "0.0.0", "settings": "0.0.0"}, "testmodules": [], "provides": [], "type": "plugins/supported", "description": "Provides syntax highlighting services for the editor"}, "completion": {"resourceURL": "resources/completion/", "description": "Code completion support", "dependencies": {"jquery": "0.0.0", "ctags": "0.0.0", "rangeutils": "0.0.0", "canon": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "provides": [{"indexOn": "name", "description": "Code completion support for specific languages", "ep": "extensionpoint", "name": "completion"}, {"description": "Accept the chosen completion", "key": ["return", "tab"], "predicates": {"completing": true}, "pointer": "controller#completeCommand", "ep": "command", "name": "complete"}, {"description": "Abandon the completion", "key": "escape", "predicates": {"completing": true}, "pointer": "controller#completeCancelCommand", "ep": "command", "name": "complete cancel"}, {"description": "Choose the completion below", "key": "down", "predicates": {"completing": true}, "pointer": "controller#completeDownCommand", "ep": "command", "name": "complete down"}, {"description": "Choose the completion above", "key": "up", "predicates": {"completing": true}, "pointer": "controller#completeUpCommand", "ep": "command", "name": "complete up"}], "type": "plugins/supported", "name": "completion"}, "environment": {"testmodules": [], "dependencies": {"settings": "0.0.0"}, "resourceURL": "resources/environment/", "name": "environment", "type": "plugins/supported"}, "undomanager": {"resourceURL": "resources/undomanager/", "description": "Manages undoable events", "testmodules": ["tests/testUndomanager"], "provides": [{"pointer": "#undoManagerCommand", "ep": "command", "key": ["ctrl_shift_z"], "name": "redo"}, {"pointer": "#undoManagerCommand", "ep": "command", "key": ["ctrl_z"], "name": "undo"}], "type": "plugins/supported", "name": "undomanager"}, "rangeutils": {"testmodules": ["tests/test"], "type": "plugins/supported", "resourceURL": "resources/rangeutils/", "description": "Utility functions for dealing with ranges of text", "name": "rangeutils"}, "stylesheet": {"resourceURL": "resources/stylesheet/", "name": "stylesheet", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#CSSSyntax", "ep": "syntax", "fileexts": ["css", "less"], "name": "css"}], "type": "plugins/supported", "description": "CSS syntax highlighter"}, "html": {"resourceURL": "resources/html/", "name": "html", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#HTMLSyntax", "ep": "syntax", "fileexts": ["htm", "html"], "name": "html"}], "type": "plugins/supported", "description": "HTML syntax highlighter"}, "js_syntax": {"resourceURL": "resources/js_syntax/", "name": "js_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0", "settings": "0.0.0"}, "testmodules": [], "provides": [{"settings": ["specialmodules"], "pointer": "#JSSyntax", "ep": "syntax", "fileexts": ["js", "json"], "name": "js"}, {"description": "Regex that matches special modules", "defaultValue": "^jetpack\\.[^\"']+", "type": "text", "ep": "setting", "name": "specialmodules"}], "type": "plugins/supported", "description": "JavaScript syntax highlighter"}, "ctags": {"resourceURL": "resources/ctags/", "description": "Reads and writes tag files", "dependencies": {"traits": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "type": "plugins/supported", "name": "ctags"}, "events": {"resourceURL": "resources/events/", "description": "Dead simple event implementation", "dependencies": {"traits": "0.0"}, "testmodules": ["tests/test"], "provides": [], "type": "plugins/supported", "name": "events"}, "twilight_theme": {"resourceURL": "resources/twilight_theme/", "description": "Clone of the Twilight theme from Textmate for Bespin", "dependencies": {"theme_manager": "0.0.0"}, "testmodules": [], "provides": [{"url": ["theme.less"], "description": "A twilight theme", "pointer": "index#twilightTheme", "ep": "theme", "name": "twilight"}], "type": "plugins/thirdparty", "name": "twilight_theme"}, "theme_manager": {"resourceURL": "resources/theme_manager/", "name": "theme_manager", "share": true, "environments": {"main": true, "worker": false}, "dependencies": {"theme_manager_base": "0.0.0", "settings": "0.0.0", "events": "0.0.0", "less": "0.0.0"}, "testmodules": [], "provides": [{"unregister": "themestyles#unregisterThemeStyles", "register": "themestyles#registerThemeStyles", "ep": "extensionhandler", "name": "themestyles"}, {"unregister": "index#unregisterTheme", "register": "index#registerTheme", "ep": "extensionhandler", "name": "theme"}, {"defaultValue": "standard", "description": "The theme plugin's name to use. If set to 'standard' no theme will be used", "type": "text", "ep": "setting", "name": "theme"}, {"pointer": "#appLaunched", "ep": "appLaunched"}], "type": "plugins/supported", "description": "Handles colors in Bespin"}, "whitetheme": {"resourceURL": "resources/whitetheme/", "description": "Provides a white theme for Bespin", "dependencies": {"theme_manager": "0.0.0"}, "testmodules": [], "provides": [{"url": ["theme.less"], "description": "A basic white theme", "pointer": "index#whiteTheme", "ep": "theme", "name": "white"}], "type": "plugins/supported", "name": "whitetheme"}, "standard_syntax": {"resourceURL": "resources/standard_syntax/", "description": "Easy-to-use basis for syntax engines", "environments": {"worker": true}, "dependencies": {"syntax_worker": "0.0.0", "syntax_directory": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "type": "plugins/supported", "name": "standard_syntax"}, "jquery": {"testmodules": [], "resourceURL": "resources/jquery/", "name": "jquery", "type": "plugins/thirdparty"}, "embedded": {"testmodules": [], "dependencies": {"theme_manager": "0.0.0", "text_editor": "0.0.0", "appconfig": "0.0.0", "edit_session": "0.0.0", "screen_theme": "0.0.0"}, "resourceURL": "resources/embedded/", "name": "embedded", "type": "plugins/supported"}, "appconfig": {"resourceURL": "resources/appconfig/", "description": "Instantiates components and displays the GUI based on configuration.", "dependencies": {"jquery": "0.0.0", "canon": "0.0.0", "underscore": "0.0.0", "settings": "0.0.0"}, "testmodules": [], "provides": [{"description": "Event: Fired when the app is completely launched.", "ep": "extensionpoint", "name": "appLaunched"}], "type": "plugins/supported", "name": "appconfig"}, "syntax_worker": {"resourceURL": "resources/syntax_worker/", "description": "Coordinates multiple syntax engines", "environments": {"worker": true}, "dependencies": {"syntax_directory": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "type": "plugins/supported", "name": "syntax_worker"}, "screen_theme": {"resourceURL": "resources/screen_theme/", "description": "Bespins standard theme basePlugin", "dependencies": {"theme_manager": "0.0.0"}, "testmodules": [], "provides": [{"url": ["theme.less"], "ep": "themestyles"}, {"defaultValue": "@global_font", "ep": "themevariable", "name": "container_font"}, {"defaultValue": "@global_font_size", "ep": "themevariable", "name": "container_font_size"}, {"defaultValue": "@global_container_background", "ep": "themevariable", "name": "container_bg"}, {"defaultValue": "@global_color", "ep": "themevariable", "name": "container_color"}, {"defaultValue": "@global_line_height", "ep": "themevariable", "name": "container_line_height"}, {"defaultValue": "@global_pane_background", "ep": "themevariable", "name": "pane_bg"}, {"defaultValue": "@global_pane_border_radius", "ep": "themevariable", "name": "pane_border_radius"}, {"defaultValue": "@global_form_font", "ep": "themevariable", "name": "form_font"}, {"defaultValue": "@global_form_font_size", "ep": "themevariable", "name": "form_font_size"}, {"defaultValue": "@global_form_line_height", "ep": "themevariable", "name": "form_line_height"}, {"defaultValue": "@global_form_color", "ep": "themevariable", "name": "form_color"}, {"defaultValue": "@global_form_text_shadow", "ep": "themevariable", "name": "form_text_shadow"}, {"defaultValue": "@global_pane_link_color", "ep": "themevariable", "name": "pane_a_color"}, {"defaultValue": "@global_font", "ep": "themevariable", "name": "pane_font"}, {"defaultValue": "@global_font_size", "ep": "themevariable", "name": "pane_font_size"}, {"defaultValue": "@global_pane_text_shadow", "ep": "themevariable", "name": "pane_text_shadow"}, {"defaultValue": "@global_pane_h1_font", "ep": "themevariable", "name": "pane_h1_font"}, {"defaultValue": "@global_pane_h1_font_size", "ep": "themevariable", "name": "pane_h1_font_size"}, {"defaultValue": "@global_pane_h1_color", "ep": "themevariable", "name": "pane_h1_color"}, {"defaultValue": "@global_font_size * 1.8", "ep": "themevariable", "name": "pane_line_height"}, {"defaultValue": "@global_pane_color", "ep": "themevariable", "name": "pane_color"}, {"defaultValue": "@global_text_shadow", "ep": "themevariable", "name": "pane_text_shadow"}, {"defaultValue": "@global_font", "ep": "themevariable", "name": "button_font"}, {"defaultValue": "@global_font_size", "ep": "themevariable", "name": "button_font_size"}, {"defaultValue": "@global_button_color", "ep": "themevariable", "name": "button_color"}, {"defaultValue": "@global_button_background", "ep": "themevariable", "name": "button_bg"}, {"defaultValue": "@button_bg - #063A27", "ep": "themevariable", "name": "button_bg2"}, {"defaultValue": "@button_bg - #194A5E", "ep": "themevariable", "name": "button_border"}, {"defaultValue": "@global_control_background", "ep": "themevariable", "name": "control_bg"}, {"defaultValue": "@global_control_color", "ep": "themevariable", "name": "control_color"}, {"defaultValue": "@global_control_border", "ep": "themevariable", "name": "control_border"}, {"defaultValue": "@global_control_border_radius", "ep": "themevariable", "name": "control_border_radius"}, {"defaultValue": "@global_control_active_background", "ep": "themevariable", "name": "control_active_bg"}, {"defaultValue": "@global_control_active_border", "ep": "themevariable", "name": "control_active_border"}, {"defaultValue": "@global_control_active_color", "ep": "themevariable", "name": "control_active_color"}, {"defaultValue": "@global_control_active_inset_color", "ep": "themevariable", "name": "control_active_inset_color"}], "type": "plugins/supported", "name": "screen_theme"}});;
+    bespin.tiki.require("bespin:plugins").catalog.registerMetadata({"text_editor": {"resourceURL": "resources/text_editor/", "description": "Canvas-based text editor component and many common editing commands", "dependencies": {"completion": "0.0.0", "undomanager": "0.0.0", "settings": "0.0.0", "canon": "0.0.0", "rangeutils": "0.0.0", "traits": "0.0.0", "theme_manager": "0.0.0", "keyboard": "0.0.0", "edit_session": "0.0.0", "syntax_manager": "0.0.0"}, "testmodules": ["tests/controllers/testLayoutmanager", "tests/models/testTextstorage", "tests/testScratchcanvas", "tests/utils/testRect"], "provides": [{"action": "new", "pointer": "views/editor#EditorView", "ep": "factory", "name": "text_editor"}, {"predicates": {"isTextView": true}, "pointer": "commands/editing#backspace", "ep": "command", "key": "backspace", "name": "backspace"}, {"predicates": {"isTextView": true}, "pointer": "commands/editing#deleteCommand", "ep": "command", "key": "delete", "name": "delete"}, {"description": "Delete all lines currently selected", "key": "ctrl_d", "predicates": {"isTextView": true}, "pointer": "commands/editing#deleteLines", "ep": "command", "name": "deletelines"}, {"description": "Create a new, empty line below the current one", "key": "ctrl_return", "predicates": {"isTextView": true}, "pointer": "commands/editing#openLine", "ep": "command", "name": "openline"}, {"description": "Join the current line with the following", "key": "ctrl_shift_j", "predicates": {"isTextView": true}, "pointer": "commands/editing#joinLines", "ep": "command", "name": "joinline"}, {"params": [{"defaultValue": "", "type": "text", "name": "text", "description": "The text to insert"}], "pointer": "commands/editing#insertText", "ep": "command", "name": "insertText"}, {"predicates": {"completing": false, "isTextView": true}, "pointer": "commands/editing#newline", "ep": "command", "key": "return", "name": "newline"}, {"predicates": {"completing": false, "isTextView": true}, "pointer": "commands/editing#tab", "ep": "command", "key": "tab", "name": "tab"}, {"predicates": {"isTextView": true}, "pointer": "commands/editing#untab", "ep": "command", "key": "shift_tab", "name": "untab"}, {"predicates": {"isTextView": true}, "ep": "command", "name": "move"}, {"description": "Repeat the last search (forward)", "pointer": "commands/editor#findNextCommand", "ep": "command", "key": "ctrl_g", "name": "findnext"}, {"description": "Repeat the last search (backward)", "pointer": "commands/editor#findPrevCommand", "ep": "command", "key": "ctrl_shift_g", "name": "findprev"}, {"predicates": {"completing": false, "isTextView": true}, "pointer": "commands/movement#moveDown", "ep": "command", "key": "down", "name": "move down"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveLeft", "ep": "command", "key": "left", "name": "move left"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveRight", "ep": "command", "key": "right", "name": "move right"}, {"predicates": {"completing": false, "isTextView": true}, "pointer": "commands/movement#moveUp", "ep": "command", "key": "up", "name": "move up"}, {"predicates": {"isTextView": true}, "ep": "command", "name": "select"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectDown", "ep": "command", "key": "shift_down", "name": "select down"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectLeft", "ep": "command", "key": "shift_left", "name": "select left"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectRight", "ep": "command", "key": "shift_right", "name": "select right"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectUp", "ep": "command", "key": "shift_up", "name": "select up"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveLineEnd", "ep": "command", "key": ["end", "ctrl_right"], "name": "move lineend"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectLineEnd", "ep": "command", "key": ["shift_end", "ctrl_shift_right"], "name": "select lineend"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveDocEnd", "ep": "command", "key": "ctrl_down", "name": "move docend"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectDocEnd", "ep": "command", "key": "ctrl_shift_down", "name": "select docend"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveLineStart", "ep": "command", "key": ["home", "ctrl_left"], "name": "move linestart"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectLineStart", "ep": "command", "key": ["shift_home", "ctrl_shift_left"], "name": "select linestart"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveDocStart", "ep": "command", "key": "ctrl_up", "name": "move docstart"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectDocStart", "ep": "command", "key": "ctrl_shift_up", "name": "select docstart"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#moveNextWord", "ep": "command", "key": ["alt_right"], "name": "move nextword"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectNextWord", "ep": "command", "key": ["alt_shift_right"], "name": "select nextword"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#movePreviousWord", "ep": "command", "key": ["alt_left"], "name": "move prevword"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectPreviousWord", "ep": "command", "key": ["alt_shift_left"], "name": "select prevword"}, {"predicates": {"isTextView": true}, "pointer": "commands/movement#selectAll", "ep": "command", "key": ["ctrl_a", "meta_a"], "name": "select all"}, {"predicates": {"isTextView": true}, "ep": "command", "name": "scroll"}, {"predicates": {"isTextView": true}, "pointer": "commands/scrolling#scrollDocStart", "ep": "command", "key": "ctrl_home", "name": "scroll start"}, {"predicates": {"isTextView": true}, "pointer": "commands/scrolling#scrollDocEnd", "ep": "command", "key": "ctrl_end", "name": "scroll end"}, {"predicates": {"isTextView": true}, "pointer": "commands/scrolling#scrollPageDown", "ep": "command", "key": "pagedown", "name": "scroll down"}, {"predicates": {"isTextView": true}, "pointer": "commands/scrolling#scrollPageUp", "ep": "command", "key": "pageup", "name": "scroll up"}, {"pointer": "commands/editor#lcCommand", "description": "Change all selected text to lowercase", "withKey": "CMD SHIFT L", "ep": "command", "name": "lc"}, {"pointer": "commands/editor#detabCommand", "description": "Convert tabs to spaces.", "params": [{"defaultValue": null, "type": "text", "name": "tabsize", "description": "Optionally, specify a tab size. (Defaults to setting.)"}], "ep": "command", "name": "detab"}, {"pointer": "commands/editor#entabCommand", "description": "Convert spaces to tabs.", "params": [{"defaultValue": null, "type": "text", "name": "tabsize", "description": "Optionally, specify a tab size. (Defaults to setting.)"}], "ep": "command", "name": "entab"}, {"pointer": "commands/editor#trimCommand", "description": "trim trailing or leading whitespace from each line in selection", "params": [{"defaultValue": "both", "type": {"data": [{"name": "left"}, {"name": "right"}, {"name": "both"}], "name": "selection"}, "name": "side", "description": "Do we trim from the left, right or both"}], "ep": "command", "name": "trim"}, {"pointer": "commands/editor#ucCommand", "description": "Change all selected text to uppercase", "withKey": "CMD SHIFT U", "ep": "command", "name": "uc"}, {"predicates": {"isTextView": true}, "pointer": "controllers/undo#undoManagerCommand", "ep": "command", "key": ["ctrl_shift_z"], "name": "redo"}, {"predicates": {"isTextView": true}, "pointer": "controllers/undo#undoManagerCommand", "ep": "command", "key": ["ctrl_z"], "name": "undo"}, {"description": "The distance in characters between each tab", "defaultValue": 8, "type": "number", "ep": "setting", "name": "tabstop"}, {"description": "Customize the keymapping", "defaultValue": "{}", "type": "text", "ep": "setting", "name": "customKeymapping"}, {"description": "The keymapping to use", "defaultValue": "standard", "type": "text", "ep": "setting", "name": "keymapping"}, {"description": "The editor font size in pixels", "defaultValue": 14, "type": "number", "ep": "setting", "name": "fontsize"}, {"description": "The editor font face", "defaultValue": "Monaco, Lucida Console, monospace", "type": "text", "ep": "setting", "name": "fontface"}, {"defaultValue": {"color": "#e5c138", "paddingLeft": 5, "backgroundColor": "#4c4a41", "paddingRight": 10}, "ep": "themevariable", "name": "gutter"}, {"defaultValue": {"color": "#e6e6e6", "selectedTextBackgroundColor": "#526da5", "backgroundColor": "#2a211c", "cursorColor": "#879aff", "unfocusedCursorBackgroundColor": "#73171e", "unfocusedCursorColor": "#ff0033"}, "ep": "themevariable", "name": "editor"}, {"defaultValue": {"comment": "#666666", "directive": "#999999", "keyword": "#42A8ED", "addition": "#FFFFFF", "plain": "#e6e6e6", "module": "#BA4946", "specialmodule": "#C741BB", "builtin": "#307BAD", "deletion": "#FFFFFF", "error": "#ff0000", "operator": "#88BBFF", "identifier": "#D841FF", "string": "#039A0A"}, "ep": "themevariable", "name": "highlighterFG"}, {"defaultValue": {"addition": "#008000", "deletion": "#800000"}, "ep": "themevariable", "name": "highlighterBG"}, {"defaultValue": {"nibStrokeStyle": "rgb(150, 150, 150)", "fullAlpha": 1.0, "barFillStyle": "rgb(0, 0, 0)", "particalAlpha": 0.29999999999999999, "barFillGradientBottomStop": "rgb(44, 44, 44)", "backgroundStyle": "#2A211C", "thickness": 17, "padding": 5, "trackStrokeStyle": "rgb(150, 150, 150)", "nibArrowStyle": "rgb(255, 255, 255)", "barFillGradientBottomStart": "rgb(22, 22, 22)", "barFillGradientTopStop": "rgb(40, 40, 40)", "barFillGradientTopStart": "rgb(90, 90, 90)", "nibStyle": "rgb(100, 100, 100)", "trackFillStyle": "rgba(50, 50, 50, 0.8)"}, "ep": "themevariable", "name": "scroller"}, {"description": "Event: Notify when something within the editor changed.", "params": [{"required": true, "name": "pointer", "description": "Function that is called whenever a change happened."}], "ep": "extensionpoint", "name": "editorChange"}, {"description": "Decoration for the gutter", "ep": "extensionpoint", "name": "gutterDecoration"}, {"description": "Line number decoration for the gutter", "pointer": "views/gutter#lineNumbers", "ep": "gutterDecoration", "name": "lineNumbers"}], "type": "plugins/supported", "name": "text_editor"}, "cs_syntax": {"resourceURL": "resources/cs_syntax/", "name": "cs_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#CSSyntax", "ep": "syntax", "fileexts": ["cs"], "name": "cs"}], "type": "plugins/thirdparty", "description": "C# syntax highlighter"}, "markdown": {"resourceURL": "resources/markdown/", "version": "1.0.0", "maintainers": [{"web": "http://blueskyonmars.com/", "name": "Kevin Dangoor", "email": "kid@blazingthings.com"}], "dependencies": {"markdown_js": "0.1.2"}, "testmodules": [], "provides": [{"description": "commands for working with markdown files", "ep": "command", "name": "markdown"}, {"description": "preview the HTML form of this markdown text", "pointer": "#preview", "ep": "command", "key": "ctrl_shift_p", "name": "markdown preview"}, {"description": "convert the selected text to HTML", "pointer": "#convert", "ep": "command", "name": "markdown convert"}], "licenses": [{"url": "http://www.mozilla.org/MPL/MPL-1.1.html", "type": "MPL"}, {"url": "http://creativecommons.org/licenses/GPL/2.0/", "type": "GPL"}, {"url": "http://creativecommons.org/licenses/LGPL/2.1/", "type": "LGPL"}], "type": "plugins/thirdparty", "name": "markdown"}, "less": {"resourceURL": "resources/less/", "description": "Leaner CSS", "contributors": [], "author": "Alexis Sellier <self@cloudhead.net>", "url": "http://lesscss.org", "version": "1.0.11", "dependencies": {}, "testmodules": [], "provides": [], "keywords": ["css", "parser", "lesscss", "browser"], "type": "plugins/thirdparty", "name": "less"}, "markdown_js": {"resourceURL": "resources/markdown_js/", "name": "markdown_js", "contributors": [{"web": "http://evilstreak.co.uk", "name": "Dominic Baggott", "email": "dominic.baggott@gmail.com"}, {"web": "http://ashberlin.com", "name": "Ash Berlin", "email": "ash_markdownjs@firemirror.com"}], "repositories": [{"url": "http://github.com/evilstreak/markdown-js", "type": "git"}], "bugs": "http://github.com/evilstreak/markdown-js/issues", "licenses": [{"url": "http://www.opensource.org/licenses/mit-license.php", "type": "MIT"}], "maintainers": [{"web": "http://evilstreak.co.uk", "name": "Dominic Baggott", "email": "dominic.baggott@gmail.com"}, {"web": "http://ashberlin.com", "name": "Ash Berlin", "email": "ash_markdownjs@firemirror.com"}], "version": "0.1.2", "testmodules": [], "keywords": ["markdown", "text processing"], "type": "plugins/thirdparty", "description": "A Markdown parser for javascript"}, "diff_syntax": {"resourceURL": "resources/diff_syntax/", "name": "diff_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#DiffSyntax", "ep": "syntax", "fileexts": ["diff", "patch"], "name": "diff"}], "type": "plugins/supported", "description": "Diff syntax highlighter"}, "theme_manager_base": {"resourceURL": "resources/theme_manager_base/", "name": "theme_manager_base", "share": true, "environments": {"main": true}, "dependencies": {}, "testmodules": [], "provides": [{"description": "(Less)files holding the CSS style information for the UI.", "params": [{"required": true, "name": "url", "description": "Name of the ThemeStylesFile - can also be an array of files."}], "ep": "extensionpoint", "name": "themestyles"}, {"description": "Event: Notify when the theme(styles) changed.", "params": [{"required": true, "name": "pointer", "description": "Function that is called whenever the theme is changed."}], "ep": "extensionpoint", "name": "themeChange"}, {"indexOn": "name", "description": "A theme is a way change the look of the application.", "params": [{"required": false, "name": "url", "description": "Name of a ThemeStylesFile that holds theme specific CSS rules - can also be an array of files."}, {"required": true, "name": "pointer", "description": "Function that returns the ThemeData"}], "ep": "extensionpoint", "name": "theme"}], "type": "plugins/supported", "description": "Defines extension points required for theming"}, "keyboard": {"resourceURL": "resources/keyboard/", "description": "Keyboard shortcuts", "dependencies": {"canon": "0.0", "settings": "0.0"}, "testmodules": ["tests/testKeyboard"], "provides": [{"description": "A keymapping defines how keystrokes are interpreted.", "params": [{"required": true, "name": "states", "description": "Holds the states and all the informations about the keymapping. See docs: pluginguide/keymapping"}], "ep": "extensionpoint", "name": "keymapping"}], "type": "plugins/supported", "name": "keyboard"}, "edit_session": {"resourceURL": "resources/edit_session/", "description": "Ties together the files being edited with the views on screen", "dependencies": {"events": "0.0.0"}, "testmodules": ["tests/testSession"], "provides": [{"action": "call", "pointer": "#createSession", "ep": "factory", "name": "session"}], "type": "plugins/supported", "name": "edit_session"}, "completion": {"resourceURL": "resources/completion/", "description": "Code completion support", "dependencies": {"jquery": "0.0.0", "ctags": "0.0.0", "rangeutils": "0.0.0", "canon": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "provides": [{"indexOn": "name", "description": "Code completion support for specific languages", "ep": "extensionpoint", "name": "completion"}, {"description": "Accept the chosen completion", "key": ["return", "tab"], "predicates": {"completing": true}, "pointer": "controller#completeCommand", "ep": "command", "name": "complete"}, {"description": "Abandon the completion", "key": "escape", "predicates": {"completing": true}, "pointer": "controller#completeCancelCommand", "ep": "command", "name": "complete cancel"}, {"description": "Choose the completion below", "key": "down", "predicates": {"completing": true}, "pointer": "controller#completeDownCommand", "ep": "command", "name": "complete down"}, {"description": "Choose the completion above", "key": "up", "predicates": {"completing": true}, "pointer": "controller#completeUpCommand", "ep": "command", "name": "complete up"}], "type": "plugins/supported", "name": "completion"}, "undomanager": {"resourceURL": "resources/undomanager/", "description": "Manages undoable events", "testmodules": ["tests/testUndomanager"], "provides": [{"pointer": "#undoManagerCommand", "ep": "command", "key": ["ctrl_shift_z"], "name": "redo"}, {"pointer": "#undoManagerCommand", "ep": "command", "key": ["ctrl_z"], "name": "undo"}], "type": "plugins/supported", "name": "undomanager"}, "standard_syntax": {"resourceURL": "resources/standard_syntax/", "description": "Easy-to-use basis for syntax engines", "environments": {"worker": true}, "dependencies": {"syntax_worker": "0.0.0", "syntax_directory": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "type": "plugins/supported", "name": "standard_syntax"}, "rangeutils": {"testmodules": ["tests/test"], "type": "plugins/supported", "resourceURL": "resources/rangeutils/", "description": "Utility functions for dealing with ranges of text", "name": "rangeutils"}, "stylesheet": {"resourceURL": "resources/stylesheet/", "name": "stylesheet", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#CSSSyntax", "ep": "syntax", "fileexts": ["css", "less"], "name": "css"}], "type": "plugins/supported", "description": "CSS syntax highlighter"}, "html": {"resourceURL": "resources/html/", "name": "html", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#HTMLSyntax", "ep": "syntax", "fileexts": ["htm", "html"], "name": "html"}], "type": "plugins/supported", "description": "HTML syntax highlighter"}, "js_syntax": {"resourceURL": "resources/js_syntax/", "name": "js_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0", "settings": "0.0.0"}, "testmodules": [], "provides": [{"settings": ["specialmodules"], "pointer": "#JSSyntax", "ep": "syntax", "fileexts": ["js", "json"], "name": "js"}, {"description": "Regex that matches special modules", "defaultValue": "^jetpack\\.[^\"']+", "type": "text", "ep": "setting", "name": "specialmodules"}], "type": "plugins/supported", "description": "JavaScript syntax highlighter"}, "ctags": {"resourceURL": "resources/ctags/", "description": "Reads and writes tag files", "dependencies": {"traits": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "type": "plugins/supported", "name": "ctags"}, "twilight_theme": {"resourceURL": "resources/twilight_theme/", "description": "Clone of the Twilight theme from Textmate for Bespin", "dependencies": {"theme_manager": "0.0.0"}, "testmodules": [], "provides": [{"url": ["theme.less"], "description": "A twilight theme", "pointer": "index#twilightTheme", "ep": "theme", "name": "twilight"}], "type": "plugins/thirdparty", "name": "twilight_theme"}, "python": {"resourceURL": "resources/python/", "name": "python", "environments": {"worker": true}, "dependencies": {"syntax_manager": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#PySyntax", "ep": "syntax", "fileexts": ["py"], "name": "py"}], "type": "plugins/thirdparty", "description": "Python syntax highlighter"}, "c_cpp_syntax": {"resourceURL": "resources/c_cpp_syntax/", "name": "c_cpp_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#C_CPPSyntax", "ep": "syntax", "fileexts": ["c", "cpp"], "name": "c_cpp"}], "type": "plugins/thirdparty", "description": "C/C++ syntax highlighter"}, "theme_manager": {"resourceURL": "resources/theme_manager/", "name": "theme_manager", "share": true, "environments": {"main": true, "worker": false}, "dependencies": {"theme_manager_base": "0.0.0", "settings": "0.0.0", "events": "0.0.0", "less": "0.0.0"}, "testmodules": [], "provides": [{"unregister": "themestyles#unregisterThemeStyles", "register": "themestyles#registerThemeStyles", "ep": "extensionhandler", "name": "themestyles"}, {"unregister": "index#unregisterTheme", "register": "index#registerTheme", "ep": "extensionhandler", "name": "theme"}, {"defaultValue": "standard", "description": "The theme plugin's name to use. If set to 'standard' no theme will be used", "type": "text", "ep": "setting", "name": "theme"}, {"pointer": "#appLaunched", "ep": "appLaunched"}], "type": "plugins/supported", "description": "Handles colors in Bespin"}, "whitetheme": {"resourceURL": "resources/whitetheme/", "description": "Provides a white theme for Bespin", "dependencies": {"theme_manager": "0.0.0"}, "testmodules": [], "provides": [{"url": ["theme.less"], "description": "A basic white theme", "pointer": "index#whiteTheme", "ep": "theme", "name": "white"}], "type": "plugins/supported", "name": "whitetheme"}, "php_syntax": {"resourceURL": "resources/php_syntax/", "name": "php_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#PHPSyntax", "ep": "syntax", "fileexts": ["php", "phtml"], "name": "php"}], "type": "plugins/thirdparty", "description": "PHP syntax highlighter"}, "ruby_syntax": {"resourceURL": "resources/ruby_syntax/", "name": "ruby_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#RubySyntax", "ep": "syntax", "fileexts": ["rb", "ruby"], "name": "rb"}], "type": "plugins/thirdparty", "description": "Ruby syntax highlighter"}, "jquery": {"testmodules": [], "resourceURL": "resources/jquery/", "name": "jquery", "type": "plugins/thirdparty"}, "java_syntax": {"resourceURL": "resources/java_syntax/", "name": "java_syntax", "environments": {"worker": true}, "dependencies": {"standard_syntax": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#JavaSyntax", "ep": "syntax", "fileexts": ["java"], "name": "java"}], "type": "plugins/thirdparty", "description": "Java syntax highlighter"}, "embedded": {"testmodules": [], "dependencies": {"theme_manager": "0.0.0", "text_editor": "0.0.0", "appconfig": "0.0.0", "edit_session": "0.0.0", "screen_theme": "0.0.0"}, "resourceURL": "resources/embedded/", "name": "embedded", "type": "plugins/supported"}, "sql_syntax": {"resourceURL": "resources/sql_syntax/", "name": "sql_syntax", "environments": {"worker": true}, "dependencies": {"syntax_manager": "0.0.0"}, "testmodules": [], "provides": [{"pointer": "#SQLSyntax", "ep": "syntax", "fileexts": ["sql"], "name": "sql"}], "type": "plugins/thirdparty", "description": "Python syntax highlighter"}, "appconfig": {"resourceURL": "resources/appconfig/", "description": "Instantiates components and displays the GUI based on configuration.", "dependencies": {"jquery": "0.0.0", "canon": "0.0.0", "underscore": "0.0.0", "settings": "0.0.0"}, "testmodules": [], "provides": [{"description": "Event: Fired when the app is completely launched.", "ep": "extensionpoint", "name": "appLaunched"}], "type": "plugins/supported", "name": "appconfig"}, "syntax_worker": {"resourceURL": "resources/syntax_worker/", "description": "Coordinates multiple syntax engines", "environments": {"worker": true}, "dependencies": {"syntax_directory": "0.0.0", "underscore": "0.0.0"}, "testmodules": [], "type": "plugins/supported", "name": "syntax_worker"}, "screen_theme": {"resourceURL": "resources/screen_theme/", "description": "Bespins standard theme basePlugin", "dependencies": {"theme_manager": "0.0.0"}, "testmodules": [], "provides": [{"url": ["theme.less"], "ep": "themestyles"}, {"defaultValue": "@global_font", "ep": "themevariable", "name": "container_font"}, {"defaultValue": "@global_font_size", "ep": "themevariable", "name": "container_font_size"}, {"defaultValue": "@global_container_background", "ep": "themevariable", "name": "container_bg"}, {"defaultValue": "@global_color", "ep": "themevariable", "name": "container_color"}, {"defaultValue": "@global_line_height", "ep": "themevariable", "name": "container_line_height"}, {"defaultValue": "@global_pane_background", "ep": "themevariable", "name": "pane_bg"}, {"defaultValue": "@global_pane_border_radius", "ep": "themevariable", "name": "pane_border_radius"}, {"defaultValue": "@global_form_font", "ep": "themevariable", "name": "form_font"}, {"defaultValue": "@global_form_font_size", "ep": "themevariable", "name": "form_font_size"}, {"defaultValue": "@global_form_line_height", "ep": "themevariable", "name": "form_line_height"}, {"defaultValue": "@global_form_color", "ep": "themevariable", "name": "form_color"}, {"defaultValue": "@global_form_text_shadow", "ep": "themevariable", "name": "form_text_shadow"}, {"defaultValue": "@global_pane_link_color", "ep": "themevariable", "name": "pane_a_color"}, {"defaultValue": "@global_font", "ep": "themevariable", "name": "pane_font"}, {"defaultValue": "@global_font_size", "ep": "themevariable", "name": "pane_font_size"}, {"defaultValue": "@global_pane_text_shadow", "ep": "themevariable", "name": "pane_text_shadow"}, {"defaultValue": "@global_pane_h1_font", "ep": "themevariable", "name": "pane_h1_font"}, {"defaultValue": "@global_pane_h1_font_size", "ep": "themevariable", "name": "pane_h1_font_size"}, {"defaultValue": "@global_pane_h1_color", "ep": "themevariable", "name": "pane_h1_color"}, {"defaultValue": "@global_font_size * 1.8", "ep": "themevariable", "name": "pane_line_height"}, {"defaultValue": "@global_pane_color", "ep": "themevariable", "name": "pane_color"}, {"defaultValue": "@global_text_shadow", "ep": "themevariable", "name": "pane_text_shadow"}, {"defaultValue": "@global_font", "ep": "themevariable", "name": "button_font"}, {"defaultValue": "@global_font_size", "ep": "themevariable", "name": "button_font_size"}, {"defaultValue": "@global_button_color", "ep": "themevariable", "name": "button_color"}, {"defaultValue": "@global_button_background", "ep": "themevariable", "name": "button_bg"}, {"defaultValue": "@button_bg - #063A27", "ep": "themevariable", "name": "button_bg2"}, {"defaultValue": "@button_bg - #194A5E", "ep": "themevariable", "name": "button_border"}, {"defaultValue": "@global_control_background", "ep": "themevariable", "name": "control_bg"}, {"defaultValue": "@global_control_color", "ep": "themevariable", "name": "control_color"}, {"defaultValue": "@global_control_border", "ep": "themevariable", "name": "control_border"}, {"defaultValue": "@global_control_border_radius", "ep": "themevariable", "name": "control_border_radius"}, {"defaultValue": "@global_control_active_background", "ep": "themevariable", "name": "control_active_bg"}, {"defaultValue": "@global_control_active_border", "ep": "themevariable", "name": "control_active_border"}, {"defaultValue": "@global_control_active_color", "ep": "themevariable", "name": "control_active_color"}, {"defaultValue": "@global_control_active_inset_color", "ep": "themevariable", "name": "control_active_inset_color"}], "type": "plugins/supported", "name": "screen_theme"}});;
 });
 })();
 /* ***** BEGIN LICENSE BLOCK *****
