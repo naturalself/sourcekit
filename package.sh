@@ -1,2 +1,2 @@
 #!/bin/sh
-git archive --format=zip --prefix=chromepad/ -o chromepad.zip $1
+git archive --format=zip --prefix=sourcekit/ -o sourcekit.zip $1
