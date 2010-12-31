@@ -1,3 +1,11 @@
+jQuery.fn.sort = function() {
+   return this.pushStack( [].sort.apply( this, arguments ), []);
+};
+
+function sortFiles(a,b){
+    return a.path > b.path ? 1 : -1;
+};
+
 var Sidebar = function(filelist, dropbox) {
 	var _dropbox = dropbox;
 	var _filelist = filelist;
@@ -7,26 +15,33 @@ var Sidebar = function(filelist, dropbox) {
 			EventBroker.subscribe("load.sidebar", (function(event, parentNode, path) {
 				dropbox.getDirectoryContents(path, function(data) {
 					$("#" + $(parentNode).attr('id') + " ul").empty();
-					$.each(data.contents, function(index, file) {
+					
+					var contents = data.contents.sort(function(a, b) {
+						var aTmp = ((a.is_dir) ? "0" : "1") + a.path.toLowerCase();
+						var bTmp = ((b.is_dir) ? "0" : "1") + b.path.toLowerCase();
+						return (aTmp > bTmp) ? 1 : -1;
+					});
+					
+					$.each(contents, function(index, file) {
 						if (file.is_dir) {
-							_filelist.jstree("create_node", parentNode, "inside", {
+							_filelist.jstree("create_node", parentNode, "last", {
 								data: file.path.match(/([^\\\/]+)$/)[1],
 								state: "closed",
 								attr: {
 									id: file.path.replace(/\//g, '_')
 								}
 							});
-					
+
 							_filelist.jstree("open_node", parentNode);
 						} else {
-							_filelist.jstree("create_node", parentNode, "inside", {
+							_filelist.jstree("create_node", parentNode, "last", {
 								data: file.path.match(/([^\\\/]+)$/)[1],
 								state: null,
 								children: null,
 								attr: {
 									id: file.path.replace(/\//g, '_')
 								}
-							});
+							});							
 						}
 					});
 
@@ -37,7 +52,7 @@ var Sidebar = function(filelist, dropbox) {
 			// set up jstree
 			_filelist.jstree({
 				core: { animation: 0 },
-				plugins : [ "themes", "json_data", "ui"],
+				plugins : [ "themes", "json_data", "ui" ],
 				themes : {
 					"theme" : "apple",
 					"dots" : false,

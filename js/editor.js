@@ -5,7 +5,16 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 	var _editor = editor;
 	var _statusBar = statusBar;
 	
-	var _acceptedMimeTypes = {"text/plain": "", "text/html": "html", "application/octet-stream": "", "application/javascript": "js", "text/x-python": "py", "text/x-ruby": "rb"};
+	var _acceptedMimeTypes = {"text/plain": "", 
+			"text/html": "html", 
+			"application/octet-stream": "", 
+			"application/javascript": "js", 
+			"text/x-python": "py", 
+			"text/x-ruby": "rb",
+			"text/php": "php",
+			"text/x-csrc": "c_cpp",
+			"text/x-c++src": "c_cpp",
+			"text/x-java": "java"};
 	var _fileExtensions = {"md": "markdown", "json": "js", "rb": "rb", "c": "c_cpp", "cpp": "c_cpp", "py": "py", "php": "php", "phtml": "php"};
 	var _editorLibrary;
 	
@@ -40,7 +49,6 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 				this.path = path;
 
 				_dropbox.getMetadata(this.path, (function(data) {
-					console.log(data.mime_type);
 					if (_acceptedMimeTypes[data.mime_type] != null) {
 						var syntax = _acceptedMimeTypes[data.mime_type];
 					
@@ -56,7 +64,6 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 							if (data) {
 								document.title = this.path;
 								_editorLibrary.editor.value = data;
-								console.log(syntax);
 								_editorLibrary.editor.syntax = syntax;
 							} else {
 								_editorLibrary.editor.value = "";

@@ -1,10 +1,17 @@
 SourceKit
 =========
-SourceKit is an editor that fits inside of a modern browser. It is meant to be quick and dirty for those text editing tasks that needs to be done relatively close (context or time) to the browser.
+A Textmate like lightweight programmer's text editor right inside of Chrome. It saves files directly to Dropbox, so if you have the Dropbox sync software installed, the changes will appear locally as if you did so with a text editor! Changes will be stored remotely so naturally this same extension will pull up the same copy of the file everywhere!
 
-Technical Details
------------------
-This project embeds an instance of the Mozilla SkyWriter (used to be called, Bespin) text editing component. 
+Embedded is the excellent Mozilla Bespin (SkyWriter) text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.
 
-This is an alpha and, as such, many things will change over the course of the coming weeks!
+CHANGELOG
+0.3.4
+- Added a syntax highlighting support for many different languages including: C/C++, Ruby, Python, PHP, HTML, JavaScript, Java
+- The file list is sorted now (on open)
 
+0.3.3 
+- Applied to Dropbox for production application status! (pending approval!!!)
+- Renamed to SourceKit - too many ChromePad's and too Chrome specific
+
+0.3.1 
+- First public release!
