@@ -1,4 +1,4 @@
-var ModernDropbox = function(consumerKey, consumerSecret) {
+var Dropbox = function(consumerKey, consumerSecret) {
 	// Constructor / Private
 	var _consumerKey = consumerKey;
 	var _consumerSecret = consumerSecret;

@@ -3,8 +3,10 @@
   <head>
 	  <title>SourceKit</title>
 	  <link id="bespin_base" href="bespin/"/>
-	  <link rel="stylesheet" href="css/application.css" type="text/css" media="screen" title="no title" charset="utf-8">
 
+      <link rel="stylesheet" href="css/smoothness/jquery-ui-1.8.7.custom.css" type="text/css" media="screen" title="no title" charset="utf-8">
+            <link rel="stylesheet" href="css/application.css" type="text/css" media="screen" title="no title" charset="utf-8">
+      
 	  <script src="bespin/BespinEmbedded.js"></script>
 	  
 	  <script src="js/jquery/jquery.min.js"></script>
@@ -34,7 +36,14 @@
 		</div>
 		<div class="ui-layout-center" id="main">
 			<div class="wrapper">
-				<div class="bespin" id="editor" data-bespinoptions='{ "settings": { "tabstop": 4 }, "stealFocus": true }'></div>
+			    <div id="tabs">
+			        <ul>
+			            <li><a href="#tabs-1">Nunc tincidunt</a> <span class="ui-icon ui-icon-close">Remove Tab</span></li>
+		            </ul>
+			        <div id="tabs-1">
+				        <div class="bespin" id="editor" data-bespinoptions='{ "settings": { "tabstop": 4 }, "stealFocus": true }'></div>
+				    </div>
+				</div>
 				<div class="push"></div>
 			</div>
 			<footer><button id="save"><img src="images/save.png" align="absmiddle"/> Save</button></footer>

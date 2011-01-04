@@ -38,7 +38,25 @@ button {
 	overflow: hidden;
 }
 
-div {
+#tabs { 
+	margin: 0;
+	padding: 0;
+	border: none;
+	font-size: 10px;
+}
+
+#tabs li .ui-icon-close { 
+	float: left; 
+	margin: 0.4em 0.2em 0 0; 
+	cursor: pointer; 
+}
+
+#tabs div {
+	margin: 0;
+	padding: 0;
+}
+
+div.editor {
 	overflow: hidden;
 }
 
@@ -73,5 +91,5 @@ footer button {
 
 footer button img {
 	border: none;
-	
 }
+
