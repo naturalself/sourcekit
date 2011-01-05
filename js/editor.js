@@ -11,6 +11,10 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 	
 	var _buffers = [];
 	
+	var _bufferPaths = [];
+	
+	var _bufferMimeTypes = [];
+	
 	var _currentBufferIndex = 0;
 	
 	var _acceptedMimeTypes = {
@@ -38,8 +42,30 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 	var _editorLibrary;
 	
 	return {
+		debug: function() {
+			console.log(_buffers);
+			console.log(_currentBufferIndex);
+			console.log(_bufferPaths);
+			console.log(_bufferMimeTypes);
+		},
 		path: "",
 		initialize: function() {
+			$(_tabs).tabs({
+				show: (function(event, ui) {
+					if (ui.index > 0) {
+						$(_editor).css("display", "block");
+						$(ui.panel).append($(_editor));
+						EventBroker.publish("show_buffer.editor", [ui.index]);
+					}
+				}).bind(this),
+				tabTemplate: '<li><a href="#{href}">#{label}</a> <span class="ui-icon ui-icon-close">Remove Tab</span></li>'
+			});
+		
+			$(_tabs).children("span.ui-icon-close").live("click", function() {
+				var index = $("li", $("#tabs")).index($(this).parent());
+				$(_tabs).tabs("remove", index);
+			});
+			
 			_editorLibrary = _editor.get(0).bespin;
 
 			// Hooking up global events			
@@ -66,27 +92,21 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 			
 			EventBroker.subscribe('load.editor', (function(event, path) {
 				this.path = path;
-				_buffers[$(_tabs).tabs("options", "selected")] = _editorLibrary.editor.value;
+				$(_tabs).tabs("add", "#tabs-" + (_currentBufferIndex + 1), this.path.match(/[^\/]*$/)[0]);
+				// select new one
 				_dropbox.getMetadata(this.path, (function(data) {
-					if (_acceptedMimeTypes[data.mime_type] != null) {
-						var syntax = _acceptedMimeTypes[data.mime_type];
+					_bufferPaths[_currentBufferIndex + 1] = path;
+					_bufferMimeTypes[_currentBufferIndex + 1] = data.mime_type;
 					
-						if (data.mime_type == "application/octet-stream") {
-							for (extension in _fileExtensions) {
-								if (this.path.match('\.' + extension + '$')) {
-									syntax = _fileExtensions[extension];
-								}
-							}
-						}
-						
+					if (_acceptedMimeTypes[data.mime_type] != null) {
 						_dropbox.getFileContents(this.path, (function(data) {
 							if (data) {
 								document.title = this.path;
-								_editorLibrary.editor.value = data;
-								_editorLibrary.editor.syntax = syntax;
+								_buffers[_currentBufferIndex + 1] = data;
 							} else {
-								_editorLibrary.editor.value = "";
+								_buffers[_currentBufferIndex + 1] = "";
 							}
+							EventBroker.publish("show_buffer.editor", _currentBufferIndex + 1);
 						}).bind(this));
 					} else {
 						Notification.notify("images/close.png", "Error loading file", "Not a supported file format!");
@@ -94,11 +114,34 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 				}).bind(this));
 			}).bind(this));
 			
-			EventBroker.subscribe('select_tab.editor', (function(event, index) {
-				_buffers[_currentBufferIndex] = _editorLibrary.editor.value;
-
+			EventBroker.subscribe('show_buffer.editor', (function(event, index) {
+				var syntax = _acceptedMimeTypes[_bufferMimeTypes[index]];
+				
+				if (_bufferMimeTypes[index] == "application/octet-stream") {
+					for (extension in _fileExtensions) {
+						if (_bufferPaths[index].match('\.' + extension + '$')) {
+							syntax = _fileExtensions[extension];
+						}
+					}
+				}
+				
+				console.log(_buffers);
+				if (_editorLibrary.editor.value != null) {
+					_buffers[_currentBufferIndex] = _editorLibrary.editor.value;
+				} else {
+					_buffers[_currentBufferIndex] = "";
+				}
+				console.log(_buffers);
+				if (_buffers[index] != null) {
+					_editorLibrary.editor.value = _buffers[index];
+				} else {
+					_editorLibrary.editor.value = "";
+				}
+				console.log(_buffers);
 				$(_tabs).tabs("select", index);
-				_editorLibrary.editor.value = buffers[index];
+			
+				_editorLibrary.editor.syntax = syntax;
+				
 				_currentBufferIndex = index;
 			}).bind(this));
 			
@@ -139,7 +182,8 @@ $(document).ready(function() {
 		editor.initialize();
 	
 		$("#save").click(function() {
-			EventBroker.publish("save.editor");
+//			EventBroker.publish("save.editor");
+			editor.debug();
 		});
 	}
 });
