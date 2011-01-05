@@ -1,11 +1,20 @@
-var Editor = function(layout, editor, statusBar, dropbox) {
+var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 	var _dropbox = dropbox;
 	
 	var _layout = layout;
+	
 	var _editor = editor;
+	
 	var _statusBar = statusBar;
 	
-	var _acceptedMimeTypes = {"text/plain": "", 
+	var _tabs = tabs;
+	
+	var _buffers = [];
+	
+	var _currentBufferIndex = 0;
+	
+	var _acceptedMimeTypes = {
+			"text/plain": "", 
 			"text/html": "html", 
 			"application/octet-stream": "", 
 			"application/javascript": "js", 
@@ -15,7 +24,17 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 			"text/x-csrc": "c_cpp",
 			"text/x-c++src": "c_cpp",
 			"text/x-java": "java"};
-	var _fileExtensions = {"md": "markdown", "json": "js", "rb": "rb", "c": "c_cpp", "cpp": "c_cpp", "py": "py", "php": "php", "phtml": "php"};
+			
+	var _fileExtensions = {
+			"md": "markdown", 
+			"json": "js", 
+			"rb": "rb", 
+			"c": "c_cpp", 
+			"cpp": "c_cpp", 
+			"py": "py", 
+			"php": "php", 
+			"phtml": "php"};
+			
 	var _editorLibrary;
 	
 	return {
@@ -23,7 +42,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 		initialize: function() {
 			_editorLibrary = _editor.get(0).bespin;
 
-			// Hooking up global events
+			// Hooking up global events			
 			EventBroker.subscribe('new.editor', (function(event, defaultPath) {
 				if (defaultPath == null) {
 					defaultPath = "/";
@@ -47,7 +66,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 			
 			EventBroker.subscribe('load.editor', (function(event, path) {
 				this.path = path;
-
+				_buffers[$(_tabs).tabs("options", "selected")] = _editorLibrary.editor.value;
 				_dropbox.getMetadata(this.path, (function(data) {
 					if (_acceptedMimeTypes[data.mime_type] != null) {
 						var syntax = _acceptedMimeTypes[data.mime_type];
@@ -75,12 +94,22 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 				}).bind(this));
 			}).bind(this));
 			
+			EventBroker.subscribe('select_tab.editor', (function(event, index) {
+				_buffers[_currentBufferIndex] = _editorLibrary.editor.value;
+
+				$(_tabs).tabs("select", index);
+				_editorLibrary.editor.value = buffers[index];
+				_currentBufferIndex = index;
+			}).bind(this));
+			
 			EventBroker.subscribe('redraw.editor', (function(event) {
 				_layout.height($(window).height());
 
 				_editor.width(_layout.width());
-				_editor.height(_layout.height() - _statusBar.height());
-	
+				_editor.height(_layout.height() - _statusBar.height() - _tabs.children("ul").height());
+
+				_tabs.height(_layout.height() - _statusBar.height());
+
 				_editorLibrary.dimensionsChanged();
 			}).bind(this));
 			
@@ -105,7 +134,7 @@ var Editor = function(layout, editor, statusBar, dropbox) {
 $(document).ready(function() {
 	var bgPage = chrome.extension.getBackgroundPage();
 	var dropbox = bgPage.dropbox;
-	var editor = new Editor($("#main"), $("#editor"), $("#main footer"), dropbox);
+	var editor = new Editor($("#main"), $("#editor"), $("#main footer"), $("#tabs"), dropbox);
 	window.onBespinLoad = function() {
 		editor.initialize();
 	

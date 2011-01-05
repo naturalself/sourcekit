@@ -5,8 +5,6 @@ body {
 	 font-family: "Helvetica Neue", "ubuntu", "Segoe UI", "Arial", sans-serif;
 }
 
-div.bespin { }
-
 div#status-bar {
 	height: 18px;
 	background: #eee;
@@ -38,11 +36,18 @@ button {
 	overflow: hidden;
 }
 
+#tabs .ui-corner-all {
+	border-radius: 0px;
+	border: none;
+	border-bottom: 1px #999 solid;
+}
+
 #tabs { 
 	margin: 0;
 	padding: 0;
 	border: none;
 	font-size: 10px;
+	height: 100%;
 }
 
 #tabs li .ui-icon-close { 
@@ -56,8 +61,9 @@ button {
 	padding: 0;
 }
 
-div.editor {
+div#main {
 	overflow: hidden;
+	z-index: 100;
 }
 
 .wrapper {
@@ -66,10 +72,15 @@ div.editor {
 	min-height: 100%;
 	height: auto !important;
 	overflow: hidden;
+	z-index: 100;
 }
 
 footer, .push {
+	position: fixed;
+	width: 100%;
+	display: block;
 	height: 23px;
+	z-index: 101 !important;
 }
 
 footer {
