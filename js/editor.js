@@ -39,7 +39,9 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 			"cpp": "c_cpp", 
 			"py": "py", 
 			"php": "php", 
-			"phtml": "php"};
+			"phtml": "php",
+			"cs": "cs",
+			"coffee", "coffee"};
 			
 	var _editorLibrary;
 	
@@ -126,8 +128,8 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 				_dropbox.getMetadata(this.path, (function(data) {
 					_bufferPaths[index] = path;
 					_bufferMimeTypes[index] = data.mime_type;
-					_bufferTabIds[index] = this.path.replace(/[\/\.]/g, '_');
-					
+					_bufferTabIds[index] = this.path.replace(/[\/ \.]/g, '_');
+	console.log(data.mime_type);
 					if (_acceptedMimeTypes[data.mime_type] != null) {
 						_dropbox.getFileContents(this.path, (function(data) {
 							if (data) {
