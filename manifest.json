@@ -3,7 +3,7 @@
   "version": "0.3.5",
   "incognito": "split",
   "icons": {
-    "16": "icon_16.png"
+    "16": "icon_16.png",
     "128": "icon_128.png" 
   },
   "app": {
