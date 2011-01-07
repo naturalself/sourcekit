@@ -15,7 +15,9 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 	
 	var _bufferMimeTypes = [];
 	
-	var _currentBufferIndex = 0;
+	var _bufferTabIds = [];
+	
+	var _currentBufferIndex = null;
 	
 	var _acceptedMimeTypes = {
 			"text/plain": "", 
@@ -52,18 +54,38 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 		initialize: function() {
 			$(_tabs).tabs({
 				show: (function(event, ui) {
-					if (ui.index > 0) {
-						$(_editor).css("display", "block");
-						$(ui.panel).append($(_editor));
-						EventBroker.publish("show_buffer.editor", [ui.index]);
-					}
+					this.path = _bufferPaths[ui.index];
+					$(_editor).css("display", "block");
+					$(ui.panel).append($(_editor));
+
+					EventBroker.publish("show_buffer.editor", [ui.index]);
+					EventBroker.publish("redraw.editor");
 				}).bind(this),
-				tabTemplate: '<li><a href="#{href}">#{label}</a> <span class="ui-icon ui-icon-close">Remove Tab</span></li>'
+				tabTemplate: '<li><a href="#{href}">#{label}</a><span class="ui-icon ui-icon-close">Remove Tab</span></li>'
 			});
-		
-			$(_tabs).children("span.ui-icon-close").live("click", function() {
-				var index = $("li", $("#tabs")).index($(this).parent());
+
+			$('#' + $(_tabs).attr('id') + ' span.ui-icon-close').live("click", function() {
+				var index = $("li", $(_tabs)).index($(this).parent());
 				$(_tabs).tabs("remove", index);
+
+				if (_buffers.length > 0) {
+					_bufferPaths.splice(index, 1);
+					_buffers.splice(index, 1);
+					_bufferMimeTypes.splice(index, 1);
+					_bufferTabIds.splice(index, 1);
+				
+					if (_currentBufferIndex > 0) {
+						_currentBufferIndex--;
+					} else {
+						_currentBufferIndex = 0;
+					}
+				} else {
+					_bufferPaths = [];
+					_buffers = [];
+					_bufferMimeTypes = [];
+					_bufferTabIds = [];
+					_currentBufferIndex = null;
+				}
 			});
 			
 			_editorLibrary = _editor.get(0).bespin;
@@ -92,21 +114,30 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 			
 			EventBroker.subscribe('load.editor', (function(event, path) {
 				this.path = path;
-				$(_tabs).tabs("add", "#tabs-" + (_currentBufferIndex + 1), this.path.match(/[^\/]*$/)[0]);
+				
+				var index = 0;
+				if (_currentBufferIndex != null) {
+					index = _currentBufferIndex + 1;
+				}
+				
 				// select new one
 				_dropbox.getMetadata(this.path, (function(data) {
-					_bufferPaths[_currentBufferIndex + 1] = path;
-					_bufferMimeTypes[_currentBufferIndex + 1] = data.mime_type;
+					_bufferPaths[index] = path;
+					_bufferMimeTypes[index] = data.mime_type;
+					_bufferTabIds[index] = this.path.replace(/[\/\.]/g, '_');
 					
 					if (_acceptedMimeTypes[data.mime_type] != null) {
 						_dropbox.getFileContents(this.path, (function(data) {
 							if (data) {
 								document.title = this.path;
-								_buffers[_currentBufferIndex + 1] = data;
+								_buffers[index] = data;
 							} else {
-								_buffers[_currentBufferIndex + 1] = "";
+								_buffers[index] = "";
 							}
-							EventBroker.publish("show_buffer.editor", _currentBufferIndex + 1);
+							
+							$(_tabs).tabs("add", "#tabs-" + _bufferTabIds[index], this.path.match(/[^\/]*$/)[0]);
+							
+							$(_tabs).tabs("select", index);
 						}).bind(this));
 					} else {
 						Notification.notify("images/close.png", "Error loading file", "Not a supported file format!");
@@ -125,24 +156,26 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 					}
 				}
 				
-				console.log(_buffers);
-				if (_editorLibrary.editor.value != null) {
-					_buffers[_currentBufferIndex] = _editorLibrary.editor.value;
-				} else {
-					_buffers[_currentBufferIndex] = "";
+				if (_currentBufferIndex != null) {
+					if (_editorLibrary.editor.value != null) {
+						_buffers[_currentBufferIndex] = _editorLibrary.editor.value;
+					} else {
+						_buffers[_currentBufferIndex] = "";
+					}
 				}
-				console.log(_buffers);
+				
 				if (_buffers[index] != null) {
 					_editorLibrary.editor.value = _buffers[index];
 				} else {
 					_editorLibrary.editor.value = "";
 				}
-				console.log(_buffers);
+				
 				$(_tabs).tabs("select", index);
 			
 				_editorLibrary.editor.syntax = syntax;
 				
 				_currentBufferIndex = index;
+				
 			}).bind(this));
 			
 			EventBroker.subscribe('redraw.editor', (function(event) {
@@ -161,12 +194,12 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 			}).bind(this));
 		
 			// Set up a keydown event catcher for the editor (e.g. saving)
-			_editor.keydown(function(event) {
+			$(window).bind('keydown', (function(event) {
 				if (event.metaKey && event.keyCode == 83) { // Ctrl or Meta-S
 					EventBroker.publish("save.editor");
 					event.preventDefault();
 				}
-			});
+			}));
 			
 			EventBroker.publish("ready.editor");
 		}
@@ -182,8 +215,7 @@ $(document).ready(function() {
 		editor.initialize();
 	
 		$("#save").click(function() {
-//			EventBroker.publish("save.editor");
-			editor.debug();
+			EventBroker.publish("save.editor");
 		});
 	}
 });
