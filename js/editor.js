@@ -41,7 +41,7 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 			"php": "php", 
 			"phtml": "php",
 			"cs": "cs",
-			"coffee", "coffee"};
+			"coffee": "coffee"};
 			
 	var _editorLibrary;
 	
