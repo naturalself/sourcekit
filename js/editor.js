@@ -50,6 +50,8 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 		},
 		path: "",
 		initialize: function() {
+			_buffers[0] = "";
+			
 			$(_tabs).tabs({
 				show: (function(event, ui) {
 					if (ui.index > 0) {
@@ -92,21 +94,26 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 			
 			EventBroker.subscribe('load.editor', (function(event, path) {
 				this.path = path;
-				$(_tabs).tabs("add", "#tabs-" + (_currentBufferIndex + 1), this.path.match(/[^\/]*$/)[0]);
+				bufferIndex = _currentBufferIndex + 1;
+				$(_tabs).tabs("add", "#tabs-" + bufferIndex, this.path.match(/[^\/]*$/)[0]);
+				console.log(_buffers);
 				// select new one
 				_dropbox.getMetadata(this.path, (function(data) {
-					_bufferPaths[_currentBufferIndex + 1] = path;
-					_bufferMimeTypes[_currentBufferIndex + 1] = data.mime_type;
-					
+					_bufferPaths[bufferIndex] = path;
+					console.log(_buffers);
+					_bufferMimeTypes[bufferIndex] = data.mime_type;
+					console.log(_buffers);
 					if (_acceptedMimeTypes[data.mime_type] != null) {
 						_dropbox.getFileContents(this.path, (function(data) {
 							if (data) {
 								document.title = this.path;
-								_buffers[_currentBufferIndex + 1] = data;
+								console.log(_buffers);
+								_buffers[bufferIndex] = data;
+								console.log(_buffers);
 							} else {
-								_buffers[_currentBufferIndex + 1] = "";
+								_buffers[bufferIndex] = "";
 							}
-							EventBroker.publish("show_buffer.editor", _currentBufferIndex + 1);
+							EventBroker.publish("show_buffer.editor", bufferIndex);
 						}).bind(this));
 					} else {
 						Notification.notify("images/close.png", "Error loading file", "Not a supported file format!");
@@ -125,19 +132,18 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 					}
 				}
 				
-				console.log(_buffers);
 				if (_editorLibrary.editor.value != null) {
 					_buffers[_currentBufferIndex] = _editorLibrary.editor.value;
 				} else {
 					_buffers[_currentBufferIndex] = "";
 				}
-				console.log(_buffers);
+				
 				if (_buffers[index] != null) {
 					_editorLibrary.editor.value = _buffers[index];
 				} else {
 					_editorLibrary.editor.value = "";
 				}
-				console.log(_buffers);
+				
 				$(_tabs).tabs("select", index);
 			
 				_editorLibrary.editor.syntax = syntax;
