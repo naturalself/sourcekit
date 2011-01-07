@@ -7,6 +7,9 @@ REPORT ISSUES HERE: https://github.com/kenotron/sourcekit/issues
 Embedded is the excellent Mozilla Bespin (SkyWriter) text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.
 
 CHANGELOG
+0.3.6
+- BUG FIX... had a typo in the last release
+
 0.3.5
 - Tabbed interface!
 - Added support for C#, and CoffeeScript
