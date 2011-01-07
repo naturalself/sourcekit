@@ -52,6 +52,8 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 		},
 		path: "",
 		initialize: function() {
+			_buffers[0] = "";
+			
 			$(_tabs).tabs({
 				show: (function(event, ui) {
 					this.path = _bufferPaths[ui.index];
