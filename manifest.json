@@ -2,14 +2,12 @@
   "name": "SourceKit - Text Editor Inside Chrome",
   "version": "0.3.5",
   "incognito": "split",
-  "icons": {
-    "16": "icon_16.png",
-    "128": "icon_128.png" 
+  "icons": { 
+    "128": "icon_128.png",
+    "16": "icon_16.png"
   },
-  "app": {
-    "launch": {
-      "local_path": "application.html"
-    }
+  "browser_action": {
+    "default_icon": "icon_16.png"
   },
   "options_page": "options.html",
   "background_page": "background.html",

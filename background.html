@@ -4,12 +4,20 @@
     <script src='js/dropbox/oauth.js'></script>
     <script src="js/dropbox/dropbox.js"></script>
     <script>
-        consumerKey = "0660jgq6erg4h63";
-        consumerSecret = "0iyu9q1lnb56jyg";
-        dropbox = new Dropbox(consumerKey, consumerSecret);
+    consumerKey = "0660jgq6erg4h63";
+    consumerSecret = "0iyu9q1lnb56jyg";
+    dropbox = new Dropbox(consumerKey, consumerSecret);
     
+    if (!dropbox.isAccessGranted()) {
+        chrome.tabs.create({ url: "options.html", selected: true });
+    }
+    
+    chrome.browserAction.onClicked.addListener(function(tab) {
         if (!dropbox.isAccessGranted()) {
             chrome.tabs.create({ url: "options.html", selected: true });
+        } else {
+            chrome.tabs.create({ url: "application.html", selected: true });
         }
+    });
     </script>
 </html>

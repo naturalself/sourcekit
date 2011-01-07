@@ -9,7 +9,7 @@ Embedded is the excellent Mozilla Bespin (SkyWriter) text editor component. This
 CHANGELOG
 0.3.5
 - Tabbed interface!
-- Converted to a Packaged App!
+- Added support for C#, and CoffeeScript
 
 0.3.4
 - Added a syntax highlighting support for many different languages including: C/C++, Ruby, Python, PHP, HTML, JavaScript, Java
