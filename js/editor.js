@@ -1,23 +1,17 @@
-var Editor = function(layout, editor, statusBar, tabs, dropbox) {
-	var _dropbox = dropbox;
-	
-	var _layout = layout;
-	
+var Editor = function(layout, editor, tabs, statusBar) {
+	var _storage = Application.storage;
+
 	var _editor = editor;
-	
-	var _statusBar = statusBar;
 	
 	var _tabs = tabs;
 	
+	var _statusBar = statusBar;
+	
 	var _buffers = [];
 	
-	var _bufferPaths = [];
-	
-	var _bufferMimeTypes = [];
-	
-	var _bufferTabIds = [];
-	
 	var _currentBufferIndex = null;
+
+	var _layout = layout;
 	
 	var _acceptedMimeTypes = {
 			"text/plain": "", 
@@ -46,78 +40,29 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 	var _editorLibrary;
 	
 	return {
-		debug: function() {
-			console.log(_buffers);
-			console.log(_currentBufferIndex);
-			console.log(_bufferPaths);
-			console.log(_bufferMimeTypes);
-		},
-		path: "",
+		// Assumed to be called inside a window.onBespinLoad function
 		initialize: function() {
-			_buffers[0] = "";
-			
-			$(_tabs).tabs({
-				show: (function(event, ui) {
-					this.path = _bufferPaths[ui.index];
-					$(_editor).css("display", "block");
-					$(ui.panel).append($(_editor));
-
-					EventBroker.publish("show_buffer.editor", [ui.index]);
-					EventBroker.publish("redraw.editor");
-				}).bind(this),
-				tabTemplate: '<li><a href="#{href}">#{label}</a><span class="ui-icon ui-icon-close">Remove Tab</span></li>'
-			});
-
-			$('#' + $(_tabs).attr('id') + ' span.ui-icon-close').live("click", function() {
-				var index = $("li", $(_tabs)).index($(this).parent());
-				$(_tabs).tabs("remove", index);
-
-				if (_buffers.length > 0) {
-					_bufferPaths.splice(index, 1);
-					_buffers.splice(index, 1);
-					_bufferMimeTypes.splice(index, 1);
-					_bufferTabIds.splice(index, 1);
-				
-					if (_currentBufferIndex > 0) {
-						_currentBufferIndex--;
-					} else {
-						_currentBufferIndex = 0;
-					}
-				} else {
-					_bufferPaths = [];
-					_buffers = [];
-					_bufferMimeTypes = [];
-					_bufferTabIds = [];
-					_currentBufferIndex = null;
-				}
-			});
-			
 			_editorLibrary = _editor.get(0).bespin;
 
-			// Hooking up global events			
 			EventBroker.subscribe('new.editor', (function(event, defaultPath) {
 				if (defaultPath == null) {
 					defaultPath = "/";
 				}
 				
-				this.path = prompt("Choose a file name to save", defaultPath);
+				this.path = prompt("Choose a file name to be created", defaultPath);
 				
 				_editorLibrary.editor.value = "";
 				_editorLibrary.editor.syntax = "";
 			}).bind(this));
 			
 			EventBroker.subscribe('save.editor', (function(event) {
-				if (this.path == "" || !this.path) {
-					this.path = prompt("Choose a file name to save");
-				}
-				
-				_dropbox.putFileContents(this.path, _editorLibrary.editor.value, (function(data) {
+				_storage.putFileContents(this.path, _editorLibrary.editor.value, (function(data) {
 					Notification.notify("images/check.png", "Save File Notification", "File Saved As " + this.path + "!");
 				}).bind(this));
 			}).bind(this));
 			
-			EventBroker.subscribe('load.editor', (function(event, path) {
-				this.path = path;
+			EventBroker.subscribe('load.editor', (function(event, data) {
+				this.path = data.path;
 				
 				var index = 0;
 				if (_currentBufferIndex != null) {
@@ -125,23 +70,17 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 				}
 				
 				// select new one
-				_dropbox.getMetadata(this.path, (function(data) {
-					_bufferPaths[index] = path;
-					_bufferMimeTypes[index] = data.mime_type;
-					_bufferTabIds[index] = this.path.replace(/[\/ \.]/g, '_');
-	console.log(data.mime_type);
+				_storage.getMetadata(this.path, (function(data) {
 					if (_acceptedMimeTypes[data.mime_type] != null) {
-						_dropbox.getFileContents(this.path, (function(data) {
-							if (data) {
+						_storage.getFileContents(this.path, (function(content) {
+							if (content) {
 								document.title = this.path;
-								_buffers[index] = data;
+								_buffers[index] = new Buffer(this.path, content, data.mime_type);
 							} else {
-								_buffers[index] = "";
+								_buffers[index] = new Buffer(this.path, "", data.mime_type);
 							}
-							
-							$(_tabs).tabs("add", "#tabs-" + _bufferTabIds[index], this.path.match(/[^\/]*$/)[0]);
-							
-							$(_tabs).tabs("select", index);
+							_tabs.tabs("add", "#tabs-" + _buffers[index].id, _buffers[index].basename);
+							_tabs.tabs("select", index);
 						}).bind(this));
 					} else {
 						Notification.notify("images/close.png", "Error loading file", "Not a supported file format!");
@@ -149,77 +88,98 @@ var Editor = function(layout, editor, statusBar, tabs, dropbox) {
 				}).bind(this));
 			}).bind(this));
 			
-			EventBroker.subscribe('show_buffer.editor', (function(event, index) {
-				var syntax = _acceptedMimeTypes[_bufferMimeTypes[index]];
-				
-				if (_bufferMimeTypes[index] == "application/octet-stream") {
+			EventBroker.subscribe('show_buffer.editor', (function(event, data) {
+				var index = data.index;
+				var syntax = _acceptedMimeTypes[_buffers[index].mimeType];
+
+				if (_buffers[index].mimeType == "application/octet-stream" ||
+					_buffers[index].mimeType == "text/plain") {
 					for (extension in _fileExtensions) {
-						if (_bufferPaths[index].match('\.' + extension + '$')) {
+						if (_buffers[index].basename.match('\.' + extension + '$')) {
 							syntax = _fileExtensions[extension];
 						}
 					}
 				}
-				
+
 				if (_currentBufferIndex != null) {
 					if (_editorLibrary.editor.value != null) {
-						_buffers[_currentBufferIndex] = _editorLibrary.editor.value;
+						_buffers[_currentBufferIndex].content = _editorLibrary.editor.value;
 					} else {
-						_buffers[_currentBufferIndex] = "";
+						_buffers[_currentBufferIndex].content = "";
 					}
 				}
 				
 				if (_buffers[index] != null) {
-					_editorLibrary.editor.value = _buffers[index];
+					_editorLibrary.editor.value = _buffers[index].content;
 				} else {
 					_editorLibrary.editor.value = "";
 				}
 				
-				$(_tabs).tabs("select", index);
+				_tabs.tabs("select", index);
 			
 				_editorLibrary.editor.syntax = syntax;
 				
 				_currentBufferIndex = index;
-				
 			}).bind(this));
 			
 			EventBroker.subscribe('redraw.editor', (function(event) {
 				_layout.height($(window).height());
 
 				_editor.width(_layout.width());
-				_editor.height(_layout.height() - _statusBar.height() - _tabs.children("ul").height());
-
-				_tabs.height(_layout.height() - _statusBar.height());
+				_editor.height(_layout.height() 
+						- _statusBar.height() 
+						- _tabs.children("ul").height());
+				
+				_tabs.height(_layout.height() 
+						- _statusBar.height());
 
 				_editorLibrary.dimensionsChanged();
 			}).bind(this));
 			
-			EventBroker.subscribe('change-theme.editor', (function(themeName) {
-				_editorElement.bespin.settings.set("theme", themeName);
+			EventBroker.subscribe('change_theme.editor', (function(event, data) {
+				_editor.bespin.settings.set("theme", data.themeName);
 			}).bind(this));
 		
 			// Set up a keydown event catcher for the editor (e.g. saving)
-			$(window).bind('keydown', (function(event) {
+			$(_editor).bind('keydown', (function(event) {
 				if (event.metaKey && event.keyCode == 83) { // Ctrl or Meta-S
 					EventBroker.publish("save.editor");
 					event.preventDefault();
 				}
 			}));
 			
+			_tabs.tabs({
+				show: (function(event, ui) {
+					this.path = _buffers[ui.index].path;
+					_editor.css("display", "block");
+					
+					$(ui.panel).append($(_editor));
+
+					EventBroker.publish("show_buffer.editor", {index: ui.index});
+					EventBroker.publish("redraw.editor");
+				}).bind(this),
+				tabTemplate: '<li><a href="#{href}">#{label}</a><span class="ui-icon ui-icon-close">Remove Tab</span></li>'
+			});
+		
+			$('#' + _tabs.attr('id') + ' span.ui-icon-close').live("click", function() {
+				var index = $("li", _tabs).index($(this).parent());
+				_tabs.tabs("remove", index);
+
+				if (_buffers.length > 0) {
+					_buffers.splice(index, 1);
+				
+					if (_currentBufferIndex > 0) {
+						_currentBufferIndex--;
+					} else {
+						_currentBufferIndex = 0;
+					}
+				} else {
+					_buffers = [];
+					_currentBufferIndex = null;
+				}
+			});
+			
 			EventBroker.publish("ready.editor");
 		}
 	};
 }
-
-// Set up the editor
-$(document).ready(function() {
-	var bgPage = chrome.extension.getBackgroundPage();
-	var dropbox = bgPage.dropbox;
-	var editor = new Editor($("#main"), $("#editor"), $("#main footer"), $("#tabs"), dropbox);
-	window.onBespinLoad = function() {
-		editor.initialize();
-	
-		$("#save").click(function() {
-			EventBroker.publish("save.editor");
-		});
-	}
-});

@@ -6,14 +6,18 @@ function sortFiles(a,b){
     return a.path > b.path ? 1 : -1;
 };
 
-var Sidebar = function(filelist, dropbox) {
-	var _dropbox = dropbox;
-	var _filelist = filelist;
+var FileList = function(fileList) {
+	var _storage = Application.storage;
+	var _fileList = fileList;
+	var _application = null;
 	
 	return {
 		initialize: function() {
-			EventBroker.subscribe("load.sidebar", (function(event, parentNode, path) {
-				dropbox.getDirectoryContents(path, function(data) {
+			EventBroker.subscribe("load.fileList", (function(event, data) {
+				var parentNode = data.parentNode;
+				var path = data.path;
+				
+				_storage.getDirectoryContents(path, function(data) {
 					$("#" + $(parentNode).attr('id') + " ul").empty();
 					
 					var contents = data.contents.sort(function(a, b) {
@@ -24,7 +28,7 @@ var Sidebar = function(filelist, dropbox) {
 					
 					$.each(contents, function(index, file) {
 						if (file.is_dir) {
-							_filelist.jstree("create_node", parentNode, "last", {
+							_fileList.jstree("create_node", parentNode, "last", {
 								data: file.path.match(/([^\\\/]+)$/)[1],
 								state: "closed",
 								attr: {
@@ -32,9 +36,9 @@ var Sidebar = function(filelist, dropbox) {
 								}
 							});
 
-							_filelist.jstree("open_node", parentNode);
+							_fileList.jstree("open_node", parentNode);
 						} else {
-							_filelist.jstree("create_node", parentNode, "last", {
+							_fileList.jstree("create_node", parentNode, "last", {
 								data: file.path.match(/([^\\\/]+)$/)[1],
 								state: null,
 								children: null,
@@ -45,12 +49,12 @@ var Sidebar = function(filelist, dropbox) {
 						}
 					});
 
-					$('#filelist').jstree("open_node", parentNode);
+					$(_fileList).jstree("open_node", parentNode);
 				});
 			}).bind(this));
 			
 			// set up jstree
-			_filelist.jstree({
+			_fileList.jstree({
 				core: { animation: 0 },
 				plugins : [ "themes", "json_data", "ui" ],
 				themes : {
@@ -61,59 +65,50 @@ var Sidebar = function(filelist, dropbox) {
 				json_data: { 
 					data: [{
 						data : "/", 
-						attr : { id : "filelist_root" }, 
+						attr : { id : "fileList_root" }, 
 						state : "closed"
 					}]
 				},
 			});
 			
-			_filelist.bind("select_node.jstree", (function(event, data) {
+			_fileList.bind("select_node.jstree", (function(event, data) {
 				var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
 				var isFile = data.inst.is_leaf(data.rslt.obj);
 				var parentNode = data.rslt.obj;
 
 				if (isFile) {
-					EventBroker.publish('load.editor', [path]);
+					EventBroker.publish('load.editor', {path: path});
 				} else {
 					if (!data.inst.is_open()) {
-						_filelist.jstree("open_node", parentNode);
+						_fileList.jstree("open_node", parentNode);
 					} else {
-						_filelist.jstree("close_node", parentNode);
+						_fileList.jstree("close_node", parentNode);
 					}
 				}
 			}).bind(this));
 			
-			_filelist.bind("open_node.jstree", function(event, data) {
+			_fileList.bind("open_node.jstree", function(event, data) {
 				var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
 				var parentNode = data.rslt.obj;
-				EventBroker.publish('load.sidebar', [parentNode, path]);
+				EventBroker.publish('load.fileList', {parentNode: parentNode, path: path});
 			});
 			
 			$("#new-file").click((function() {
 				var node;
-				var nodes = _filelist.jstree("get_selected");
+				var nodes = _fileList.jstree("get_selected");
 				
 				if (nodes != null && nodes[0] != null) {
 					node = nodes[0];
 				}
 				
-				var path = _filelist.jstree("get_path", node).join('/').replace(/^\/\//, '/');
+				var path = _fileList.jstree("get_path", node).join('/').replace(/^\/\//, '/');
 				
-				if (_filelist.jstree("is_leaf", node)) {
+				if (_fileList.jstree("is_leaf", node)) {
 					path = path.match(/^(.*?)[^\\\/]+$/)[1];
 				}
 				
-				EventBroker.publish("new.editor", [path]);
+				EventBroker.publish("new.editor", {path: path});
 			}).bind(this));
 		}
 	}
 }
-
-$(document).ready(function() {
-	var bgPage = chrome.extension.getBackgroundPage();
-	var dropbox = bgPage.dropbox;
-	var sidebar = new Sidebar($("#filelist"), dropbox);
-	sidebar.initialize();
-	
-
-});

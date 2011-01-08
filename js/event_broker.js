@@ -8,7 +8,7 @@ var EventBroker = {
 		}
     },
 
-    publish: function(eventType, parameters) {
-        $(this).trigger(eventType, parameters);
+    publish: function(eventType, data) {
+        $(this).trigger(eventType, [data]);
     }
 };
