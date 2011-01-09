@@ -31,7 +31,6 @@
 	</head>
 	<body>
 		<div class="ui-layout-west" id="sideBar">
-			
 			<div class="wrapper">
 				<div id="fileList"></div>
 			</div>
@@ -41,12 +40,15 @@
 			</footer>
 		</div>
 		<div class="ui-layout-center" id="main">
-			<div class="wrapper">
+			<div id="intro">
+				<h1>SourceKit</h1>
+			</div>
+			<div class="wrapper" style="display:none;">
 				<div id="tabs">
 					<ul></ul>
 				</div>
 			</div>
-			<footer><button id="save"><img src="images/save.png" align="absmiddle"/>Save</button></footer>
+			<footer style="display:none;"><button id="save"><img src="images/save.png" align="absmiddle"/>Save</button></footer>
 		</div>
 		<div class="bespin" id="editor" data-bespinoptions='{ "settings": { "tabstop": 4 }, "stealFocus": true }'></div>
 	</body>

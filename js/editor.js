@@ -93,6 +93,10 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			}).bind(this));
 			
 			EventBroker.subscribe('show_buffer.editor', (function(event, data) {
+				$("#intro").hide();
+				$("#main .wrapper").show();
+				$("#main footer").show();
+				
 				var index = data.index;
 				var syntax = _acceptedMimeTypes[_buffers[index].mimeType];
 
@@ -155,7 +159,6 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			_tabs.tabs({
 				show: (function(event, ui) {
 					this.path = _buffers[ui.index].path;
-					_editor.css("display", "block");
 					
 					$(ui.panel).append($(_editor));
 
@@ -181,6 +184,9 @@ var Editor = function(layout, editor, tabs, statusBar) {
 					_buffers = [];
 					_currentBufferIndex = null;
 					$("body").append($(_editor));
+					$("#intro").show();
+					$("#main .wrapper").hide();
+					$("#main footer").hide();
 				}
 				
 				_tabs.tabs("remove", index);

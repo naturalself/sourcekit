@@ -143,6 +143,8 @@ var FileList = function(fileList) {
 					_fileList.jstree("rename", newNode);
 				}
 			}).bind(this));
+			
+			EventBroker.publish("load.fileList", { parentNode: "#fileList_root", path: "/" });
 		}
 	}
 }
