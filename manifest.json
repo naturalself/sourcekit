@@ -1,21 +1,21 @@
 {
   "name": "SourceKit - Text Editor Inside Chrome",
-  "version": "0.3.6",
+  "version": "0.3.6.1",
   "incognito": "split",
   "icons": { 
     "128": "icon_128.png",
     "16": "icon_16.png"
   },
   "browser_action": {
-    "default_icon": "icon_16.png"
+    "default_icon": "icon_16.png",
+	"default_title": "SourceKit"
   },
   "options_page": "options.html",
   "background_page": "background.html",
-  "permissions": ["tabs",
+  "permissions": [
+	"tabs",
     "notifications",
     "http://*.dropbox.com/",
-    "https://*.dropbox.com/",
-    "https://*.getdropbox.com/",
-    "http://*.getdropbox.com/"
+    "https://*.dropbox.com/"
   ]
 }

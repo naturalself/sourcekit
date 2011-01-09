@@ -19,6 +19,8 @@
                 email: $('#email').val(), 
                 password: $('#password').val(),
                 success: (function(data) {
+					chrome.browserAction.setIcon({path:"icon_16.png"});
+					chrome.browserAction.setTitle({title:"SourceKit"});
                     chrome.tabs.getCurrent(function(tab) {
                         chrome.tabs.create({ url: "application.html", selected: true });
                         chrome.tabs.remove(tab.id);
@@ -34,6 +36,8 @@
         
         function deauthorize() {
             dropbox.deauthorize();
+			chrome.browserAction.setIcon({path:"icon_gray_16.png"});
+			chrome.browserAction.setTitle({title:"SourceKit - Not logged in."});
             window.location.reload(false);
         }
     </script>
