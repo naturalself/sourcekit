@@ -26,8 +26,10 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			"text/x-java": "java"};
 			
 	var _fileExtensions = {
-			"md": "markdown", 
-			"json": "js", 
+			"md": "markdown",
+			"java": "java",
+			"js": "js",
+			"json": "js",
 			"rb": "rb", 
 			"c": "c_cpp", 
 			"cpp": "c_cpp", 
@@ -43,16 +45,11 @@ var Editor = function(layout, editor, tabs, statusBar) {
 		// Assumed to be called inside a window.onBespinLoad function
 		initialize: function() {
 			_editorLibrary = _editor.get(0).bespin;
-
-			EventBroker.subscribe('new.editor', (function(event, defaultPath) {
-				if (defaultPath == null) {
-					defaultPath = "/";
-				}
-				
-				this.path = prompt("Choose a file name to be created", defaultPath);
-				
-				_editorLibrary.editor.value = "";
-				_editorLibrary.editor.syntax = "";
+			EventBroker.subscribe('new.editor', (function(event, data) {
+				this.path = data.path;
+				_storage.putFileContents(this.path, "", (function(data) {
+					EventBroker.publish('load.editor', {path: this.path});
+				}).bind(this));
 			}).bind(this));
 			
 			EventBroker.subscribe('save.editor', (function(event) {
@@ -62,6 +59,13 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			}).bind(this));
 			
 			EventBroker.subscribe('load.editor', (function(event, data) {
+				for (var i in _buffers) {
+					if (_buffers[i].path == data.path) {
+						EventBroker.publish('show_buffer.editor', {index: parseInt(i)});
+						return this;
+					}
+				}
+								
 				this.path = data.path;
 				
 				var index = 0;
@@ -141,7 +145,7 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			}).bind(this));
 		
 			// Set up a keydown event catcher for the editor (e.g. saving)
-			$(_editor).bind('keydown', (function(event) {
+			$(window).bind('keydown', (function(event) {
 				if (event.metaKey && event.keyCode == 83) { // Ctrl or Meta-S
 					EventBroker.publish("save.editor");
 					event.preventDefault();
@@ -158,14 +162,14 @@ var Editor = function(layout, editor, tabs, statusBar) {
 					EventBroker.publish("show_buffer.editor", {index: ui.index});
 					EventBroker.publish("redraw.editor");
 				}).bind(this),
+
 				tabTemplate: '<li><a href="#{href}">#{label}</a><span class="ui-icon ui-icon-close">Remove Tab</span></li>'
 			});
 		
-			$('#' + _tabs.attr('id') + ' span.ui-icon-close').live("click", function() {
-				var index = $("li", _tabs).index($(this).parent());
-				_tabs.tabs("remove", index);
+			EventBroker.subscribe("close_tab.editor", (function(event, data) {
+				var index = $("li", _tabs).index($(data.ui).parent());				
 
-				if (_buffers.length > 0) {
+				if (_buffers.length > 1) {
 					_buffers.splice(index, 1);
 				
 					if (_currentBufferIndex > 0) {
@@ -176,7 +180,14 @@ var Editor = function(layout, editor, tabs, statusBar) {
 				} else {
 					_buffers = [];
 					_currentBufferIndex = null;
+					$("body").append($(_editor));
 				}
+				
+				_tabs.tabs("remove", index);
+			}).bind(this));
+		
+			$('#' + _tabs.attr('id') + ' span.ui-icon-close').live("click", function(event, ui) {
+				EventBroker.publish("close_tab.editor", {ui: ui});
 			});
 			
 			EventBroker.publish("ready.editor");
