@@ -7,6 +7,11 @@ REPORT ISSUES HERE: https://github.com/kenotron/sourcekit/issues
 Embedded is the excellent Mozilla Bespin (SkyWriter) text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.
 
 CHANGELOG
+0.3.7
+- Fixed a bug about opening files with spaces in them
+- Can create files / folders with the file list on the left
+- Added default page so the app is less "bare" when started
+
 0.3.6
 - BUG FIX... had a typo in the last release
 
