@@ -1,3 +1,5 @@
+
+
 var Editor = function(layout, editor, tabs, statusBar) {
 	var _storage = Application.storage;
 
@@ -44,6 +46,8 @@ var Editor = function(layout, editor, tabs, statusBar) {
 	return {
 		// Assumed to be called inside a window.onBespinLoad function
 		initialize: function() {
+			var BespinBuffer = bespin.tiki.require('text_editor:models/buffer').Buffer;
+			
 			_editorLibrary = _editor.get(0).bespin;
 			EventBroker.subscribe('new.editor', (function(event, data) {
 				this.path = data.path;
@@ -79,9 +83,14 @@ var Editor = function(layout, editor, tabs, statusBar) {
 						_storage.getFileContents(this.path, (function(content) {
 							if (content) {
 								document.title = this.path;
-								_buffers[index] = new Buffer(this.path, content, data.mime_type);
+								console.log('hi');
+								newBespinBuffer = new BespinBuffer(null, content);
+
+								console.log(new EditorBuffer(this.path, newBespinBuffer, data.mime_type));
+								_buffers[index] = new EditorBuffer(this.path, newBespinBuffer, data.mime_type);
+								console.log('hi');
 							} else {
-								_buffers[index] = new Buffer(this.path, "", data.mime_type);
+								_buffers[index] = new EditorBuffer(this.path, new BespinBuffer(null, ""), data.mime_type);
 							}
 							_tabs.tabs("add", "#tabs-" + _buffers[index].id, _buffers[index].basename);
 							_tabs.tabs("select", index);
@@ -109,18 +118,20 @@ var Editor = function(layout, editor, tabs, statusBar) {
 					}
 				}
 
-				if (_currentBufferIndex != null) {
-					if (_editorLibrary.editor.value != null) {
-						_buffers[_currentBufferIndex].content = _editorLibrary.editor.value;
+				// Save the current bespinBuffer
+				/*if (_currentBufferIndex != null) {
+					if (_editorLibrary.editor.buffer != null) {
+						_buffers[_currentBufferIndex].bespinBuffer = _editorLibrary.editor.buffer;
 					} else {
-						_buffers[_currentBufferIndex].content = "";
+						_buffers[_currentBufferIndex].bespinBuffer = new BespinBuffer();
 					}
-				}
-				
+				}*/
+
+				// Assign either a new bespinBuffer or an existing bespinBuffer
 				if (_buffers[index] != null) {
-					_editorLibrary.editor.value = _buffers[index].content;
+					_editorLibrary.editor.buffer = _buffers[index].bespinBuffer;
 				} else {
-					_editorLibrary.editor.value = "";
+					_editorLibrary.editor.buffer = new BespinBuffer();
 				}
 				
 				_tabs.tabs("select", index);

@@ -1,6 +1,6 @@
-var Buffer = function(path, content, mimeType) {	
+var EditorBuffer = function(path, bespinBuffer, mimeType) {	
 	var _path = path;
-	var _content = content;
+	var _bespinBuffer = bespinBuffer;
 	var _basename = path;
 	var _mimeType = "text/plain";
 	var _id = _path.replace(/[\/ \.]/g, '_');
@@ -11,10 +11,10 @@ var Buffer = function(path, content, mimeType) {
 	
 	return {
 		isNew: function() { return this.path == null },
+		bespinBuffer: _bespinBuffer,
 		path: _path,
-		content: _content,
 		basename: _basename,
 		mimeType: _mimeType,
-		id: _id
+		id: _id,
 	}
 }
