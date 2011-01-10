@@ -13,6 +13,7 @@ CHANGELOG
 * Utilize Bespin's buffers when switching tabs
 * Fixes undo / redo functionality (so the undo history is not mixed between tabs!!!)
 * Added a "lock" so one cannot click on multiple files while the first file is being loaded
+* Much better looking "Options" page
 
 ### 0.3.7 ###
 * Fixed a bug about opening files with spaces in them
