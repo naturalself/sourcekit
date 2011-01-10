@@ -48,25 +48,23 @@
         });
     </script>
     <div id="main">
-        <h1>SourceKit Options</h1>
-
-        <div id="deauthorize" style="display:none;">
-            <p>Access has been granted by DropBox!</p>
-        
-            <p>You can <a href="javascript:deauthorize();">deauthorize</a> access to your Dropbox account</p>
-        </div>
-        <div id="authorize" style="display: none;">
-            <p>Please fill out the following to log into Dropbox.</p>
-    
-            <p><em>This process will authorize SourceKit to access your DropBox files, the
-            username and password will not be saved locally at all.</em></p>
-    
-            <label>Email <input type="text" name="email" id="email" /></label>
-            
-            <label>Password <input type="password" name="password" id="password" /></label>
-    
-            <button onclick="authorize()">Login to DropBox</button>
-        </div>
+		<header>
+	        <h1>SourceKit Options</h1>
+		</header>	
+		<section>
+			<img src="images/dropbox-logo.png" align="absmiddle" />
+	        <div id="deauthorize" style="display:none;">
+	            <p>Access has been granted by Dropbox. Would you like to <a href="javascript:deauthorize();">deauthorize</a>?</p>
+				<button onclick="window.close()">Close this Window</button>
+	        </div>
+	        <div id="authorize" style="display: none;">
+				<input type="text" name="email" id="email" placeholder="Email" />
+	            <input type="password" name="password" id="password" placeholder="Password"/>
+				<p class="fineprint"><em>(This just grants access, passwords will not be saved locally)</em></p>
+				<button onclick="authorize()">Grant Access to SourceKit</button>
+	        </div>
+		</section>
+		<footer></footer>
     </div>
 </body>
 </html>
