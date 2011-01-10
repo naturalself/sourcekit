@@ -47,6 +47,8 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			var BespinBuffer = bespin.tiki.require('text_editor:models/buffer').Buffer;
 			
 			_editorLibrary = _editor.get(0).bespin;
+			_editorLibrary.settings.set('fontsize', 12);
+			
 			EventBroker.subscribe('new.editor', (function(event, data) {
 				this.path = data.path;
 				_storage.putFileContents(this.path, "", (function(data) {

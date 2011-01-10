@@ -5,17 +5,10 @@ body {
 	 font-family: "Helvetica Neue", "ubuntu", "Segoe UI", "Arial", sans-serif;
 }
 
-div#sidebar {
+/* Sidebar */
+div#sideBar {
 	width: 100%;
 	height: 100%;
-}
-
-button {
-	display: inline;
-	padding: 0;
-	margin: 0;
-	background: none;
-	border: none;
 }
 
 .ui-layout-center {
@@ -28,6 +21,11 @@ button {
 	overflow: hidden;
 }
 
+.file {
+	background-color: red;
+}
+
+/* Tabs */
 #tabs .ui-corner-all {
 	border-radius: 0px;
 	border: none;
@@ -53,6 +51,7 @@ button {
 	padding: 0;
 }
 
+/* Main, Editor, and Status Bar */
 div#main {
 	overflow: hidden;
 	z-index: 100;
@@ -98,6 +97,8 @@ footer {
 }
 
 footer button {
+	display: inline;
+	background: none;
 	margin: 0;
 	padding: 0 6px 0 6px;
 	background-image: url(../images/footer-button-end.png);

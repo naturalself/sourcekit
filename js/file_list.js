@@ -62,7 +62,7 @@ var FileList = function(fileList) {
 				plugins : [ "themes", "json_data", "ui", "crrm", "unique", "sort" ],
 				ui : {
 					"select_limit": 1,
-					"selected_parent_close": "deselect"
+					"selected_parent_close": "deselect",
 				},
 				themes : {
 					"theme" : "apple",
@@ -76,7 +76,7 @@ var FileList = function(fileList) {
 						attr : { id : "fileList_root" }, 
 						state : "closed"
 					}]
-				},
+				}
 			});
 			
 			_fileList.bind("before.jstree", (function(event, data) {
@@ -150,11 +150,11 @@ var FileList = function(fileList) {
 					selectedNode = nodes[0];
 				}
 				if (_fileList.jstree("is_leaf", selectedNode)) {
-					var newNode = _fileList.jstree("create_node", $(selectedNode).parent(), "last", { state: "closed" });
+					var newNode = _fileList.jstree("create_node", $(selectedNode).parent(), null, { state: "closed" });
 					_fileList.jstree("open_node", $(selectedNode).parent());
 					_fileList.jstree("rename", newNode);
 				} else {
-					var newNode = _fileList.jstree("create_node", $(selectedNode), "last", { state: "closed" });
+					var newNode = _fileList.jstree("create_node", $(selectedNode), null, { state: "closed" });
 					_fileList.jstree("open_node", $(selectedNode));
 					_fileList.jstree("rename", newNode);
 				}
