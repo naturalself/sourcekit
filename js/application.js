@@ -43,6 +43,14 @@ var Application = {
 		fileList.initialize();
 		
 	}).bind(this),
+	
+	lock: (function() {
+		
+	}),
+	
+	unlock: (function() {
+		
+	})
 }
 
 $(document).ready(function() {

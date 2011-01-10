@@ -106,14 +106,16 @@ var FileList = function(fileList) {
 					_storage.createDirectory(path);
 				}
 			});
-			
+
+			/**
+			 * call jstree to create a node (leaf = true) against either
+			 *  1. selected node if it's a folder
+			 *  2. or in the parentnode of the selected node if it's a leaf
+			 *  on callback:
+			 *  1. create new file
+			 *  2. select node & open file
+			 */
 			$("#new-file").click((function() {
-				// call jstree to create a node (leaf = true) against either
-				// 1. selected node if it's a folder
-				// 2. or in the parentnode of the selected node if it's a leaf
-				// on callback:
-				// 1. create new file
-				// 2. select node & open file
 
 				var selectedNode;
 				var nodes = _fileList.jstree("get_selected");

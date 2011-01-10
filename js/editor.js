@@ -1,5 +1,3 @@
-
-
 var Editor = function(layout, editor, tabs, statusBar) {
 	var _storage = Application.storage;
 
@@ -83,12 +81,7 @@ var Editor = function(layout, editor, tabs, statusBar) {
 						_storage.getFileContents(this.path, (function(content) {
 							if (content) {
 								document.title = this.path;
-								console.log('hi');
-								newBespinBuffer = new BespinBuffer(null, content);
-
-								console.log(new EditorBuffer(this.path, newBespinBuffer, data.mime_type));
-								_buffers[index] = new EditorBuffer(this.path, newBespinBuffer, data.mime_type);
-								console.log('hi');
+								_buffers[index] = new EditorBuffer(this.path, new BespinBuffer(null, content), data.mime_type);
 							} else {
 								_buffers[index] = new EditorBuffer(this.path, new BespinBuffer(null, ""), data.mime_type);
 							}
@@ -117,15 +110,6 @@ var Editor = function(layout, editor, tabs, statusBar) {
 						}
 					}
 				}
-
-				// Save the current bespinBuffer
-				/*if (_currentBufferIndex != null) {
-					if (_editorLibrary.editor.buffer != null) {
-						_buffers[_currentBufferIndex].bespinBuffer = _editorLibrary.editor.buffer;
-					} else {
-						_buffers[_currentBufferIndex].bespinBuffer = new BespinBuffer();
-					}
-				}*/
 
 				// Assign either a new bespinBuffer or an existing bespinBuffer
 				if (_buffers[index] != null) {
