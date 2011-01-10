@@ -7,23 +7,5 @@
     consumerKey = "0660jgq6erg4h63";
     consumerSecret = "0iyu9q1lnb56jyg";
     dropbox = new Dropbox(consumerKey, consumerSecret);
-
-	if (!dropbox.isAccessGranted()) {
-		setInactiveIcon();
-	}
-
-    chrome.browserAction.onClicked.addListener(function(tab) {
-		chrome.tabs.create({url:dropbox.isAccessGranted() ? "application.html" : "options.html", selected:true});
-    });
-
-	function setActiveIcon() {
-		chrome.browserAction.setIcon({path: "icon_16.png"});
-		chrome.browserAction.setTitle({title:"SourceKit - Not logged in."});
-	}
-	
-	function setInactiveIcon() {
-		chrome.browserAction.setIcon({path: "icon_gray_16.png"});
-		chrome.browserAction.setTitle({title:"SourceKit"});
-	}
     </script>
 </html>

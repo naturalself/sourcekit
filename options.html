@@ -19,13 +19,10 @@
                 email: $('#email').val(), 
                 password: $('#password').val(),
                 success: (function(data) {
-					bgPage.setActiveIcon();
                     chrome.tabs.getCurrent(function(tab) {
                         chrome.tabs.create({ url: "application.html", selected: true });
                         chrome.tabs.remove(tab.id);
                     });
-                    
-                    
                 }).bind(this),
                 error: (function(data) {
                     window.location.reload(false);
@@ -35,7 +32,6 @@
         
         function deauthorize() {
             dropbox.deauthorize();
-			bgPage.setInactiveIcon();
             window.location.reload(false);
         }
     </script>
@@ -55,7 +51,6 @@
 			<img src="images/dropbox-logo.png" align="absmiddle" />
 	        <div id="deauthorize" style="display:none;">
 	            <p>Access has been granted by Dropbox. Would you like to <a href="javascript:deauthorize();">deauthorize</a>?</p>
-				<button onclick="window.close()">Close this Window</button>
 	        </div>
 	        <div id="authorize" style="display: none;">
 				<input type="text" name="email" id="email" placeholder="Email" />

@@ -14,6 +14,9 @@ Embedded is the excellent Mozilla Bespin (SkyWriter) text editor component. This
 Changelog
 ---------
 
+### 0.4.0 ###
+* By popular demand, this has been converted to a packaged app!
+
 ### 0.3.8 ###
 * Utilize Bespin's buffers when switching tabs
 * Fixes undo / redo functionality (so the undo history is not mixed between tabs!!!)

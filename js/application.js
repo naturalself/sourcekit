@@ -57,16 +57,23 @@ $(document).ready(function() {
 	var bgPage = chrome.extension.getBackgroundPage();
 	var storage = bgPage.dropbox;
 	
-	Application.storage = storage;
+	if (!storage.isAccessGranted()) {
+		chrome.tabs.getCurrent(function(tab) {
+	        chrome.tabs.create({ url: "options.html", selected: true });
+	        chrome.tabs.remove(tab.id);
+	    });
+	} else {
+		Application.storage = storage;
 	
-	Application.bindComponents({
-		editorPanel: $("#main"),
-		editor: $("#editor"),
-		tabs: $("#tabs"),
-		fileList: $("#fileList"),
-		sideBar: $("#sideBar"),
-		statusBar: $("#main footer")
-	});
+		Application.bindComponents({
+			editorPanel: $("#main"),
+			editor: $("#editor"),
+			tabs: $("#tabs"),
+			fileList: $("#fileList"),
+			sideBar: $("#sideBar"),
+			statusBar: $("#main footer")
+		});
 	
-	Application.initialize();
+		Application.initialize();
+	}
 });
