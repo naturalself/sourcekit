@@ -10,6 +10,7 @@ var FileList = function(fileList) {
 	var _storage = Application.storage;
 	var _fileList = fileList;
 	var _application = null;
+	var _state = "ready";
 	
 	return {
 		initialize: function() {
@@ -51,6 +52,10 @@ var FileList = function(fileList) {
 				});
 			}).bind(this));
 			
+			EventBroker.subscribe("loaded.editor", (function(event, data) {
+				_state = "ready";
+			}).bind(this));
+			
 			// set up jstree
 			_fileList.jstree({
 				core: { animation: 0 },
@@ -74,12 +79,21 @@ var FileList = function(fileList) {
 				},
 			});
 			
+			_fileList.bind("before.jstree", (function(event, data) {
+				if (data.func == "select_node") {					
+					if (_state != "ready") {
+						return false;
+					}
+				}
+			}).bind(this));
+			
 			_fileList.bind("select_node.jstree", (function(event, data) {
 				var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
 				var isFile = data.inst.is_leaf(data.rslt.obj);
 				var parentNode = data.rslt.obj;
 
 				if (isFile) {
+					_state = "busy";
 					EventBroker.publish('load.editor', {path: path});
 				} else {
 					if (!data.inst.is_open()) {

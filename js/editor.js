@@ -123,6 +123,8 @@ var Editor = function(layout, editor, tabs, statusBar) {
 				_editorLibrary.editor.syntax = syntax;
 				
 				_currentBufferIndex = index;
+				
+				EventBroker.publish("loaded.editor");
 			}).bind(this));
 			
 			EventBroker.subscribe('redraw.editor', (function(event) {
