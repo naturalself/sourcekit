@@ -21,6 +21,7 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			"text/x-python": "py", 
 			"text/x-ruby": "rb",
 			"text/php": "php",
+			"text/css": "",
 			"text/x-csrc": "c_cpp",
 			"text/x-c++src": "c_cpp",
 			"text/x-java": "java"};
@@ -30,9 +31,11 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			"java": "java",
 			"js": "js",
 			"json": "js",
+			"sql": "sql",
 			"rb": "rb", 
 			"c": "c_cpp", 
-			"cpp": "c_cpp", 
+			"cpp": "c_cpp",
+			"cs": "cs",
 			"py": "py", 
 			"php": "php", 
 			"phtml": "php",
@@ -49,6 +52,12 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			_editorLibrary = _editor.get(0).bespin;
 			_editorLibrary.settings.set('fontsize', 12);
 			
+			/** 
+			 * Handles "new.editor" event
+			 * Chain calls the "load.editor" event
+			 * 
+			 * @param data json object { path: the_path_to_load }
+			 */
 			EventBroker.subscribe('new.editor', (function(event, data) {
 				this.path = data.path;
 				_storage.putFileContents(this.path, "", (function(data) {
@@ -56,12 +65,14 @@ var Editor = function(layout, editor, tabs, statusBar) {
 				}).bind(this));
 			}).bind(this));
 			
-			EventBroker.subscribe('save.editor', (function(event) {
-				_storage.putFileContents(this.path, _editorLibrary.editor.value, (function(data) {
-					Notification.notify("images/check.png", "Save File Notification", "File Saved As " + this.path + "!");
-				}).bind(this));
-			}).bind(this));
-			
+			/**
+			 * Handles the "load.editor" event
+			 *
+			 * Will switch to the right tab if file is already loaded; otherwise:
+			 * Will create a new EditorBuffer (which is composed of path, BespinBuffer and mimeType)
+			 * Creates new tab and selects it (notifying tab show event)
+			 * If the file cannot be loaded, send notification and then send "loaded.editor" event to clear locks on the file list
+			 */
 			EventBroker.subscribe('load.editor', (function(event, data) {
 				for (var i in _buffers) {
 					if (_buffers[i].path == data.path) {
@@ -79,6 +90,7 @@ var Editor = function(layout, editor, tabs, statusBar) {
 				
 				// select new one
 				_storage.getMetadata(this.path, (function(data) {
+					console.log(data.mime_type);
 					if (_acceptedMimeTypes[data.mime_type] != null) {
 						_storage.getFileContents(this.path, (function(content) {
 							if (content) {
@@ -92,6 +104,7 @@ var Editor = function(layout, editor, tabs, statusBar) {
 						}).bind(this));
 					} else {
 						Notification.notify("images/close.png", "Error loading file", "Not a supported file format!");
+						EventBroker.publish("loaded.editor");
 					}
 				}).bind(this));
 			}).bind(this));
@@ -127,6 +140,16 @@ var Editor = function(layout, editor, tabs, statusBar) {
 				_currentBufferIndex = index;
 				
 				EventBroker.publish("loaded.editor");
+			}).bind(this));
+			
+			/** 
+			 * Handles "save.editor" event
+			 * Will save and notify about the file being saved
+			 */
+			EventBroker.subscribe('save.editor', (function(event) {
+				_storage.putFileContents(this.path, _editorLibrary.editor.value, (function(data) {
+					Notification.notify("images/check.png", "Save File Notification", "File Saved As " + this.path + "!");
+				}).bind(this));
 			}).bind(this));
 			
 			EventBroker.subscribe('redraw.editor', (function(event) {
