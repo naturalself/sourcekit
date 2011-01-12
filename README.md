@@ -14,6 +14,10 @@ Embedded is the excellent Mozilla Bespin (SkyWriter) text editor component. This
 Changelog
 ---------
 
+### 0.4.1 ###
+* C#, SQL support
+* Do not prevent editing text/* mime types (shell, CSS, and others are allowed)
+
 ### 0.4.0 ###
 * By popular demand, this has been converted to a packaged app!
 

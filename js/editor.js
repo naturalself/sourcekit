@@ -21,7 +21,6 @@ var Editor = function(layout, editor, tabs, statusBar) {
 			"text/x-python": "py", 
 			"text/x-ruby": "rb",
 			"text/php": "php",
-			"text/css": "",
 			"text/x-csrc": "c_cpp",
 			"text/x-c++src": "c_cpp",
 			"text/x-java": "java"};
@@ -90,8 +89,7 @@ var Editor = function(layout, editor, tabs, statusBar) {
 				
 				// select new one
 				_storage.getMetadata(this.path, (function(data) {
-					console.log(data.mime_type);
-					if (_acceptedMimeTypes[data.mime_type] != null) {
+					if (_acceptedMimeTypes[data.mime_type] != null || data.mime_type.match(/^text\//)) {
 						_storage.getFileContents(this.path, (function(content) {
 							if (content) {
 								document.title = this.path;
