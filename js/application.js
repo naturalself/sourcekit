@@ -11,6 +11,16 @@ var Application = {
 	bindComponents: (function(components) {
 		this.components = components;
 	}).bind(this),
+		
+	loadPlugins: (function() {
+		Application.storage.getDirectoryContents(".sourcekit/plugins", (function(data) {
+			data.contents.forEach(function(file) {
+				Application.storage.getFileContents(file.path, function(data) {
+					eval(data);
+				});
+			});
+		});
+	}),
 	
 	initialize: (function() {
 		EventBroker.subscribe("ready.editor", function() {
@@ -41,16 +51,8 @@ var Application = {
 		// Initialize the file list sidebar
 		var fileList = new FileList($(this.components.fileList));
 		fileList.initialize();
-		
 	}).bind(this),
 	
-	lock: (function() {
-		
-	}),
-	
-	unlock: (function() {
-		
-	})
 }
 
 $(document).ready(function() {
@@ -75,5 +77,6 @@ $(document).ready(function() {
 		});
 	
 		Application.initialize();
+		Application.loadPlugins();
 	}
 });
