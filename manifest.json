@@ -1,6 +1,6 @@
 {
   "name": "SourceKit - Text Editor Inside Chrome",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "incognito": "split",
   "icons": { 
     "128": "icon_128.png",
@@ -15,7 +15,6 @@
   "background_page": "background.html",
   "permissions": [
 	"tabs",
-	"unlimitedStorage",
     "notifications",
     "http://*.dropbox.com/",
     "https://*.dropbox.com/"

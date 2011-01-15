@@ -11,8 +11,16 @@ Details
 -------
 Embedded is the excellent Mozilla Bespin (SkyWriter) text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.
 
+Plugins
+-------
+Arbitrary Javascript "plugins" are loaded post initialization from your Dropbox account. It is loaded from /.sourcekit/plugins/ 
+
 Changelog
 ---------
+
+### 0.5.0 ###
+* Added PLUGINs support
+* Fixed a file name compatibility issue in the file list
 
 ### 0.4.1 ###
 * C#, SQL support
