@@ -33,7 +33,7 @@ var FileList = function(fileList) {
 								data: file.path.match(/([^\\\/]+)$/)[1],
 								state: "closed",
 								attr: {
-									id: file.path.replace(/\//g, '_')
+									id: file.path.replace(/[\/\.]/g, '_')
 								}
 							});
 
@@ -44,7 +44,7 @@ var FileList = function(fileList) {
 								state: null,
 								children: null,
 								attr: {
-									id: "node" + file.path.replace(/\//g, '_')
+									id: "node" + file.path.replace(/[\/\.]/g, '_')
 								}
 							});							
 						}
@@ -105,9 +105,10 @@ var FileList = function(fileList) {
 			}).bind(this));
 			
 			_fileList.bind("open_node.jstree", function(event, data) {
-				var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
+				/*var path = data.inst.get_path(data.rslt.obj).join('/').replace(/^\/\//, '/');
 				var parentNode = data.rslt.obj;
-				EventBroker.publish('load.fileList', {parentNode: parentNode, path: path});
+				EventBroker.publish('load.fileList', {parentNode: parentNode, path: path});*/
+				_fileList.jstree("select_node", data.rslt.obj);
 			});
 			
 			_fileList.bind("rename_node.jstree", function(event, data) {

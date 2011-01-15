@@ -19,7 +19,7 @@ var Application = {
 					eval(data);
 				});
 			});
-		});
+		}).bind(this));
 	}),
 	
 	initialize: (function() {
