@@ -7,32 +7,27 @@
         
         <script>
             var require = {
-                
                 packages: [
-                    {
-                        name: 'dojo',
-                        location: './',
-                        main:'./_base/_loader/package-main',
-                        lib: '.'
-                    }
+                
+                
                 ],
                 
                 paths: { 
-                    sourcekit: "../src/sourcekit"
+                    sourcekit: "../src/sourcekit",
+                    dojo: "dojo",
+                    dijit: "dijit-all",
+                    ace: "ace"
                 },
                 
                 ready: function() {
-                    require(['dojo', 'sourcekit/application', 'sourcekit/config'], function (d, Application) {
-                        alert('hi');
+                    require(['ace', 'dijit', 'dojo'], function (ace, dijit, dojo) {
+                        console.log(ace, dijit, dojo);
                     });
                 }
             }
         </script>
         
         <script src="../lib/require.js"></script>
-        <script src="../lib/ace.js"></script>
-        <script src="../lib/dojo.js"></script>
-
     </head>
     <body>
         
