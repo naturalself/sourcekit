@@ -2,6 +2,8 @@
  * Application Object
  * Holds the buffers array and also the UI components (in a hash)
  */
+
+/*
 var Application = {
 	
 	components: {},
@@ -80,3 +82,13 @@ $(document).ready(function() {
 		Application.loadPlugins();
 	}
 });
+*/
+
+define([
+	'dojo',
+	'dijit/_Widget',
+	'dijit/_Templated'
+], function (d, Widget, Templated) {
+	console.log(d, Widget, Templated);
+});
+
