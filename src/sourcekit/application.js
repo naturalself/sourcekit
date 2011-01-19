@@ -85,10 +85,10 @@ $(document).ready(function() {
 */
 
 define([
-	'dojo',
-	'dijit/_Widget',
-	'dijit/_Templated'
-], function (d, Widget, Templated) {
-	console.log(d, Widget, Templated);
+	'dojo', 'dijit/_Widget'
+], function (d, dijit) {
+	console.log(d, dijit);
+	
+	return { app: "yes" }
 });
 

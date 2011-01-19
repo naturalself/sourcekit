@@ -17,20 +17,21 @@
                 paths: { 
                     sourcekit: "../src/sourcekit",
                     ace: "ace",
-                    dijit: "./dijit"
+                    dijit: "dijit"
                 },
                 
                 ready: function() {
-                    require(['dojo', 'dijit', 'sourcekit/application'], function (dojo, dijit) {
-                        console.log(dojo, dijit);
+                    require(['dojo', 'dijit', 'sourcekit/application'], function (dojo, dijit, application) {
+                        console.log(dojo, dijit, application);
                     });
                 }
             };
             
-            djConfig = {
+            var djConfig = {
                 afterOnLoad: true,
-                baseUrl: '../lib/dojo'
+                baseUrl: '../lib'
             }
+                
         </script>
         
         
