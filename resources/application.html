@@ -7,26 +7,34 @@
         
         <script>
             var require = {
-                packages: [
-                
-                
-                ],
+                packages: [{
+                    name: "dojo",
+                    location: "./dojo",
+                    lib: "./",
+                    main: "_base/_loader/package-main"
+                }],
                 
                 paths: { 
                     sourcekit: "../src/sourcekit",
-                    dojo: "dojo",
-                    dijit: "dijit-all",
-                    ace: "ace"
+                    ace: "ace",
+                    dijit: "./dijit"
                 },
                 
                 ready: function() {
-                    require(['ace', 'dijit', 'dojo'], function (ace, dijit, dojo) {
-                        console.log(ace, dijit, dojo);
+                    require(['dojo', 'dijit', 'sourcekit/application'], function (dojo, dijit) {
+                        console.log(dojo, dijit);
                     });
                 }
+            };
+            
+            djConfig = {
+                afterOnLoad: true,
+                baseUrl: '../lib/dojo'
             }
         </script>
         
+        
+        <!-- Ace already includes require.js -->
         <script src="../lib/require.js"></script>
     </head>
     <body>
