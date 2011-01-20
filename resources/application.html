@@ -4,44 +4,41 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <title>SourceKit</title>
-        
+        <link rel="stylesheet" href="css/themes/claro/claro.css" />
+        <script src="http://o.aolcdn.com/dojo/1.5.0/dojo/dojo.xd.js" djConfig="parseOnLoad: true"></script>
         <script>
-            require = {
-                packages: [{
-                    name: "dojo",
-                    location: "./dojo",
-                    lib: "./",
-                    main: "_base/_loader/package-main"
-                }],
-                
+            var require = {
                 paths: { 
-                    sourcekit: "../src/sourcekit",
-                    ace: "ace",
-                    dijit: "dijit"
+                    sourcekit: '../src/sourcekit'
                 },
-                
-                deps: ["dijit"],
-                
                 ready: function() {
-                    require(['dojo', 'dijit', 'sourcekit/application'], function (dojo, dijit, Application) {
-                        Application
+                    require(["sourcekit/application"], function(Application) {
+                        dojo.addOnLoad(function() {
+                            Application.start();
+                        });
                     });
                 }
-            };
-            
-            // configure dojo
-			djConfig = {
-				afterOnLoad: true,
-				baseUrl: './dojo/'
-			};
-                
+            }
         </script>
         
-        
-        <!-- Ace already includes require.js -->
         <script src="../lib/require.js"></script>
+        <style type="text/css">
+            body, html { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
+            #borderContainer { width:100%; height:100% }
+        </style>
     </head>
-    <body>
-        
+    <body class="claro">
+       <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="true" liveSplitters="true" id="borderContainer">
+            <div dojoType="dijit.layout.ContentPane" splitter="true" region="leading"
+                style="width: 100px;">
+                    Hi
+                </div>
+
+            <div dojoType="dijit.layout.TabContainer" style="width: 100%; height: 100%;" splitter="true" region="center">
+                <div dojoType="dijit.layout.ContentPane" title="My first tab" selected="true">
+                    <div id="aceWorthy">asdfadsfa</div>
+                </div>
+            </div>
+        </div>
     </body>
 </html>

@@ -1,97 +1,11 @@
-/**
- * Application Object
- * Holds the buffers array and also the UI components (in a hash)
- */
-
-/*
-var Application = {
-	
-	components: {},
-	
-	storage: null,
-	
-	bindComponents: (function(components) {
-		this.components = components;
-	}).bind(this),
-		
-	loadPlugins: (function() {
-		Application.storage.getDirectoryContents(".sourcekit/plugins", (function(data) {
-			data.contents.forEach(function(file) {
-				Application.storage.getFileContents(file.path, function(data) {
-					eval(data);
-				});
-			});
-		}).bind(this));
-	}),
-	
-	initialize: (function() {
-		EventBroker.subscribe("ready.editor", function() {
-			$('body').layout({ 
-				applyDefaultStyles: true,
-				center__applyDefaultStyles: false,
-				onresize: function() { EventBroker.publish('redraw.editor'); }
-			});
-
-			EventBroker.publish('redraw.editor');
-		});
-		
-		// Initialize the canvas based editor
-		var editor = new Editor(
-			$(this.components.editorPanel),
-			$(this.components.editor), 
-			$(this.components.tabs), 
-			$(this.components.statusBar));
-			
-		window.onBespinLoad = function() {
-			editor.initialize();
-			
-			$("#save").click(function() {
-				EventBroker.publish("save.editor");
-			});	
-		}
-		
-		// Initialize the file list sidebar
-		var fileList = new FileList($(this.components.fileList));
-		fileList.initialize();
-	}).bind(this),
-	
-}
-
-$(document).ready(function() {
-	var bgPage = chrome.extension.getBackgroundPage();
-	var storage = bgPage.dropbox;
-	
-	if (!storage.isAccessGranted()) {
-		chrome.tabs.getCurrent(function(tab) {
-	        chrome.tabs.create({ url: "options.html", selected: true });
-	        chrome.tabs.remove(tab.id);
-	    });
-	} else {
-		Application.storage = storage;
-	
-		Application.bindComponents({
-			editorPanel: $("#main"),
-			editor: $("#editor"),
-			tabs: $("#tabs"),
-			fileList: $("#fileList"),
-			sideBar: $("#sideBar"),
-			statusBar: $("#main footer")
-		});
-	
-		Application.initialize();
-		Application.loadPlugins();
-	}
-});
-*/
-
-define([
-	'dojo', 
-	'dijit'
-    "dijit/layout/BorderContainer",
-    "dijit/layout/TabContainer",
-    "dijit/layout/AccordionContainer",
-    "dijit/layout/ContentPane",
-], function (d, dijit) {
-	return { app: "yes" }
+define(['ace'], 'sourcekit/application', function (ace) {
+    return { 
+        start: function() {
+            dojo.require("dijit.layout.ContentPane");
+            dojo.require("dijit.layout.BorderContainer");
+            dojo.require("dijit.layout.TabContainer");
+           // ace.edit("aceWorthy");
+        }
+    }
 });
 
