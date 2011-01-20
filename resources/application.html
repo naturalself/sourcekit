@@ -6,7 +6,7 @@
         <title>SourceKit</title>
         
         <script>
-            var require = {
+            require = {
                 packages: [{
                     name: "dojo",
                     location: "./dojo",
@@ -21,16 +21,17 @@
                 },
                 
                 ready: function() {
-                    require(['dojo', 'dijit', 'sourcekit/application'], function (dojo, dijit, application) {
+                    require(['sourcekit/application'], function (dojo, dijit, application) {
                         console.log(dojo, dijit, application);
                     });
                 }
             };
             
-            var djConfig = {
-                afterOnLoad: true,
-                baseUrl: '../lib'
-            }
+            // configure dojo
+			djConfig = {
+				afterOnLoad: true,
+				baseUrl: './dojo/'
+			};
                 
         </script>
         

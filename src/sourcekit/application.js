@@ -85,9 +85,9 @@ $(document).ready(function() {
 */
 
 define([
-	'dojo', 'dijit/_Widget'
-], function (d, dijit) {
-	console.log(d, dijit);
+	'dojo', 'dijit', 'ace'
+], function (d, dijit, ace) {
+	console.log(d, dijit, ace);
 	
 	return { app: "yes" }
 });
