@@ -20,9 +20,11 @@
                     dijit: "dijit"
                 },
                 
+                deps: ["dijit"],
+                
                 ready: function() {
-                    require(['sourcekit/application'], function (dojo, dijit, application) {
-                        console.log(dojo, dijit, application);
+                    require(['dojo', 'dijit', 'sourcekit/application'], function (dojo, dijit, Application) {
+                        Application
                     });
                 }
             };

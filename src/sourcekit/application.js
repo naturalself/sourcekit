@@ -85,10 +85,13 @@ $(document).ready(function() {
 */
 
 define([
-	'dojo', 'dijit', 'ace'
-], function (d, dijit, ace) {
-	console.log(d, dijit, ace);
-	
+	'dojo', 
+	'dijit'
+    "dijit/layout/BorderContainer",
+    "dijit/layout/TabContainer",
+    "dijit/layout/AccordionContainer",
+    "dijit/layout/ContentPane",
+], function (d, dijit) {
 	return { app: "yes" }
 });
 
