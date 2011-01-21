@@ -4,41 +4,31 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <title>SourceKit</title>
-        <link rel="stylesheet" href="css/themes/claro/claro.css" />
-        <script src="http://o.aolcdn.com/dojo/1.5.0/dojo/dojo.xd.js" djConfig="parseOnLoad: true"></script>
+        <link rel="stylesheet" href="../src/closure-library/closure/goog/css/tabbar.css" />
+        <link rel="stylesheet" href="../src/closure-library/closure/goog/css/tree.css" />
+        <script src="../src/closure-library/closure/goog/base.js"></script>
+        <script src="../src/sourcekit/application.js"></script>
         <script>
-            var require = {
-                paths: { 
-                    sourcekit: '../src/sourcekit'
-                },
-                ready: function() {
-                    require(["sourcekit/application"], function(Application) {
-                        dojo.addOnLoad(function() {
-                            Application.start();
-                        });
-                    });
-                }
-            }
+            goog.require("sourcekit.Application");
         </script>
-        
-        <script src="../lib/require.js"></script>
-        <style type="text/css">
-            body, html { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
-            #borderContainer { width:100%; height:100% }
-        </style>
     </head>
-    <body class="claro">
-       <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="true" liveSplitters="true" id="borderContainer">
-            <div dojoType="dijit.layout.ContentPane" splitter="true" region="leading"
-                style="width: 100px;">
-                    Hi
-                </div>
-
-            <div dojoType="dijit.layout.TabContainer" style="width: 100%; height: 100%;" splitter="true" region="center">
-                <div dojoType="dijit.layout.ContentPane" title="My first tab" selected="true">
-                    <div id="aceWorthy">asdfadsfa</div>
-                </div>
-            </div>
+    <body>
+        <div id="tree"></div>
+        
+        <div id="top" class="goog-tab-bar goog-tab-bar-top"> 
+            <div class="goog-tab goog-tab-selected">Hello</div> 
+            <div class="goog-tab">Settings</div> 
+            <div class="goog-tab">More</div> 
+            <div class="goog-tab goog-tab-disabled">Advanced</div> 
         </div>
+        <!-- Use goog-tab-bar-clear to separate the tabs from the content. --> 
+        <div class="goog-tab-bar-clear"></div> 
+        <div id="top_content" class="goog-tab-content"> 
+            Use the keyboard or the mouse to switch tabs.
+        </div> 
+        
+        <script>
+            sourcekit.Application.run();
+        </script>
     </body>
 </html>
