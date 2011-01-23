@@ -9,10 +9,13 @@ define('sourcekit/application', function () {
             var tabContainer = new dijit.layout.TabContainer();
             var contentContainer = new dijit.layout.ContentPane();
             contentContainer.content = "HOHOHO";
-            
-            var editor = new CodeMirror(dojo.query("#editor"));
-            console.log(editor);
-            
+            var editor = new CodeMirror(dojo.query("#editorPane")[0], {
+                parserfile: ["tokenizejavascript.js", "parsejavascript.js"],
+                path: "../src/codemirror/",
+                stylesheet: "css/codemirror/xmlcolors.css",
+                content: "YAR",
+                lineNumbers: true
+            });
         }
     }
 });
