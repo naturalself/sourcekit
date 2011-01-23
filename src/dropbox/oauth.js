@@ -1,3 +1,5 @@
+define('dropbox/oauth', function() {
+
 /*
  * Copyright 2008 Netflix, Inc.
  *
@@ -549,3 +551,5 @@ try {
     OAuth.correctTimestampFromSrc();
 } catch(e) {
 }
+
+});
