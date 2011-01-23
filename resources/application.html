@@ -23,8 +23,11 @@
         </script>
         <script src="../src/require.js"></script>
         <style type="text/css">
-            body, html { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
+            body, html { width:100%; height:100%; margin:0; padding:0; overflow: hidden; }
             #borderContainer { width:100%; height:100% }
+            .CodeMirror-line-numbers { font-family: monospace; font-size: 10pt; margin: 0 0 0 0; padding: 5px; border-right: 1px solid #ccc; text-align: right; background: #eee;}
+            #editorContentPane { overflow:hidden; }
+            #editorPane { border: #ccc 1px solid; }
         </style>
     </head>
     <body class="claro">
@@ -33,9 +36,7 @@
                 style="width: 100px;"></div>
 
             <div dojoType="dijit.layout.TabContainer" style="width: 100%; height: 100%;" splitter="true" region="center">
-                <div dojoType="dijit.layout.ContentPane" title="My first tab" selected="true" id="editorPane">
-                    <div id="editor">wow.</div>
-                </div>
+                <div dojoType="dijit.layout.ContentPane" title="My first tab" selected="true" id="editorContentPane"><div id="editorPane"></div></div>
             </div>
         </div>
     </body>

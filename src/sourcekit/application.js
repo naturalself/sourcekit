@@ -10,11 +10,15 @@ define('sourcekit/application', function () {
             var contentContainer = new dijit.layout.ContentPane();
             contentContainer.content = "HOHOHO";
             var editor = new CodeMirror(dojo.query("#editorPane")[0], {
-                parserfile: ["tokenizejavascript.js", "parsejavascript.js"],
+                parserfile: ["parsedummy.js"],
                 path: "../src/codemirror/",
-                stylesheet: "css/codemirror/xmlcolors.css",
-                content: "YAR",
-                lineNumbers: true
+                stylesheet: ["css/codemirror/xmlcolors.css", "css/codemirror/jscolors.css", "css/codemirror/csscolors.css"],
+                autoMatchParens : true,
+                height : '100%',
+                content: 'test',
+                textWrapping: false,
+                lineNumbers: true,
+                breakPoints: false,
             });
         }
     }
