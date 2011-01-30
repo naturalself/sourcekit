@@ -1,4 +1,4 @@
-define('dropbox/oauth', function() {
+define('dropbox/oauth', ['dropbox/sha1'], function(Sha1) {
 
 /*
  * Copyright 2008 Netflix, Inc.
@@ -542,7 +542,7 @@ OAuth.SignatureMethod.registerMethodClass(["HMAC-SHA1", "HMAC-SHA1-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
             b64pad = '=';
-            var signature = b64_hmac_sha1(this.key, baseString);
+            var signature = Sha1.b64_hmac_sha1(this.key, baseString);
             return signature;
         }
     ));
@@ -551,5 +551,7 @@ try {
     OAuth.correctTimestampFromSrc();
 } catch(e) {
 }
+
+return OAuth;
 
 });

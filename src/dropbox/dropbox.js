@@ -1,3 +1,5 @@
+define("dropbox/dropbox", ["dropbox/oauth"], function(OAuth) {
+
 var Dropbox = function(consumerKey, consumerSecret) {
 	// Constructor / Private
 	var _consumerKey = consumerKey;
@@ -12,6 +14,54 @@ var Dropbox = function(consumerKey, consumerSecret) {
 	var _cookieTimeOut = 3650;
 	var _dropboxApiVersion = 0;
 	var _xhr = new XMLHttpRequest();
+	
+	var _serialize = function(a) {
+	    serialized = [];
+	    for (var key in a) {
+	        var value = a[key];
+	        serialized[ serialized.length ] = encodeURIComponent(key) + "=" + encodeURIComponent(value);
+        }
+        
+        return serialized.join("&").replace(/%20/g, "+");
+    };
+	
+	var _ajax = function(options) {
+	    if (!options.type) {
+	        options.type = "GET";
+        }
+        
+        if (typeof options.data === "object") {
+            options.type = "POST";
+        } 
+	    
+	    _xhr.open(options.type, options.url, true);
+	    
+	    _xhr.dataType = options.dataType;
+	    
+        _xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+		_xhr.onreadystatechange = (function() {
+		    
+			if (this.readyState == 4 && this.status == 200) {
+			    var data = this.responseText;
+			    if (this.dataType == "json") {
+			        data = JSON.parse(this.responseText);
+		        }
+				options.success(data, this.status, this);
+    		} else if (this.readState == 4) {
+    		    var data = this.responseText;
+			    if (this.dataType == "json") {
+			        data = JSON.parse(this.responseText);
+		        }
+
+				options.error(data, this.status, this);
+			}
+		}).bind(_xhr);
+		
+		_xhr.onerror = options.error;
+
+		_xhr.send(_serialize(options.data));
+    };
 	
 	var _ajaxSendFileContents = function(options) {
 		var message = options.message;
@@ -172,7 +222,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
 				error: options.error
 			});
 		} else {
-			$.ajax({
+			_ajax({
 				url: message.action,
 				type: message.method,
 				data: OAuth.getParameterMap(message.parameters),
@@ -200,7 +250,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
 		},
 
 		authorize: function(options) {
-			$.ajax({
+			_ajax({
 				type: 'GET',
 				url: "https://api.dropbox.com/" + _dropboxApiVersion + "/token",
 				data: {
@@ -309,3 +359,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
 		}
 	}).initialize();
 };
+
+
+return Dropbox;
+});

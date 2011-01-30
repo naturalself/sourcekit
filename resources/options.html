@@ -1,48 +1,10 @@
 <html>
 <head>
     <title>SourceKit Options</title>
-    <script src="js/jquery/jquery.js"></script>
-    <script>
-        var bgPage = chrome.extension.getBackgroundPage();
-	    var dropbox = bgPage.dropbox;
-    
-        function restore_options() {
-            if (dropbox.isAccessGranted()) {
-                $('#deauthorize').css("display", "block");
-            } else {
-                $('#authorize').css("display", "block");   
-            }
-        }
-        
-        function authorize() {
-            dropbox.authorize({
-                email: $('#email').val(), 
-                password: $('#password').val(),
-                success: (function(data) {
-                    chrome.tabs.getCurrent(function(tab) {
-                        chrome.tabs.create({ url: "application.html", selected: true });
-                        chrome.tabs.remove(tab.id);
-                    });
-                }).bind(this),
-                error: (function(data) {
-                    window.location.reload(false);
-                }).bind(this)
-            });
-        }
-        
-        function deauthorize() {
-            dropbox.deauthorize();
-            window.location.reload(false);
-        }
-    </script>
+    <script src="../src/require.js"></script>
     <link rel="stylesheet" href="css/options.css" type="text/css" media="screen" title="no title" charset="utf-8">
 </head>
 <body>
-    <script>
-        $(document).ready(function() {
-            restore_options();
-        });
-    </script>
     <div id="main">
 		<header>
 	        <h1>SourceKit Options</h1>
@@ -50,16 +12,57 @@
 		<section>
 			<img src="images/dropbox-logo.png" align="absmiddle" />
 	        <div id="deauthorize" style="display:none;">
-	            <p>Access has been granted by Dropbox. Would you like to <a href="javascript:deauthorize();">deauthorize</a>?</p>
+	            <p>Access has been granted by Dropbox. Would you like to <a href="javascript:Options.deauthorize();">deauthorize</a>?</p>
 	        </div>
 	        <div id="authorize" style="display: none;">
 				<input type="text" name="email" id="email" placeholder="Email" />
 	            <input type="password" name="password" id="password" placeholder="Password"/>
 				<p class="fineprint"><em>(This just grants access, passwords will not be saved locally)</em></p>
-				<button onclick="authorize()">Grant Access to SourceKit</button>
+				<button onclick="Options.authorize()">Grant Access to SourceKit</button>
 	        </div>
 		</section>
 		<footer></footer>
     </div>
+    <script>
+        require(['dropbox/dropbox'], function(Dropbox) {
+            var bgPage = chrome.extension.getBackgroundPage();
+            var consumerKey = "0660jgq6erg4h63";
+            var consumerSecret = "0iyu9q1lnb56jyg";
+            var dropbox = new Dropbox(consumerKey, consumerSecret);
+    
+            Options = {};
+            
+            Options.restore_options = function() {
+                if (dropbox.isAccessGranted()) {
+                    document.getElementById('deauthorize').style.display = "block";
+                } else {
+                    document.getElementById('authorize').style.display = "block";
+                }
+            }
+        
+            Options.authorize = function() {
+                dropbox.authorize({
+                    email: document.getElementById('email').value, 
+                    password: document.getElementById('password').value,
+                    success: (function(data) {
+                        chrome.tabs.getCurrent(function(tab) {
+                            chrome.tabs.create({ url: "resources/application.html", selected: true });
+                            chrome.tabs.remove(tab.id);
+                        });
+                    }).bind(this),
+                    error: (function(data) {
+                        window.location.reload(false);
+                    }).bind(this)
+                });
+            }
+        
+            Options.deauthorize = function() {
+                dropbox.deauthorize();
+                window.location.reload(false);
+            }
+        
+            Options.restore_options();
+        });
+    </script>
 </body>
 </html>

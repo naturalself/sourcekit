@@ -1,4 +1,15 @@
-define('sourcekit/application', function () {
+define('sourcekit/application', ['dropbox/dropbox'], function (Dropbox) {
+    consumerKey = "0660jgq6erg4h63";
+    consumerSecret = "0iyu9q1lnb56jyg";
+    dropbox = new Dropbox(consumerKey, consumerSecret);
+    
+    if (!dropbox.isAccessGranted()) {
+        chrome.tabs.getCurrent(function(tab) {
+            chrome.tabs.create({ url: "options.html", selected: true });
+            chrome.tabs.remove(tab.id);
+        });
+    }
+    
     dojo.require("dijit.layout.ContentPane");
     dojo.require("dijit.layout.BorderContainer");
     dojo.require("dijit.layout.TabContainer");
