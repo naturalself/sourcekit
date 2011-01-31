@@ -13,6 +13,11 @@ define('sourcekit/application', ['dropbox/dropbox'], function (Dropbox) {
     dojo.require("dijit.layout.ContentPane");
     dojo.require("dijit.layout.BorderContainer");
     dojo.require("dijit.layout.TabContainer");
+    dojo.require("dojo.data.ItemFileReadStore");
+    dojo.require("dijit.Tree");
+    dojo.require("dijit.form.Button");
+    dojo.require("dijit.Toolbar");
+    dojo.require("dijit.MenuBar");
 
     return {
         start: function() {
@@ -31,6 +36,22 @@ define('sourcekit/application', ['dropbox/dropbox'], function (Dropbox) {
                 lineNumbers: true,
                 breakPoints: false,
             });
+            
+            var store = dojo.data.ItemFileReadStore({ url: "/src/sourcekit/countries.js" });
+            
+            var treeModel = new dijit.tree.ForestStoreModel({
+                store: store,
+                query: {
+                   "type": "continent"
+                },
+                rootId: "root",
+                rootLabel: "Continents",
+                childrenAttrs: ["children"]
+            });
+            
+            new dijit.Tree({ model: treeModel, showRoot: false }, "treeOne");
+            var toolbar = new dijit.Toolbar({}, "treeToolbar");
+            cutButton = new dijit.form.Button({}, "cutButton");
         }
     }
 });

@@ -32,11 +32,21 @@
     </head>
     <body class="claro">
         <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="true" liveSplitters="true" id="borderContainer">
-            <div dojoType="dijit.layout.ContentPane" splitter="true" region="leading"
-                style="width: 100px;"></div>
+            <div dojoType="dijit.layout.ContentPane" splitter="true" region="leading" style="width: 100px; padding: 0;">
+                <div id="treeToolBar" dojoType="dijit.Toolbar">
+                    <div id="newFileButton" dojoType="dijit.form.Button" iconClass="dijitIconFile" showLabel="false"> </div>
+                    <div id="newFolderButton" dojoType="dijit.form.Button" iconClass="dijitIconFolderClosed" showLabel="false"> </div>
+                </div>
+                <div id="treeOne"></div>
+            </div>
 
-            <div dojoType="dijit.layout.TabContainer" style="width: 100%; height: 100%;" splitter="true" region="center">
-                <div dojoType="dijit.layout.ContentPane" title="My first tab" selected="true" id="editorContentPane"><div id="editorPane"></div></div>
+            <div dojoType="dijit.layout.ContentPane" splitter="false" region="center" style="border: 0; padding: 0;">
+                <div id="fileMenuBar" dojoType="dijit.MenuBar">
+                    <div id="saveFileButton" dojoType="dijit.form.Button" iconClass="dijitIconSave" showLabel="true">Save</div>
+                </div>
+                <div dojoType="dijit.layout.TabContainer" style="width: 100%; height: 100%;" splitter="true" region="center">
+                    <div dojoType="dijit.layout.ContentPane" title="My first tab" selected="true" id="editorContentPane"><div id="editorPane"></div></div>
+                </div>
             </div>
         </div>
     </body>
