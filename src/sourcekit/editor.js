@@ -21,8 +21,6 @@ Editor.prototype.setupInterface = function() {
         breakPoints: false,
     });*/
     
-    this.tabContainer = new dijit.layout.TabContainer({style: "height: 100%; width: 100%;"}, "editorTabContainer");
-    this.tabContainer.startup();
 }
 
 return Editor;

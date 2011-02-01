@@ -9,6 +9,7 @@
         <script>
             dojo.require("dijit.layout.BorderContainer");
             dojo.require("dijit.layout.ContentPane");
+            dojo.require("dijit.layout.TabContainer");
         </script>
         <script src="../src/codemirror/codemirror.js" ></script>
         <style type="text/css">
@@ -30,12 +31,14 @@
     </head>
     <body class="claro">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false">
-	        <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true" style="width: 200px; padding: 0; border-right: solid #eee 1px;">
+	        <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true">
 	            <div id="fileListToolbar"></div>
                 <div id="fileListTree"></div>
             </div>
 	        <div id="borderCenter" dojoType="dijit.layout.ContentPane" region="center">
-	            <div id="editorTabContainer"></div>
+	            <div id="editorTabContainer" dojoType="dijit.layout.TabContainer">
+	               SourceKit v0.6
+	            </div>
 	        </div>
         </div>
         <script src="../src/require.js"></script>
