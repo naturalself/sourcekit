@@ -5,49 +5,44 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <title>SourceKit</title>
         <link rel="stylesheet" href="css/themes/claro/claro.css" />
-        <script src="http://o.aolcdn.com/dojo/1.5.0/dojo/dojo.xd.js" djConfig="parseOnLoad: true"></script>
-        <script src="../src/codemirror/codemirror.js" ></script>
+        <script src="http://o.aolcdn.com/dojo/1.5.0/dojo/dojo.xd.js" djConfig="parseOnLoad:true"></script>
         <script>
-            var require = {
-                paths: {
-                    sourcekit: '../src/sourcekit'
-                },
-                ready: function() {
-                    require(["sourcekit/application"], function(Application) {
-                        dojo.addOnLoad(function() {
-                            Application.start();
-                        });
-                    });
-                }
-            }
+            dojo.require("dijit.layout.BorderContainer");
+            dojo.require("dijit.layout.ContentPane");
         </script>
-        <script src="../src/require.js"></script>
+        <script src="../src/codemirror/codemirror.js" ></script>
         <style type="text/css">
             body, html { width:100%; height:100%; margin:0; padding:0; overflow: hidden; }
+            /* Dijit Layout */
             #borderContainer { width:100%; height:100% }
+            #borderLeft {
+                width: 200px; padding: 0; border-right: solid #eee 1px;
+            }
+            #borderCenter {
+                padding: 0; border-left: solid #eee 1px;
+            }
+
+            /* CodeMirror */
             .CodeMirror-line-numbers { font-family: monospace; font-size: 10pt; margin: 0 0 0 0; padding: 5px; border-right: 1px solid #ccc; text-align: right; background: #eee;}
             #editorContentPane { overflow:hidden; }
             #editorPane { border: #ccc 1px solid; }
         </style>
     </head>
     <body class="claro">
-        <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="true" liveSplitters="true" id="borderContainer">
-            <div dojoType="dijit.layout.ContentPane" splitter="true" region="leading" style="width: 100px; padding: 0;">
-                <div id="treeToolBar" dojoType="dijit.Toolbar">
-                    <div id="newFileButton" dojoType="dijit.form.Button" iconClass="dijitIconFile" showLabel="false"> </div>
-                    <div id="newFolderButton" dojoType="dijit.form.Button" iconClass="dijitIconFolderClosed" showLabel="false"> </div>
-                </div>
-                <div id="treeOne"></div>
+        <div id="borderContainer" dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false">
+	        <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true" style="width: 200px; padding: 0; border-right: solid #eee 1px;">
+	            <div id="fileListToolbar"></div>
+                <div id="fileListTree"></div>
             </div>
-
-            <div dojoType="dijit.layout.ContentPane" splitter="false" region="center" style="border: 0; padding: 0;">
-                <div id="fileMenuBar" dojoType="dijit.MenuBar">
-                    <div id="saveFileButton" dojoType="dijit.form.Button" iconClass="dijitIconSave" showLabel="true">Save</div>
-                </div>
-                <div dojoType="dijit.layout.TabContainer" style="width: 100%; height: 100%;" splitter="true" region="center">
-                    <div dojoType="dijit.layout.ContentPane" title="My first tab" selected="true" id="editorContentPane"><div id="editorPane"></div></div>
-                </div>
-            </div>
+	        <div id="borderCenter" dojoType="dijit.layout.ContentPane" region="center">
+	            <div id="editorTabContainer"></div>
+	        </div>
         </div>
+        <script src="../src/require.js"></script>
+        <script>
+        require(["sourcekit/application"], function(Application) {
+            Application.start();
+        });
+        </script>
     </body>
 </html>
