@@ -5,7 +5,7 @@ dojo.require("dijit.layout.BorderContainer");
 dojo.require("dijit.layout.TabContainer");
 
 var Editor = function() {
-    this.setupInterface();
+    dojo.addOnLoad(this.setupInterface);
 };
 
 Editor.prototype.setupInterface = function() {
@@ -22,14 +22,7 @@ Editor.prototype.setupInterface = function() {
     });*/
     
     this.tabContainer = new dijit.layout.TabContainer({style: "height: 100%; width: 100%;"}, "editorTabContainer");
-    var pane = new dijit.layout.ContentPane({ title:"Remote Content", content:"YO" });
-    this.tabContainer.addChild(pane);
-    this.tabContainer.selectChild(pane);
-    
-    var pane2 = new dijit.layout.ContentPane({ title:"Remote Content", content:"YO" });
-    this.tabContainer.addChild(pane2);
-    this.tabContainer.selectChild(pane2);
-
+    this.tabContainer.startup();
 }
 
 return Editor;
