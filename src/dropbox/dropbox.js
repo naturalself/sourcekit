@@ -34,7 +34,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
         }
 	    
 	    if (options.type == "GET") {
-	        options.url = options.url + "?" + _serialize(options.data) + "=";
+	        options.url = options.url + "?" + _serialize(options.data);
         } else if (options.type == "POST") {
 	        serializedData = _serialize(options.data);
 	    }
