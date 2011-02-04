@@ -17,6 +17,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
 	
 	var _serialize = function(a) {
 	    serialized = [];
+
 	    for (var key in a) {
 	        var value = a[key];
 	        serialized[ serialized.length ] = encodeURIComponent(key) + "=" + encodeURIComponent(value);
@@ -26,22 +27,25 @@ var Dropbox = function(consumerKey, consumerSecret) {
     };
 	
 	var _ajax = function(options) {
+	    var serializedData = null;
+	    
 	    if (!options.type) {
 	        options.type = "GET";
         }
-        
-        if (typeof options.data === "object") {
-            options.type = "POST";
-        } 
+	    
+	    if (options.type == "GET") {
+	        options.url = options.url + "?" + _serialize(options.data) + "=";
+        } else if (options.type == "POST") {
+	        serializedData = _serialize(options.data);
+	    }
 	    
 	    _xhr.open(options.type, options.url, true);
 	    
+	    _xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	    _xhr.setRequestHeader("Accept", "application/json, text/javascript, */*");
 	    _xhr.dataType = options.dataType;
 	    
-        _xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
 		_xhr.onreadystatechange = (function() {
-		    
 			if (this.readyState == 4 && this.status == 200) {
 			    var data = this.responseText;
 			    if (this.dataType == "json") {
@@ -60,7 +64,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
 		
 		_xhr.onerror = options.error;
 
-		_xhr.send(_serialize(options.data));
+		_xhr.send(serializedData);
     };
 	
 	var _ajaxSendFileContents = function(options) {
@@ -185,7 +189,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
 			message.method = options.method;
 			delete options.method;
 		}
-	
+		
 		for (key in options) {
 			message.parameters.push([key, options[key]]);
 		}

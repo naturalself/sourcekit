@@ -1,4 +1,4 @@
-define("sourcekit/filelist", function() {
+define("sourcekit/filelist", ["dropbox/dropbox"], function() {
 
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dijit.Tree");
@@ -6,7 +6,13 @@ dojo.require("dijit.form.Button");
 dojo.require("dijit.Toolbar");
 dojo.require("dijit.MenuBar");
 
-var FileList = function() {
+var FileList = function(dropbox) {
+    this.dropbox = dropbox;
+    
+    this.dropbox.getDirectoryContents("", function(data) {
+        console.log(data);
+    });
+    
     dojo.addOnLoad(this.setupInterface);
 };
 
@@ -26,6 +32,12 @@ FileList.prototype.setupInterface = function() {
     new dijit.Tree({ model: treeModel, showRoot: false }, "fileListTree");
     var toolbar = new dijit.Toolbar({}, "fileListToolbar");
     cutButton = new dijit.form.Button({}, "cutButton");
+}
+
+
+
+FileList.prototype.getDirectoryContents = function(path) {
+    
 }
 
 return FileList;

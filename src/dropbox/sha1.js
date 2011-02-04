@@ -65,12 +65,12 @@ Sha1.core_sha1 = function(x, len)
     for(var j = 0; j < 80; j++)
     {
       if(j < 16) w[j] = x[i + j];
-      else w[j] = rol(w[j-3] ^ w[j-8] ^ w[j-14] ^ w[j-16], 1);
-      var t = Sha1.safe_add(Sha1.safe_add(rol(a, 5), Sha1.sha1_ft(j, b, c, d)),
+      else w[j] = Sha1.rol(w[j-3] ^ w[j-8] ^ w[j-14] ^ w[j-16], 1);
+      var t = Sha1.safe_add(Sha1.safe_add(Sha1.rol(a, 5), Sha1.sha1_ft(j, b, c, d)),
                        Sha1.safe_add(Sha1.safe_add(e, w[j]), Sha1.sha1_kt(j)));
       e = d;
       d = c;
-      c = rol(b, 30);
+      c = Sha1.rol(b, 30);
       b = a;
       a = t;
     }
