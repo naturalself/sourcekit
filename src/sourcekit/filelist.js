@@ -1,4 +1,4 @@
-define("sourcekit/filelist", ["dropbox/dropbox"], function() {
+define("sourcekit/filelist", ["dropbox/dropbox", "sourcekit/filelist/store"], function(Dropbox, FileListStore) {
 
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dijit.Tree");
@@ -10,14 +10,14 @@ var FileList = function(dropbox) {
     this.dropbox = dropbox;
     
     this.dropbox.getDirectoryContents("", function(data) {
-        console.log(data);
+        data.contents
     });
     
     dojo.addOnLoad(this.setupInterface);
 };
 
 FileList.prototype.setupInterface = function() {
-    var store = new dojo.data.ItemFileReadStore({ url: "/src/sourcekit/countries.js" });
+    var store = new FileListStore(this.dropbox);
         
     var treeModel = new dijit.tree.ForestStoreModel({
         store: store,
@@ -34,11 +34,6 @@ FileList.prototype.setupInterface = function() {
     cutButton = new dijit.form.Button({}, "cutButton");
 }
 
-
-
-FileList.prototype.getDirectoryContents = function(path) {
-    
-}
 
 return FileList;
 
