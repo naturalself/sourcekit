@@ -9,23 +9,18 @@ dojo.require("dijit.MenuBar");
 var FileList = function(dropbox) {
     this.dropbox = dropbox;
     
-    this.dropbox.getDirectoryContents("", function(data) {
-        data.contents
-    });
-    
-    dojo.addOnLoad(this.setupInterface);
+    dojo.addOnLoad(this.setupInterface.bind(this));
 };
 
 FileList.prototype.setupInterface = function() {
+    
     var store = new FileListStore(this.dropbox);
         
     var treeModel = new dijit.tree.ForestStoreModel({
         store: store,
-        query: {
-           "type": "continent"
-        },
+        query: { "path": "/" },
         rootId: "root",
-        rootLabel: "Continents",
+        rootLabel: "Dropbox",
         childrenAttrs: ["children"]
     });
 

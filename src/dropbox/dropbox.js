@@ -294,17 +294,19 @@ var Dropbox = function(consumerKey, consumerSecret) {
 		},
 		
 		getDirectoryContents: function(path, callback) {
-			var filename = path.replace(/^\//, '');
-			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + escape(filename);
-			var message = _createOauthRequest(url, {
-				file_limit: _fileListLimit,
-				list: "true"
-			});
+		    if (path != null) {
+    			var filename = path.replace(/^\//, '');
+    			var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + escape(filename);
+    			var message = _createOauthRequest(url, {
+    				file_limit: _fileListLimit,
+    				list: "true"
+    			});
 
-			_sendOauthRequest(message, {
-				type: "json",
-				success: (function(data) { callback(data); }).bind(this)
-			});
+    			_sendOauthRequest(message, {
+    				type: "json",
+    				success: (function(data) { callback(data); }).bind(this)
+    			});
+    		}
 		},
 		
 		getMetadata: function(path, callback) {
@@ -363,7 +365,6 @@ var Dropbox = function(consumerKey, consumerSecret) {
 		}
 	}).initialize();
 };
-
 
 return Dropbox;
 });
