@@ -2,11 +2,12 @@ define("sourcekit/filelist/store", function() {
 
 var FileListStore = function(dropbox) {
     var _dropbox = dropbox;
+    var _arrayOfAllItems = [];
 
     return {
         getValue: function(item, attribute, defaultValue) { console.log('Not Implemented Yet'); },
         getValues: function(item, attribute) {
-            return [item[attribute]];
+            return (item[attribute] || []).slice(0); 
         },
         getAttributes: function(item) { console.log('Not Implemented Yet'); },
         hasAttribute: function(item, attribute) { 
@@ -14,38 +15,45 @@ var FileListStore = function(dropbox) {
         },
         containsValue: function(item, attribute, value) { console.log('Not Implemented Yet'); },
         isItem: function(something) { console.log('Not Implemented Yet'); },
-        isItemLoaded: function(something) {
-            return something.loaded;
-        },
-        loadItem: function(keywordArgs) {
-            console.log(keywordArgs);
+        isItemLoaded: function(something) {            
+            var result = false;
             
+            if (something && something.loaded) {
+                result = something.loaded;
+                something.loaded = false;
+            }
+            
+            return result;
+        },
+        loadItem: function(keywordArgs) { 
             var scope = keywordArgs.scope || dojo.global;
             
             if (keywordArgs.item) {
                 var item = keywordArgs.item;
-                
-                if (typeof item == "object") {
-                    var path = item.path;
-                
-                    _dropbox.getDirectoryContents(path, function(data) {
-                       for (i in data.contents) {
+
+                if (!item.loaded) {
+                    console.log("initiate load", item.path);
+                    _dropbox.getDirectoryContents(item.path, function(data) {
+                        console.log("loaded", item.path);
+                        for (i in data.contents) {
                             if (data.contents[i].is_dir) {
                                 data.contents[i].children = [];
                                 data.contents[i].loaded = false;
                             } else {
+                                _arrayOfAllItems[data.contents[i].path] = true;
                                 data.contents[i].loaded = true;
                             }
+                    
+                            item.children.push(data.contents[i]);
                         }
-                        
-                        if (keywordArgs.onItem) {
-                            item.children = [{path: 'deeb'}, {path: 'doood'}];
-                            item.loaded = true;
-                            keywordArgs["onItem"].call(scope, item);
-                        }
+                    
+                        item.loaded = true;
+                        keywordArgs['onItem'].call(scope, item);
                     });
                 }
             }
+            
+            return true;
         },
         fetch: function(keywordArgs) { 
             var path = keywordArgs.query.path;
@@ -57,6 +65,7 @@ var FileListStore = function(dropbox) {
                         data.contents[i].children = [];
                         data.contents[i].loaded = false;
                     } else {
+                        _arrayOfAllItems[data.contents[i].path] = true;
                         data.contents[i].loaded = true;
                     }
                 }
@@ -82,7 +91,7 @@ var FileListStore = function(dropbox) {
         },
         close: function(request) { console.log('Not Implemented Yet'); },
         getLabel: function(item) { 
-            return item.path;
+            return item.path.replace(/\\/g,'/').replace( /.*\//, '' );
         },
         getLabelAttributes: function(item) { console.log('Not Implemented Yet'); },
         

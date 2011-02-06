@@ -1,6 +1,5 @@
 define("sourcekit/filelist", ["dropbox/dropbox", "sourcekit/filelist/store"], function(Dropbox, FileListStore) {
 
-dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dijit.Tree");
 dojo.require("dijit.form.Button");
 dojo.require("dijit.Toolbar");
@@ -13,15 +12,15 @@ var FileList = function(dropbox) {
 };
 
 FileList.prototype.setupInterface = function() {
-    
     var store = new FileListStore(this.dropbox);
-        
+    
     var treeModel = new dijit.tree.ForestStoreModel({
         store: store,
         query: { "path": "/" },
         rootId: "root",
         rootLabel: "Dropbox",
-        childrenAttrs: ["children"]
+        childrenAttrs: ["children"],
+        deferItemLoadingUntilExpand: true
     });
 
     new dijit.Tree({ model: treeModel, showRoot: false }, "fileListTree");

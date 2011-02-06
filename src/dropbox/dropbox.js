@@ -13,7 +13,6 @@ var Dropbox = function(consumerKey, consumerSecret) {
 	var _fileListLimit = 10000;
 	var _cookieTimeOut = 3650;
 	var _dropboxApiVersion = 0;
-	var _xhr = new XMLHttpRequest();
 	
 	var _serialize = function(a) {
 	    serialized = [];
@@ -39,6 +38,8 @@ var Dropbox = function(consumerKey, consumerSecret) {
 	        serializedData = _serialize(options.data);
 	    }
 	    
+	    
+	    var _xhr = new XMLHttpRequest();
 	    _xhr.open(options.type, options.url, true);
 	    
 	    _xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -74,6 +75,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
 		var success = options.success;
 		var error = options.error;
 		
+		var _xhr = new XMLHttpRequest();
 		_xhr.open("POST", message.action, true);
 		
 		var boundary = '---------------------------';
@@ -249,7 +251,6 @@ var Dropbox = function(consumerKey, consumerSecret) {
 		
 		initialize: function() {
 			_setupAuthStorage();
-
 			return this;
 		},
 
@@ -304,7 +305,8 @@ var Dropbox = function(consumerKey, consumerSecret) {
 
     			_sendOauthRequest(message, {
     				type: "json",
-    				success: (function(data) { callback(data); }).bind(this)
+    				success: (function(data) { callback(data); }).bind(this),
+    				error: this.errorHandler.bind(this)
     			});
     		}
 		},
@@ -362,7 +364,11 @@ var Dropbox = function(consumerKey, consumerSecret) {
 		
 		logOutDropbox: function() {
 			_clearAuthStorage();
-		}
+		},
+		
+		errorHandler: function(data) {
+		    console.error(data);
+	    }
 	}).initialize();
 };
 
