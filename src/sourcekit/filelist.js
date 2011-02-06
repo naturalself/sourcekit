@@ -33,12 +33,31 @@ FileList.prototype.setupInterface = function() {
     }, "fileListTree");
     
     dojo.connect(fileListTree, "onClick", this, function(item, node, event) {
-        console.log(item);
         this.editor.openFile(item);
     });
     
     var toolbar = new dijit.Toolbar({}, "fileListToolbar");
-    cutButton = new dijit.form.Button({}, "cutButton");
+    newFileButton = new dijit.form.Button({
+        label: "New File",
+        showLabel: false,
+        iconClass: "dijitIconFile"
+    });
+    
+    newFolderButton = new dijit.form.Button({
+        label: "New Folder",
+        showLabel: false,
+        iconClass: "dijitIconFolderClosed"
+    });
+    
+    newDeleteButton = new dijit.form.Button({
+        label: "Delete",
+        showLabel: false,
+        iconClass: "dijitIconDelete"
+    });
+    
+    toolbar.addChild(newFileButton);
+    toolbar.addChild(newFolderButton);
+    toolbar.addChild(newDeleteButton);
 }
 
 return FileList;
