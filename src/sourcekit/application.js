@@ -8,7 +8,7 @@ var consumerSecret = "0iyu9q1lnb56jyg";
 var dropbox = new Dropbox(consumerKey, consumerSecret);
 var Application = {};
 
-Application.start = function() {
+Application.start = function(editorEnv) {
     if (!dropbox.isAccessGranted()) {
         chrome.tabs.getCurrent(function(tab) {
             chrome.tabs.create({ url: "options.html", selected: true });
@@ -17,7 +17,7 @@ Application.start = function() {
     }
     
     dojo.addOnLoad((function() {
-        editor = new Editor(dropbox);
+        editor = new Editor(dropbox, editorEnv);
         fileList = new FileList(editor, dropbox);
     }).bind(this));
 };

@@ -5,6 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <title>SourceKit</title>
         <link rel="stylesheet" href="css/themes/claro/claro.css" />
+        <link rel="stylesheet" href="css/application.css" />
         <script src="http://o.aolcdn.com/dojo/1.5.0/dojo/dojo.xd.js" djConfig="parseOnLoad:true"></script>
         <script>
             dojo.require("dijit.layout.BorderContainer");
@@ -22,29 +23,42 @@
             #borderCenter {
                 padding: 0;
             }
-
-            /* CodeMirror */
-            .CodeMirror-line-numbers { font-family: monospace; font-size: 10pt; margin: 0 0 0 0; padding: 5px; border-right: 1px solid #ccc; text-align: right; background: #eee;}
-            #editorContentPane { overflow:hidden; }
-            #editorPane { border: #ccc 1px solid; }
         </style>
     </head>
     <body class="claro">
-        <div id="borderContainer" dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false">
+        <div id="borderContainer" dojoType="dijit.layout.BorderContainer" gutters="false">
 	        <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true">
                 <div id="fileListToolbar"></div>
                 <div id="fileListTree"></div>                
             </div>
 	        <div id="borderCenter" dojoType="dijit.layout.ContentPane" region="center">
-	            <div id="editorTabContainer" dojoType="dijit.layout.TabContainer">
-	               SourceKit v0.6
-	            </div>
+	            <div id="editorTabContainer" dojoType="dijit.layout.TabContainer" ></div>
 	        </div>
         </div>
         <script src="../src/require.js"></script>
         <script>
-        require(["sourcekit/application"], function(Application) {
-            Application.start();
+        var deps = [
+            "pilot/plugin_manager",
+            "pilot/settings",
+            "pilot/environment",
+            "sourcekit/application"
+        ];
+
+        var plugins = [
+            "pilot/index",
+            "cockpit/index",
+            "ace/defaults"
+        ];
+        
+        require(deps, function(Application) {
+            var catalog = require("pilot/plugin_manager").catalog;
+
+            catalog.registerPlugins(plugins).then(function() {
+                var env = require("pilot/environment").create();
+                catalog.startupPlugins({ env: env }).then(function() {
+                    require("sourcekit/application").start();
+                });
+            });
         });
         </script>
     </body>

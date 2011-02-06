@@ -1,4 +1,4 @@
-define("sourcekit/filelist/store", function() {
+define("sourcekit/filelist/store", ['sourcekit/fileutil'], function(FileUtil) {
 
 var FileListStore = function(dropbox) {
     var _dropbox = dropbox;
@@ -89,7 +89,7 @@ var FileListStore = function(dropbox) {
         },
         close: function(request) { console.log('Not Implemented Yet'); },
         getLabel: function(item) { 
-            return item.path.replace(/\\/g,'/').replace( /.*\//, '' );
+            return FileUtil.basename(item.path);
         },
         getLabelAttributes: function(item) { console.log('Not Implemented Yet'); },
         

@@ -26,7 +26,7 @@ FileList.prototype.setupInterface = function() {
     });
 
     // Set up the Tree view and hook up events
-    var fileListTree = new dijit.Tree({ 
+    var fileListTree = new dijit.Tree({
         model: treeModel, 
         showRoot: false,
         openOnClick: true
@@ -46,7 +46,7 @@ FileList.prototype.setupInterface = function() {
     newFolderButton = new dijit.form.Button({
         label: "New Folder",
         showLabel: false,
-        iconClass: "dijitIconFolderClosed"
+        iconClass: "dijitIconFolderOpen"
     });
     
     newDeleteButton = new dijit.form.Button({
