@@ -18,15 +18,21 @@
             /* Dijit Layout */
             #borderContainer { width:100%; height:100% }
             #borderLeft {
-                width: 200px; padding: 0;
+                width: 200px; 
+                padding: 0;
+                border: #B5BCC7 solid 1px;
             }
             #borderCenter {
-                padding: 0;
+                padding: 0 0 5px 0;
+            }
+            #editorContainer {
+                display: none;
+                border: #B5BCC7 solid 1px;
             }
         </style>
     </head>
     <body class="claro">
-        <div id="borderContainer" dojoType="dijit.layout.BorderContainer" gutters="false">
+        <div id="borderContainer" dojoType="dijit.layout.BorderContainer" gutters="false" liveSplitters="true">
 	        <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true">
                 <div id="fileListToolbar"></div>
                 <div id="fileListTree"></div>                
@@ -35,6 +41,7 @@
 	            <div id="editorTabContainer" dojoType="dijit.layout.TabContainer" ></div>
 	        </div>
         </div>
+        <div id="editorContainer"></div>
         <script src="../src/require.js"></script>
         <script>
         var deps = [
