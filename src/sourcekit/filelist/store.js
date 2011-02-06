@@ -32,9 +32,7 @@ var FileListStore = function(dropbox) {
                 var item = keywordArgs.item;
 
                 if (!item.loaded) {
-                    console.log("initiate load", item.path);
                     _dropbox.getDirectoryContents(item.path, function(data) {
-                        console.log("loaded", item.path);
                         for (i in data.contents) {
                             if (data.contents[i].is_dir) {
                                 data.contents[i].children = [];

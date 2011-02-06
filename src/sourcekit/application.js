@@ -17,8 +17,8 @@ Application.start = function() {
     }
     
     dojo.addOnLoad((function() {
-        editor = new Editor();
-        fileList = new FileList(dropbox);
+        editor = new Editor(dropbox);
+        fileList = new FileList(editor, dropbox);
     }).bind(this));
 };
 
