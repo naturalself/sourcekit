@@ -65,7 +65,7 @@ Editor.prototype.openFile = function(item) {
         saveButton = new dijit.form.Button({
             label: "Save",
             showLabel: true,
-            iconClass: "dijitIconFile"
+            iconClass: "dijitIconSave"
         });
         editorToolbar.addChild(saveButton);
         editorContentPane.domNode.appendChild(editorToolbar.domNode);
@@ -75,6 +75,10 @@ Editor.prototype.openFile = function(item) {
     } else {
         this.tabContainer.selectChild(id, true);
     }
+}
+
+Editor.prototype.saveFile = function(tab) {
+    
 }
 
 Editor.prototype.onResize = function(event) {
