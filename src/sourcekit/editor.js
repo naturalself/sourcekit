@@ -47,6 +47,7 @@ Editor.prototype.openFile = function(item) {
         this.dropbox.getFileContents(item.path, (function(data) {
             this.sessions[id] = new AceEditSession(data);
             this.sessions[id].setUndoManager(new AceUndoManager());
+            this.sessions[id].path = item.path;
             this.editor.setSession(this.sessions[id]);
         }).bind(this));
 
@@ -65,8 +66,10 @@ Editor.prototype.openFile = function(item) {
         saveButton = new dijit.form.Button({
             label: "Save",
             showLabel: true,
-            iconClass: "dijitIconSave"
+            iconClass: "dijitIconSave",
+            onClick: this.saveFile.bind(this)
         });
+        
         editorToolbar.addChild(saveButton);
         editorContentPane.domNode.appendChild(editorToolbar.domNode);
 
@@ -77,8 +80,16 @@ Editor.prototype.openFile = function(item) {
     }
 }
 
-Editor.prototype.saveFile = function(tab) {
+Editor.prototype.saveFile = function(event) {
+    var currentSession = this.sessions[this.tabContainer.selectedChildWidget.id];
+    if (currentSession) {
+        var path = currentSession.path;
+        var content = currentSession.toString();
     
+        this.dropbox.putFileContents(path, content, (function() {
+            console.log('saved!!');
+        }).bind(this));
+    }
 }
 
 Editor.prototype.onResize = function(event) {
@@ -110,8 +121,6 @@ Editor.prototype.onSelectTab = function(tab) {
 }
 
 Editor.prototype.onCloseTab = function(tab) {
-    
-    
     if (typeof tab == 'string') {
         tab = dijit.byId(tab);
     }
