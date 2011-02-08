@@ -11,7 +11,7 @@ var Application = {};
 Application.start = function(editorEnv) {
     if (!dropbox.isAccessGranted()) {
         chrome.tabs.getCurrent(function(tab) {
-            chrome.tabs.create({ url: "options.html", selected: true });
+            chrome.tabs.create({ url: "resources/options.html", selected: true });
             chrome.tabs.remove(tab.id);
         });
     }
