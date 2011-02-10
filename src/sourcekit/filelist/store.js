@@ -85,10 +85,14 @@ var FileListStore = function(dropbox) {
             });
         },
         getFeatures: function() { 
-            return {'dojo.data.api.Read':true, 'dojo.data.api.Identity':true};;
+            return {'dojo.data.api.Read':true, 'dojo.data.api.Identity':true, 'dojo.data.api.Write':true, 'dojo.data.api.Notification':true};
         },
         close: function(request) { console.log('Not Implemented Yet'); },
         getLabel: function(item) { 
+            if (item.label) {
+                return item.label;
+            }
+            
             return FileUtil.basename(item.path);
         },
         getLabelAttributes: function(item) { console.log('Not Implemented Yet'); },
@@ -98,7 +102,53 @@ var FileListStore = function(dropbox) {
             return item.path;
         },
         getIdentityAttributes: function(/* item */ item) { console.log('Not Implemented Yet'); },
-        fetchItemByIdentity: function(keywordArgs) { console.log('Not Implemented Yet'); }
+        fetchItemByIdentity: function(keywordArgs) { console.log('Not Implemented Yet'); },
+        
+        /* Write API */
+        newItem: function(keywordArgs, parentInfo) {
+            var item = keywordArgs.item;
+            var onSuccess = function() { };
+            console.log("creating...", item.path);
+            _dropbox.putFileContents(item.path, "", onSuccess);
+            
+            this.onNew(item, parentInfo);
+            return item;
+        },
+        
+        deleteItem: function(item) {
+            
+        },
+        
+        setValue: function(item, attribute, value) {
+            console.log('Not implemented yet (for renaming)');
+        },
+        
+        setValues: function(item, attribute, values) {
+            console.log('Not implemented yet');
+        },
+        
+        unsetAttribute: function(/* item */ item, /* string */ attribute) {
+            console.log('Not implemented yet');
+        },
+        
+        save: function(/* object */ keywordArgs) {
+            console.log('Not implemented yet');
+        },
+        
+        revert: function() {
+            console.log('Not implemented yet');
+        },
+        
+        isDirty: function(/* item? */ item) {
+            console.log('Not implemented yet');
+        },
+        
+        /* Notification API */
+        onSet: function(item, attribute, oldValue, newValue) { },
+
+        onNew: function(newItem, parentInfo) { },
+
+        onDelete: function(deletedItem) { }
     }
 }
 

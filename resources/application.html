@@ -6,24 +6,75 @@
         <title>SourceKit</title>
         <link rel="stylesheet" href="css/themes/claro/claro.css" />
         <link rel="stylesheet" href="css/application.css" />
-        <script src="http://o.aolcdn.com/dojo/1.5.0/dojo/dojo.xd.js" djConfig="parseOnLoad:true"></script>
+        <!--<script src="http://o.aolcdn.com/dojo/1.5.0/dojo/dojo.xd.js" djConfig="parseOnLoad:true"></script>-->
+        <script src="../src/dojo/dojo.js.uncompressed.js" djConfig="parseOnLoad:true"></script>
         <script>
             dojo.require("dijit.layout.BorderContainer");
             dojo.require("dijit.layout.ContentPane");
             dojo.require("dijit.layout.TabContainer");
+            dojo.require("dijit.Dialog");
+            dojo.require("dijit.form.TextBox");
+            dojo.require("dijit.form.Button");
         </script>
     </head>
     <body class="claro">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" gutters="false" liveSplitters="true">
 	        <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true">
-                <div id="fileListToolbar"></div>
-                <div id="fileListTree"></div>                
+                <div id="fileListTree"></div>
             </div>
 	        <div id="borderCenter" dojoType="dijit.layout.ContentPane" region="center">
 	            <div id="editorTabContainer" dojoType="dijit.layout.TabContainer" ></div>
 	        </div>
         </div>
         <div id="editorContainer"></div>
+        <div id="newFileDialog" dojoType="dijit.Dialog" execute="console.log(this)">
+            <table>
+                <tr>
+                    <td>
+                        <label for="name">
+                            Enter File Name
+                        </label>
+                    </td>
+                    <td>
+                        <input dojoType="dijit.form.TextBox" type="text" name="newFileName" id="newFileName">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" colspan="2">
+                        <button dojoType="dijit.form.Button" id="newFileDialogOkButton" type="submit">
+                            OK
+                        </button>
+                        <button dojoType="dijit.form.Button" type="button" onClick="dijit.byId('newFileDialog').hide();">
+                            Cancel
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div id="newFolderDialog" dojoType="dijit.Dialog">
+            <table>
+                <tr>
+                    <td>
+                        <label for="name">
+                            Enter Folder Name
+                        </label>
+                    </td>
+                    <td>
+                        <input dojoType="dijit.form.TextBox" type="text" name="newFolderName" id="newFolderName">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" colspan="2">
+                        <button dojoType="dijit.form.Button" id="newFolderDialogOkButton" type="submit">
+                            OK
+                        </button>
+                        <button dojoType="dijit.form.Button" type="button" onClick="dijit.byId('newFolderDialog').hide();">
+                            Cancel
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
         <script src="../src/require.js"></script>
         <script src="../src/boot.js"></script>
     </body>

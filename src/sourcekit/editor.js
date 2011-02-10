@@ -32,11 +32,12 @@ Editor.prototype.setupInterface = function() {
     this.editorContainer = dojo.byId("editorContainer");
     this.editor = new AceEditor(new Renderer(this.editorContainer, theme));
 
-    dojo.connect(this.tabContainer, "selectChild", this.onSelectTab.bind(this));
-    dojo.connect(this.tabContainer, "removeChild", this.onCloseTab.bind(this));
-    dojo.connect(window, "onresize", this.onResize.bind(this));
+    dojo.connect(this.tabContainer, "selectChild", this.selectTab.bind(this));
+    dojo.connect(this.tabContainer, "removeChild", this.closeTab.bind(this));
+    dojo.connect(window, "onresize", this.resize.bind(this));
 }
 
+// Commands (called by application code)
 Editor.prototype.openFile = function(item) {
     var id = FileUtil.uniqueIdByPath(item.path);
     
@@ -92,7 +93,7 @@ Editor.prototype.saveFile = function(event) {
     }
 }
 
-Editor.prototype.onResize = function(event) {
+Editor.prototype.resize = function(event) {
     contentBox = dojo.contentBox(this.editorContainer.parentNode);
     
     if (dojo.byId(this.editorContainer.parentNode.id + "_toolbar")) {
@@ -103,7 +104,7 @@ Editor.prototype.onResize = function(event) {
     }
 }
 
-Editor.prototype.onSelectTab = function(tab) {
+Editor.prototype.selectTab = function(tab) {
     this.editorContainer.style.display = "block";
     
     if (typeof tab == 'string') {
@@ -114,13 +115,13 @@ Editor.prototype.onSelectTab = function(tab) {
         this.editor.setSession(this.sessions[tab.id]);
     }
     
-    dojo.connect(tab, "resize", this.onResize.bind(this));
+    dojo.connect(tab, "resize", this.resize.bind(this));
     tab.domNode.appendChild(this.editorContainer);
     this.tabContainer.resize();
     this.editor.focus();
 }
 
-Editor.prototype.onCloseTab = function(tab) {
+Editor.prototype.closeTab = function(tab) {
     if (typeof tab == 'string') {
         tab = dijit.byId(tab);
     }

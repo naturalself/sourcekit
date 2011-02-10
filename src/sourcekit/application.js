@@ -18,7 +18,7 @@ Application.start = function(editorEnv) {
     
     dojo.addOnLoad((function() {
         editor = new Editor(dropbox, editorEnv);
-        fileList = new FileList(editor, dropbox);
+        window.fileList = new FileList(editor, dropbox);
     }).bind(this));
 };
 
