@@ -72,16 +72,20 @@ FileList.prototype.setupInterface = function() {
     
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitEditorIcon dijitEditorIconNewPage",
-        label: "New File",
+        label: "New File...",
         onClick: (function() {
             this.newFileDialog.show();
         }).bind(this)
     }));
     
-    
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitIconFolderClosed",
-        label: "New Folder"
+        label: "New Folder..."
+    }));
+    
+    this.fileListContextMenu.addChild(new dijit.MenuItem({
+        iconClass: "dijitIconDelete",
+        label: "Delete"
     }));
     
     dojo.connect(this.fileListContextMenu, "_openMyself", this, function(e) {
