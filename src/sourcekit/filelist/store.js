@@ -105,6 +105,8 @@ var FileListStore = function(dropbox) {
         
         /* Write API */
         newItem: function(keywordArgs, parentInfo) {
+            // TODO: CHECK FOR DUPES!!
+            
             var item = keywordArgs;
             
             var onSuccess = function() { console.log("success"); };
