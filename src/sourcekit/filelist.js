@@ -53,7 +53,7 @@ FileList.prototype.setupInterface = function() {
     
     this.newFolderName = dijit.byId("newFolderName");
     this.newFolderDialog = dijit.byId("newFolderDialog");
-    this.newFolderDialogOkButton = dijit.byId("newFileDialogOkButton");
+    this.newFolderDialogOkButton = dijit.byId("newFolderDialogOkButton");
     
     dojo.connect(this.newFolderDialogOkButton, "onClick", (function() {
         var parentItem = null;
