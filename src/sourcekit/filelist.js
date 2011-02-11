@@ -54,6 +54,22 @@ FileList.prototype.setupInterface = function() {
     this.newFolderName = dijit.byId("newFolderName");
     this.newFolderDialog = dijit.byId("newFolderDialog");
     this.newFolderDialogOkButton = dijit.byId("newFileDialogOkButton");
+    
+    dojo.connect(this.newFolderDialogOkButton, "onClick", (function() {
+        var parentItem = null;
+            
+        if (this.fileNodeInContext.item.is_dir) {
+            parentItem = this.fileNodeInContext.item;
+        } else if (this.fileNodeInContext.getParent() != null) {
+            parentItem = this.fileNodeInContext.getParent().item;
+        } else {
+            parentItem = this.treeModel.root;
+        }
+            
+        var item = { path: (parentItem.path + "/" + this.newFileName.get('value')).replace(/\/+/g, '/'), is_dir: true };
+        
+        this.newFolder(item, parentItem);
+    }).bind(this));
 
     // Set up the Tree view and hook up events
     this.fileListTree = new dijit.Tree({
@@ -81,7 +97,10 @@ FileList.prototype.setupInterface = function() {
     
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitIconFolderClosed",
-        label: "New Folder"
+        label: "New Folder",
+        onClick: (function() {
+            this.newFolderDialog.show();
+        }).bind(this)
     }));
     
     dojo.connect(this.fileListContextMenu, "_openMyself", this, function(e) {
@@ -92,8 +111,13 @@ FileList.prototype.setupInterface = function() {
 }
 
 FileList.prototype.newFile = function(item, parentItem) {
-    this.treeModel.store.newItem({item: item}, { parent: parentItem });
+    this.treeModel.store.newItem(item, { parent: parentItem, attribute: 'children' });
 }
+
+FileList.prototype.newFolder = function(item, parentItem) {
+    this.treeModel.store.newItem(item, { parent: parentItem, attribute: 'children' });
+}
+
 
 return FileList;
 

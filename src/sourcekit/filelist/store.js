@@ -20,18 +20,17 @@ var FileListStore = function(dropbox) {
             
             if (something && something.loaded) {
                 result = something.loaded;
-                something.loaded = false;
             }
             
             return result;
         },
-        loadItem: function(keywordArgs) { 
+        loadItem: function(keywordArgs) {
             var scope = keywordArgs.scope || dojo.global;
             
             if (keywordArgs.item) {
                 var item = keywordArgs.item;
 
-                if (!item.loaded) {
+                if (!item.loaded && (item.is_dir || item.is_dir == null)) {
                     _dropbox.getDirectoryContents(item.path, function(data) {
                         for (i in data.contents) {
                             if (data.contents[i].is_dir) {
@@ -44,7 +43,7 @@ var FileListStore = function(dropbox) {
                     
                             item.children.push(data.contents[i]);
                         }
-                    
+                        
                         item.loaded = true;
                         keywordArgs['onItem'].call(scope, item);
                     });
@@ -106,12 +105,29 @@ var FileListStore = function(dropbox) {
         
         /* Write API */
         newItem: function(keywordArgs, parentInfo) {
-            var item = keywordArgs.item;
-            var onSuccess = function() { };
-            console.log("creating...", item.path);
-            _dropbox.putFileContents(item.path, "", onSuccess);
+            var item = keywordArgs;
             
-            this.onNew(item, parentInfo);
+            var onSuccess = function() { console.log("success"); };
+
+            if (item.is_dir) {
+                item.loaded = true;
+                _dropbox.createDirectory(item.path, onSuccess);
+            } else {
+                item.loaded = true;
+                _dropbox.putFileContents(item.path, "", onSuccess);
+            }
+
+            parentInfo.parent[parentInfo.attribute].push(item);
+
+            onNewParentInfo = {
+                item: parentInfo.parent,
+                attribute: parentInfo.attribute,
+                oldValue: null,
+                newValue: item
+            };
+            
+            this.onNew(item, onNewParentInfo);
+            
             return item;
         },
         
