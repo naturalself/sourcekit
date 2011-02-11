@@ -66,7 +66,7 @@ FileList.prototype.setupInterface = function() {
             parentItem = this.treeModel.root;
         }
             
-        var item = { path: (parentItem.path + "/" + this.newFileName.get('value')).replace(/\/+/g, '/'), is_dir: true };
+        var item = { path: (parentItem.path + "/" + this.newFolderName.get('value')).replace(/\/+/g, '/'), is_dir: true, children: [] };
         
         this.newFolder(item, parentItem);
     }).bind(this));
