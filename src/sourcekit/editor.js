@@ -1,14 +1,29 @@
 define('sourcekit/editor', 
-        ['sourcekit/fileutil', 
+        ['sourcekit/fileutil',
+        'sourcekit/notification',
+        
         'ace/editor',
         'ace/edit_session',
         'ace/undomanager',
-        "ace/virtual_renderer", 
-        "ace/theme/twilight"], 
-        function(FileUtil) {
+        'ace/virtual_renderer', 
+        'ace/theme/twilight',
+        
+        'ace/mode/c_cpp',
+        'ace/mode/css',
+        'ace/mode/html',
+        'ace/mode/java',
+        'ace/mode/javascript',
+        'ace/mode/php',
+        'ace/mode/python',
+        'ace/mode/ruby',
+        'ace/mode/text',
+        'ace/mode/xml',
+        ], 
+        function(FileUtil, Notification) {
 
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.layout.TabContainer");
+dojo.require("dijit.form.Select");
 dojo.require("dijit.Toolbar");
 
 var AceEditor = require("ace/editor").Editor;
@@ -35,6 +50,12 @@ Editor.prototype.setupInterface = function() {
     dojo.connect(this.tabContainer, "selectChild", this.selectTab.bind(this));
     dojo.connect(this.tabContainer, "removeChild", this.closeTab.bind(this));
     dojo.connect(window, "onresize", this.resize.bind(this));
+    
+    dojo.connect(window, "onkeydown", (function(keyEvent) {
+        if (keyEvent.charOrCode == 's' && keyEvent.metaKey == true) {
+            this.saveCurrentFile()
+        }
+    }).bind(this));
 }
 
 // Commands (called by application code)
@@ -60,18 +81,44 @@ Editor.prototype.openFile = function(item) {
             id: id
         });
         
+        // Create Toolbar
         var editorToolbar = new dijit.Toolbar({
             id: id + "_toolbar"
         });
         
+        // Save Button
         saveButton = new dijit.form.Button({
             label: "Save",
             showLabel: true,
             iconClass: "dijitIconSave",
-            onClick: this.saveFile.bind(this)
+            onClick: this.saveCurrentFile.bind(this)
         });
         
         editorToolbar.addChild(saveButton);
+        
+        // Add Syntax Highlighting Dropdown Menu
+        var modeSelect = new dijit.form.Select({
+            options: [
+                { label: 'C / C++', value: 'ace/mode/c_cpp' },
+                { label: 'CSS', value: 'ace/mode/css' },
+                { label: 'HTML', value: 'ace/mode/html' },
+                { label: 'Java', value: 'ace/mode/java' },
+                { label: 'JavaScript', value: 'ace/mode/javascript' },
+                { label: 'PHP', value: 'ace/mode/php' },
+                { label: 'Python', value: 'ace/mode/python' },
+                { label: 'Ruby', value: 'ace/mode/ruby' },
+                { label: 'Plain Text', value: 'ace/mode/text', selected: true },
+                { label: 'XML', value: 'ace/mode/xml' },
+            ],
+            onChange: (function(newValue) {
+                var Mode = require(newValue).Mode;
+                this.editor.getSession().setMode(new Mode());
+            }).bind(this)
+            
+        });
+        
+        editorToolbar.addChild(modeSelect);
+        
         editorContentPane.domNode.appendChild(editorToolbar.domNode);
 
         this.tabContainer.addChild(editorContentPane);
@@ -81,14 +128,14 @@ Editor.prototype.openFile = function(item) {
     }
 }
 
-Editor.prototype.saveFile = function(event) {
+Editor.prototype.saveCurrentFile = function() {
     var currentSession = this.sessions[this.tabContainer.selectedChildWidget.id];
     if (currentSession) {
         var path = currentSession.path;
         var content = currentSession.toString();
     
         this.dropbox.putFileContents(path, content, (function() {
-            console.log('saved!!');
+            Notification.notify('/resources/images/check.png', 'SourceKit Notification', 'File Saved!');
         }).bind(this));
     }
 }
