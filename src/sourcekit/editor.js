@@ -41,14 +41,12 @@ var Editor = function(dropbox, editorEnv) {
 };
 
 Editor.prototype.setupInterface = function() {
-    this.tabContainer = dijit.byId("editorTabContainer");
-
+    this.introContainer = dojo.byId("introContainer");
+    
     var theme = require("ace/theme/twilight");
     this.editorContainer = dojo.byId("editorContainer");
     this.editor = new AceEditor(new Renderer(this.editorContainer, theme));
 
-    dojo.connect(this.tabContainer, "selectChild", this.selectTab.bind(this));
-    dojo.connect(this.tabContainer, "removeChild", this.closeTab.bind(this));
     dojo.connect(window, "onresize", this.resize.bind(this));
     
     dojo.connect(window, "onkeydown", (function(keyEvent) {
@@ -60,6 +58,25 @@ Editor.prototype.setupInterface = function() {
 
 // Commands (called by application code)
 Editor.prototype.openFile = function(item) {
+    // TODO ADD WELCOME PAGE 
+    
+    this.introContainer.style.display = "none";
+    
+    if (this.tabContainer == null) {
+        this.tabContainer = new dijit.layout.TabContainer({
+           id: "editorTabContainer",
+           style: "height: 100%; width: 100%; padding: 0; border: none;"
+        });
+        
+        dojo.connect(this.tabContainer, "selectChild", this.selectTab.bind(this));
+        dojo.connect(this.tabContainer, "removeChild", this.closeTab.bind(this));
+        
+        dojo.body().appendChild(dojo.byId("introContainer"));
+        dijit.byId("borderCenter").setContent(this.tabContainer);
+    }
+    
+    this.tabContainer.domNode.style.display = "block";
+    
     var id = FileUtil.uniqueIdByPath(item.path);
     
     if (!this.sessions[id]) {
@@ -181,6 +198,10 @@ Editor.prototype.closeTab = function(tab) {
         var index = this.tabContainer.forward();
     } else {
         dojo.body().appendChild(this.editorContainer);
+        this.tabContainer.destroy(false);
+        this.tabContainer = null;
+        this.introContainer.style.display = "block";
+        dijit.byId("borderCenter").set('content', this.introContainer);
         this.editorContainer.style.display = "none";
     }
 }
