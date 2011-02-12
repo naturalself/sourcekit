@@ -105,9 +105,15 @@ var FileListStore = function(dropbox) {
         
         /* Write API */
         newItem: function(keywordArgs, parentInfo) {
-            // TODO: CHECK FOR DUPES!!
-            
             var item = keywordArgs;
+            
+            // Checking for dupes
+            var children = parentInfo.parent[parentInfo.attribute];
+            for (key in children) {
+                if (children[key].path == item.path) {
+                    return false;
+                }
+            }
             
             var onSuccess = function() { console.log("success"); };
 
@@ -119,7 +125,8 @@ var FileListStore = function(dropbox) {
                 _dropbox.putFileContents(item.path, "", onSuccess);
             }
 
-            parentInfo.parent[parentInfo.attribute].push(item);
+            children.push(item);
+            children.sort(function(a, b) { return a.path.toLowerCase() > b.path.toLowerCase() ? 1 : -1 });
 
             onNewParentInfo = {
                 item: parentInfo.parent,
@@ -134,7 +141,12 @@ var FileListStore = function(dropbox) {
         },
         
         deleteItem: function(item) {
+            var onSuccess = function() { console.log("success"); };
+            _dropbox.deletePath(item.path, onSuccess);
             
+            this.onDelete(item);
+            
+            return item;
         },
         
         setValue: function(item, attribute, value) {

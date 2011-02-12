@@ -75,6 +75,15 @@
                 </tr>
             </table>
         </div>
+        <div id="deleteConfirmationDialog" dojoType="dijit.Dialog">
+            Are you sure you want to delete this?
+            <button dojoType="dijit.form.Button" id="deleteConfirmationOkButton" type="submit">
+                Yes
+            </button>
+            <button dojoType="dijit.form.Button" type="button" onClick="dijit.byId('deleteConfirmationDialog').hide();">
+                No
+            </button>            
+        </div>
         <script src="../src/require.js"></script>
         <script src="../src/boot.js"></script>
     </body>

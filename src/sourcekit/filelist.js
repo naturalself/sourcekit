@@ -30,7 +30,29 @@ FileList.prototype.setupInterface = function() {
         deferItemLoadingUntilExpand: true
     });
 
-    // Set up Dialogs
+    // Set up the Tree view and hook up events
+    this.fileListTree = new dijit.Tree({
+        model: this.treeModel, 
+        //showRoot: false,
+        openOnClick: true
+    }, "fileListTree");
+    
+    dojo.connect(this.fileListTree, "onClick", this, function(item, node, event) {
+        this.editor.openFile(item);
+    });
+    
+    this.fileListContextMenu = new dijit.Menu({
+       targetNodeIds: ["fileListTree"]
+    });
+    
+    // New File Context Menu and Dialog
+    this.fileListContextMenu.addChild(new dijit.MenuItem({
+        iconClass: "dijitEditorIcon dijitEditorIconNewPage",
+        label: "New File...",
+        onClick: (function() {
+            this.newFileDialog.show();
+        }).bind(this)
+    }));
     this.newFileName = dijit.byId("newFileName");    
     this.newFileDialog = dijit.byId("newFileDialog");
     this.newFileDialogOkButton = dijit.byId("newFileDialogOkButton");
@@ -51,6 +73,14 @@ FileList.prototype.setupInterface = function() {
         this.newFile(item, parentItem);
     }).bind(this));
     
+    // New Folder Context Menu and Dialog
+    this.fileListContextMenu.addChild(new dijit.MenuItem({
+        iconClass: "dijitIconFolderClosed",
+        label: "New Folder...",
+        onClick: (function() {
+            this.newFolderDialog.show();
+        }).bind(this)
+    }));
     this.newFolderName = dijit.byId("newFolderName");
     this.newFolderDialog = dijit.byId("newFolderDialog");
     this.newFolderDialogOkButton = dijit.byId("newFolderDialogOkButton");
@@ -70,46 +100,23 @@ FileList.prototype.setupInterface = function() {
         
         this.newFolder(item, parentItem);
     }).bind(this));
-
-    // Set up the Tree view and hook up events
-    this.fileListTree = new dijit.Tree({
-        model: this.treeModel, 
-        //showRoot: false,
-        openOnClick: true
-    }, "fileListTree");
     
-    dojo.connect(this.fileListTree, "onClick", this, function(item, node, event) {
-        this.editor.openFile(item);
-    });
-    
-    this.fileListContextMenu = new dijit.Menu({
-       targetNodeIds: ["fileListTree"]
-    });
-    
-    this.fileListContextMenu.addChild(new dijit.MenuItem({
-        iconClass: "dijitEditorIcon dijitEditorIconNewPage",
-        label: "New File...",
-        onClick: (function() {
-            this.newFileDialog.show();
-        }).bind(this)
-    }));
-    
-    this.fileListContextMenu.addChild(new dijit.MenuItem({
-        iconClass: "dijitIconFolderClosed",
-        label: "New Folder...",
-        onClick: (function() {
-            this.newFolderDialog.show();
-        }).bind(this)
-    }));
-    
+    // Delete Context Menu and Dialog
+    this.deleteConfirmationDialog = dijit.byId("deleteConfirmationDialog");
+    this.deleteConfirmationOkButton = dijit.byId("deleteConfirmationOkButton");
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitIconDelete",
         label: "Delete",
-        disabled: true
+        onClick: (function() {
+            this.deleteConfirmationDialog.show();
+        }).bind(this)
     }));
+    dojo.connect(this.deleteConfirmationDialog, "onClick", (function() {
+        this.deletePath(this.fileNodeInContext.item);
+    }).bind(this));
     
+    // Handle on open event of context menu to record the node being selected in FileListTree
     dojo.connect(this.fileListContextMenu, "_openMyself", this, function(e) {
-        // get a hold of, and log out, the tree node that was the source of this open event
         var tn = dijit.getEnclosingWidget(e.target);
         this.fileNodeInContext = tn;
     });
@@ -123,6 +130,9 @@ FileList.prototype.newFolder = function(item, parentItem) {
     this.treeModel.store.newItem(item, { parent: parentItem, attribute: 'children' });
 }
 
+FileList.prototype.deletePath = function(item) {
+    this.treeModel.store.deleteItem(item);
+}
 
 return FileList;
 

@@ -362,6 +362,18 @@ var Dropbox = function(consumerKey, consumerSecret) {
 			});
 		},
 		
+		deletePath: function(path, callback) {
+		    var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/fileops/delete";
+			var message = _createOauthRequest(url, {
+				path: path,
+				root: 'dropbox'
+			});			
+			_sendOauthRequest(message, {
+				type: "json",
+				success: (function(data) { if (callback) { callback(data); } }).bind(this)
+			});
+	    },
+		
 		logOutDropbox: function() {
 			_clearAuthStorage();
 		},
