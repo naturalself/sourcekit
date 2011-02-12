@@ -2,7 +2,6 @@ define("sourcekit/filelist/store", ['sourcekit/fileutil'], function(FileUtil) {
 
 var FileListStore = function(dropbox) {
     var _dropbox = dropbox;
-    var _arrayOfAllItems = [];
 
     return {
         getValue: function(item, attribute, defaultValue) { console.log('Not Implemented Yet'); },
@@ -37,7 +36,6 @@ var FileListStore = function(dropbox) {
                                 data.contents[i].children = [];
                                 data.contents[i].loaded = false;
                             } else {
-                                _arrayOfAllItems[data.contents[i].path] = true;
                                 data.contents[i].loaded = true;
                             }
                     
@@ -62,7 +60,6 @@ var FileListStore = function(dropbox) {
                         data.contents[i].children = [];
                         data.contents[i].loaded = false;
                     } else {
-                        _arrayOfAllItems[data.contents[i].path] = true;
                         data.contents[i].loaded = true;
                     }
                 }
@@ -115,7 +112,16 @@ var FileListStore = function(dropbox) {
                 }
             }
             
-            var onSuccess = function() { console.log("success"); };
+            var onSuccess = (function() { 
+                onNewParentInfo = {
+                    item: parentInfo.parent,
+                    attribute: parentInfo.attribute,
+                    oldValue: null,
+                    newValue: item
+                };
+            
+                this.onNew(item, onNewParentInfo);
+            }).bind(this);
 
             if (item.is_dir) {
                 item.loaded = true;
@@ -127,24 +133,16 @@ var FileListStore = function(dropbox) {
 
             children.push(item);
             children.sort(function(a, b) { return a.path.toLowerCase() > b.path.toLowerCase() ? 1 : -1 });
-
-            onNewParentInfo = {
-                item: parentInfo.parent,
-                attribute: parentInfo.attribute,
-                oldValue: null,
-                newValue: item
-            };
-            
-            this.onNew(item, onNewParentInfo);
             
             return item;
         },
         
         deleteItem: function(item) {
-            var onSuccess = function() { console.log("success"); };
-            _dropbox.deletePath(item.path, onSuccess);
+            var onSuccess = (function() {
+                this.onDelete(item);
+            }).bind(this);
             
-            this.onDelete(item);
+            _dropbox.deletePath(item.path, onSuccess);
             
             return item;
         },

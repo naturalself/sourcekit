@@ -1,6 +1,6 @@
 define("sourcekit/filelist", 
-        ["dropbox/dropbox", "sourcekit/filelist/store"], 
-        function(Dropbox, FileListStore) {
+        ["dropbox/dropbox", "sourcekit/filelist/store", "sourcekit/notification"], 
+        function(Dropbox, FileListStore, Notification) {
 
 dojo.require("dijit.Tree");
 dojo.require("dijit.form.Button");
@@ -119,6 +119,16 @@ FileList.prototype.setupInterface = function() {
     dojo.connect(this.fileListContextMenu, "_openMyself", this, function(e) {
         var tn = dijit.getEnclosingWidget(e.target);
         this.fileNodeInContext = tn;
+    });
+    
+    // Set up notification
+    dojo.connect(this.treeModel, "onNewItem", this, function(item, parentInfo) {
+        this.fileListTree.set('selectedItem', item);
+        Notification.notify('/resources/images/check.png', 'SourceKit Notification', 'New file created: ' + item.path);
+    });
+    
+    dojo.connect(this.treeModel, "onDeleteItem", this, function(deletedItem) {
+        Notification.notify('/resources/images/check.png', 'SourceKit Notification', 'Deleted: ' + deletedItem.path);
     });
 }
 

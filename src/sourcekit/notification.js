@@ -10,4 +10,4 @@ var Notification = {
 
 return Notification;
 
-}
+});
