@@ -9,18 +9,31 @@ Follow me: http://twitter.com/kenneth_chau
 
 Details
 -------
-Embedded is the excellent Mozilla Bespin (SkyWriter) text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.
+Embedded is the excellent Ajax.org's Ace text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.
 
 Plugins
 -------
 Arbitrary Javascript "plugins" are loaded post initialization from your Dropbox account. It is loaded from /.sourcekit/plugins/ 
 
+Installation
+------------
+* Go to the Google Web Store, search for 'SourceKit' - install it!
+* -OR- Clone the repository and then install as an 'unpacked extension' inside Chrome
+
 Changelog
 ---------
+
+### 0.6.2 ###
+* HOLY MOTHER OF REWRITE!
+* Now uses Dojo, Ace
+* Authenticates via more user friendly Dropbox OAuth API
+* Got rid of the Dropbox email / password screen
+* Added capability to create new files and folders and delete files (right click does it!)
 
 ### 0.5.0 ###
 * Added PLUGINs support
 * Fixed a file name compatibility issue in the file list
+* Never released...
 
 ### 0.4.1 ###
 * C#, SQL support
@@ -53,7 +66,8 @@ Changelog
 
 ### 0.3.3 ###
 * Applied to Dropbox for production application status! (pending approval!!!)
-* Renamed to SourceKit * too many ChromePad's and too Chrome specific
+* Renamed to SourceKit
+* too many ChromePad's and too Chrome specific
 
 ### 0.3.1 ###
 * First public release!
