@@ -50,8 +50,10 @@ Editor.prototype.setupInterface = function() {
     dojo.connect(window, "onresize", this.resize.bind(this));
     
     dojo.connect(window, "onkeydown", (function(keyEvent) {
-        if (keyEvent.charOrCode == 's' && keyEvent.metaKey == true) {
-            this.saveCurrentFile()
+        if (keyEvent.keyCode == 83 && keyEvent.metaKey) {
+            
+            this.saveCurrentFile();
+            dojo.stopEvent(keyEvent);
         }
     }).bind(this));
 }

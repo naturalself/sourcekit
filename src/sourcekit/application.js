@@ -9,17 +9,27 @@ var dropbox = new Dropbox(consumerKey, consumerSecret);
 var Application = {};
 
 Application.start = function(editorEnv) {
-    if (!dropbox.isAccessGranted()) {
-        chrome.tabs.getCurrent(function(tab) {
-            chrome.tabs.create({ url: "resources/options.html", selected: true });
-            chrome.tabs.remove(tab.id);
-        });
-    }
+    this.editorEnv = editorEnv;
+    dropbox.authorize((function() {
+        dojo.addOnLoad((function() {
+            editor = new Editor(dropbox, this.editorEnv);
+            window.fileList = new FileList(editor, dropbox);
+        }).bind(this));
+    }).bind(this));
     
-    dojo.addOnLoad((function() {
+  
+    
+    // if (!dropbox.isAccessGranted()) {
+    //         chrome.tabs.getCurrent(function(tab) {
+    //             chrome.tabs.create({ url: "resources/options.html", selected: true });
+    //             chrome.tabs.remove(tab.id);
+    //         });
+    //     }
+    //     
+/*    dojo.addOnLoad((function() {
         editor = new Editor(dropbox, editorEnv);
         window.fileList = new FileList(editor, dropbox);
-    }).bind(this));
+    }).bind(this)); */
 };
 
 return Application;
