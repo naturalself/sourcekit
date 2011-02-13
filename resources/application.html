@@ -18,12 +18,14 @@
     </head>
     <body class="claro">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" gutters="false" liveSplitters="true">
-	        <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true">
+            <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true">
                 <div id="fileListTree"></div>
             </div>
-	        <div id="borderCenter" dojoType="dijit.layout.ContentPane" region="center">
-	            <div id="introContainer">Welcome!</div>
-	        </div>
+            <div id="borderCenter" dojoType="dijit.layout.ContentPane" region="center">
+                <div id="introContainer">
+                    <h1>SourceKit</h1>
+                </div>
+            </div>
         </div>
         <div id="editorContainer"></div>
         <div id="newFileDialog" dojoType="dijit.Dialog" execute="console.log(this)">
