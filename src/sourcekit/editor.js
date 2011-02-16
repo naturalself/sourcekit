@@ -1,6 +1,7 @@
 define('sourcekit/editor', 
         ['sourcekit/fileutil',
         'sourcekit/notification',
+        'sourcekit/editor/file_mode_mapping',
         
         'ace/editor',
         'ace/edit_session',
@@ -19,7 +20,7 @@ define('sourcekit/editor',
         'ace/mode/text',
         'ace/mode/xml',
         ], 
-        function(FileUtil, Notification) {
+        function(FileUtil, Notification, FileModeMapping) {
 
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.layout.TabContainer");
@@ -86,7 +87,17 @@ Editor.prototype.openFile = function(item) {
         
         // Load the content
         this.dropbox.getFileContents(item.path, (function(data) {
-            this.sessions[id] = new AceEditSession(data);
+            var extension = FileUtil.fileExtension(item.path);
+            var Mode = null;
+            if (extension != null) {
+                var Mode = require('ace/mode/' + FileModeMapping.findMode(extension)).Mode;
+            }
+            
+            if (Mode != null) {
+                this.sessions[id] = new AceEditSession(data, new Mode());
+            } else {
+                this.sessions[id] = new AceEditSession(data);
+            }
             this.sessions[id].setUndoManager(new AceUndoManager());
             this.sessions[id].path = item.path;
             this.editor.setSession(this.sessions[id]);
@@ -115,22 +126,15 @@ Editor.prototype.openFile = function(item) {
         
         editorToolbar.addChild(saveButton);
         
+        // Handle file type autodetection
+        var extension = FileUtil.fileExtension(item.path);
+        var defaultMode = FileModeMapping.findMode(extension);
+        
         // Add Syntax Highlighting Dropdown Menu
         var modeSelect = new dijit.form.Select({
-            options: [
-                { label: 'C / C++', value: 'ace/mode/c_cpp' },
-                { label: 'CSS', value: 'ace/mode/css' },
-                { label: 'HTML', value: 'ace/mode/html' },
-                { label: 'Java', value: 'ace/mode/java' },
-                { label: 'JavaScript', value: 'ace/mode/javascript' },
-                { label: 'PHP', value: 'ace/mode/php' },
-                { label: 'Python', value: 'ace/mode/python' },
-                { label: 'Ruby', value: 'ace/mode/ruby' },
-                { label: 'Plain Text', value: 'ace/mode/text', selected: true },
-                { label: 'XML', value: 'ace/mode/xml' },
-            ],
+            options: FileModeMapping.findAllLabels(defaultMode),
             onChange: (function(newValue) {
-                var Mode = require(newValue).Mode;
+                var Mode = require('ace/mode/' + newValue).Mode;
                 this.editor.getSession().setMode(new Mode());
             }).bind(this)
             
