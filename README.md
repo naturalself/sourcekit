@@ -23,6 +23,9 @@ Installation
 Changelog
 ---------
 
+### 0.6.3 ###
+* Fixed the file mode mapping file (more file types and added html & js); THANKS to antimatter15!!! 
+
 ### 0.6.2 ###
 * Added auto syntax hightlighting
 
