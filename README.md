@@ -24,6 +24,9 @@ Changelog
 ---------
 
 ### 0.6.2 ###
+* Added auto syntax hightlighting
+
+### 0.6.1 ###
 * HOLY MOTHER OF REWRITE!
 * Now uses Dojo, Ace
 * Authenticates via more user friendly Dropbox OAuth API
