@@ -51,8 +51,7 @@ Editor.prototype.setupInterface = function() {
     dojo.connect(window, "onresize", this.resize.bind(this));
     
     dojo.connect(window, "onkeydown", (function(keyEvent) {
-        if (keyEvent.keyCode == 83 && keyEvent.metaKey) {
-            
+        if (keyEvent.keyCode == 83 && (keyEvent.metaKey || keyEvent.ctrlKey)) {
             this.saveCurrentFile();
             dojo.stopEvent(keyEvent);
         }
