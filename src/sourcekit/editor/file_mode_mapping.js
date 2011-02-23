@@ -10,16 +10,19 @@ define('sourcekit/editor/file_mode_mapping', function() {
 
 return {
     modes: {
-        'css': { extensions: ['css'], label: 'CSS' },
         'c_cpp': { extensions: ['c', 'cpp', 'c++', 'm', 'h'], label: 'C / C++' },
+        'csharp': { extensions: ['cs'], label: 'C#' },
+        'coffee': { extensions: ['coffee'], label: 'CoffeeScript' },
+        'css': { extensions: ['css'], label: 'CSS' },
+        'html': { extensions: ['htm','html'], label: 'HTML' },
         'java': { extensions: ['java'], label: 'Java' },
+        'javascript': { extensions: ['js'], label: 'Javascript' },
+        'perl': { extensions: ['perl', 'pl'], label: 'Perl' },
         'php': { extensions: ['php', 'phtml', 'php3', 'php4'], label: 'PHP' },
         'python': { extensions: ['python', 'py'], label: 'Python' },
         'ruby': { extensions: ['rb', 'rhtml', 'erb'], label: 'Ruby' },
-        'xml': { extensions: ['xml'], label: 'XML' },
-        'html': { extensions: ['htm','html'], label: 'HTML' },
-        'javascript': { extensions: ['js'], label: 'Javascript' },
-        'text': { extensions: ['*'], label: 'Plain Text' }
+        'text': { extensions: ['*'], label: 'Plain Text' },
+        'xml': { extensions: ['xml'], label: 'XML' }
     },
     
     findMode: function(extension) {
