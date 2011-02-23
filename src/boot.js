@@ -1,8 +1,12 @@
+var config = {
+    baseUrl: "/src"
+}
+
 var deps = [
+    "sourcekit/application",
     "pilot/plugin_manager",
     "pilot/settings",
-    "pilot/environment",
-    "sourcekit/application"
+    "pilot/environment"    
 ];
 
 var plugins = [
@@ -11,7 +15,7 @@ var plugins = [
     "ace/defaults"
 ];
 
-require(deps, function(Application) {
+require(config, deps, function(Application) {
     var catalog = require("pilot/plugin_manager").catalog;
 
     catalog.registerPlugins(plugins).then(function() {

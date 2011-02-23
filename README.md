@@ -30,6 +30,7 @@ Changelog
 ### 0.6.4 ###
 * Replaced direct calls to dropbox.js with Dojo data api (can you guess where I'm headed?!)
 * Added Perl, CoffeeScript, and C# highlighter support
+* Updated RequireJS to v2.3 (since Ace supports it now!)
 
 ### 0.6.3 ###
 * Fixed the file mode mapping file (more file types and added html & js); THANKS to antimatter15!!! 

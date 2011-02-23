@@ -1,13 +1,5 @@
 define('sourcekit/editor/file_mode_mapping', function() {
 
-/*
-            var extension = FileUtil.fileExtension(item.path);
-            if (extension != null && FileModeMapping[extension] != null) {
-                var Mode = require('ace/mode/' + FileModeMapping[extension]).Mode;
-                this.sessions[id] = new AceEditSession(data, new Mode());
-            }
-*/
-
 return {
     modes: {
         'c_cpp': { extensions: ['c', 'cpp', 'c++', 'm', 'h'], label: 'C / C++' },
