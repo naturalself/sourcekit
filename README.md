@@ -20,8 +20,16 @@ Installation
 * Go to the Google Web Store, search for 'SourceKit' - install it!
 * -OR- Clone the repository and then install as an 'unpacked extension' inside Chrome
 
+Contributors
+------------
+* antimatter15: https://github.com/antimatter15
+* csnodgrass: https://github.com/colesnodgrass
+
 Changelog
 ---------
+### 0.6.4 ###
+* Replaced direct calls to dropbox.js with Dojo data api (can you guess where I'm headed?!)
+* Added Perl, CoffeeScript, and C# highlighter support
 
 ### 0.6.3 ###
 * Fixed the file mode mapping file (more file types and added html & js); THANKS to antimatter15!!! 
@@ -36,7 +44,9 @@ Changelog
 * Got rid of the Dropbox email / password screen
 * Added capability to create new files and folders and delete files (right click does it!)
 
-### 0.5.0 ###
+Older Changelog (not relevant anymore!)
+---------------------------------------
+### 0.5.0 (never released) ###
 * Added PLUGINs support
 * Fixed a file name compatibility issue in the file list
 * Never released...

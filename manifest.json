@@ -1,6 +1,6 @@
 {
   "name": "SourceKit - Text Editor Inside Chrome",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "incognito": "split",
   "icons": { 
     "128": "icons/icon_128.png",
