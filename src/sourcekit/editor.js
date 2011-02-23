@@ -2,6 +2,7 @@ define('sourcekit/editor',
         ['sourcekit/fileutil',
         'sourcekit/notification',
         'sourcekit/editor/file_mode_mapping',
+        'sourcekit/data/dropbox_store',
         
         'ace/editor',
         'ace/edit_session',
@@ -20,7 +21,7 @@ define('sourcekit/editor',
         'ace/mode/text',
         'ace/mode/xml',
         ], 
-        function(FileUtil, Notification, FileModeMapping) {
+        function(FileUtil, Notification, FileModeMapping, DropboxStore) {
 
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.layout.TabContainer");
@@ -37,11 +38,21 @@ var blankSession = new AceEditSession("");
 
 var Editor = function(dropbox, editorEnv) {
     this.dropbox = dropbox;
+
     this.sessions = {};
     dojo.addOnLoad(this.setupInterface.bind(this));
 };
 
 Editor.prototype.setupInterface = function() {
+    this.store = new DropboxStore(this.dropbox);
+    
+    dojo.connect(this.store, "onSet", this, function(item, attribute, oldValue, newValue) {
+        if (attribute == "content") {
+            Notification.notify('/resources/images/check.png', 'SourceKit Notification', 'File Saved!');
+        }
+    });
+        
+    
     this.introContainer = dojo.byId("introContainer");
     
     var theme = require("ace/theme/twilight");
@@ -60,8 +71,6 @@ Editor.prototype.setupInterface = function() {
 
 // Commands (called by application code)
 Editor.prototype.openFile = function(item) {
-    // TODO ADD WELCOME PAGE 
-    
     this.introContainer.style.display = "none";
     
     if (this.tabContainer == null) {
@@ -85,22 +94,22 @@ Editor.prototype.openFile = function(item) {
         this.editor.setSession(blankSession);
         
         // Load the content
-        this.dropbox.getFileContents(item.path, (function(data) {
-            var extension = FileUtil.fileExtension(item.path);
-            var Mode = null;
-            if (extension != null) {
-                var Mode = require('ace/mode/' + FileModeMapping.findMode(extension)).Mode;
-            }
-            
-            if (Mode != null) {
-                this.sessions[id] = new AceEditSession(data, new Mode());
-            } else {
-                this.sessions[id] = new AceEditSession(data);
-            }
-            this.sessions[id].setUndoManager(new AceUndoManager());
-            this.sessions[id].path = item.path;
-            this.editor.setSession(this.sessions[id]);
-        }).bind(this));
+        var data = this.store.getValue(item, "content");
+        var extension = FileUtil.fileExtension(item.path);
+        var Mode = null;
+        if (extension != null) {
+            var Mode = require('ace/mode/' + FileModeMapping.findMode(extension)).Mode;
+        }
+        
+        if (Mode != null) {
+            this.sessions[id] = new AceEditSession(data, new Mode());
+        } else {
+            this.sessions[id] = new AceEditSession(data);
+        }
+        this.sessions[id].setUndoManager(new AceUndoManager());
+        this.sessions[id].path = item.path;
+        this.sessions[id].item = item;
+        this.editor.setSession(this.sessions[id]);
 
         // Deal with the UI
         var editorContentPane = new dijit.layout.ContentPane({
@@ -156,9 +165,7 @@ Editor.prototype.saveCurrentFile = function() {
         var path = currentSession.path;
         var content = currentSession.toString();
     
-        this.dropbox.putFileContents(path, content, (function() {
-            Notification.notify('/resources/images/check.png', 'SourceKit Notification', 'File Saved!');
-        }).bind(this));
+        this.store.setValue(currentSession.item, "content", content);
     }
 }
 

@@ -38,34 +38,47 @@ var Dropbox = function(consumerKey, consumerSecret) {
             serializedData = _serialize(options.data);
         }
         
+        if (options.async == null) {
+            options.async = true;
+        }
         
         var _xhr = new XMLHttpRequest();
-        _xhr.open(options.type, options.url, true);
         
+        _xhr.open(options.type, options.url, options.async);
         _xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         _xhr.setRequestHeader("Accept", "application/json, text/javascript, */*");
         _xhr.dataType = options.dataType;
         
-        _xhr.onreadystatechange = (function() {
-            if (this.readyState == 4 && this.status == 200) {
-                var data = this.responseText;
-                if (this.dataType == "json") {
-                    data = JSON.parse(this.responseText);
-                }
-                options.success(data, this.status, this);
-            } else if (this.readState == 4) {
-                var data = this.responseText;
-                if (this.dataType == "json") {
-                    data = JSON.parse(this.responseText);
-                }
+        if (options.async) { // Asynchronous
+            _xhr.onreadystatechange = (function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = this.responseText;
+                    if (this.dataType == "json") {
+                        data = JSON.parse(this.responseText);
+                    }
+                    options.success(data, this.status, this);
+                } else if (this.readState == 4) {
+                    var data = this.responseText;
+                    if (this.dataType == "json") {
+                        data = JSON.parse(this.responseText);
+                    }
 
-                options.error(data, this.status, this);
-            }
-        }).bind(_xhr);
+                    options.error(data, this.status, this);
+                }
+            }).bind(_xhr);
         
-        _xhr.onerror = options.error;
+            _xhr.onerror = options.error;
 
-        _xhr.send(serializedData);
+            _xhr.send(serializedData);
+        } else { // Synchronous
+            _xhr.send(serializedData);
+            var data = _xhr.responseText;
+            if (_xhr.dataType == "json") {
+                data = JSON.parse(_xhr.responseText);
+            }
+            
+            return data;
+        }
     };
     
     var _ajaxSendFileContents = function(options) {
@@ -223,8 +236,12 @@ var Dropbox = function(consumerKey, consumerSecret) {
             options.type = "json";
         }
         
+        if (options.async === null) {
+            options.async = true;
+        }
+        
         if (options.multipart) {
-            _ajaxSendFileContents({
+            return _ajaxSendFileContents({
                 message: message,
                 filename: options.filename,
                 content: options.content,
@@ -232,7 +249,8 @@ var Dropbox = function(consumerKey, consumerSecret) {
                 error: options.error
             });
         } else {
-            _ajax({
+            return _ajax({
+                async: options.async,
                 url: message.action,
                 type: message.method,
                 data: OAuth.getParameterMap(message.parameters),
@@ -376,10 +394,17 @@ var Dropbox = function(consumerKey, consumerSecret) {
             var url = "https://api-content.dropbox.com/" + _dropboxApiVersion + "/files/dropbox/" + escape(filename);
             var message = _createOauthRequest(url);
 
-            _sendOauthRequest(message, {
-                type: "text",
-                success: (function(data) { callback(data); }).bind(this)
-            });
+            if (callback) {
+                _sendOauthRequest(message, {
+                    type: "text",
+                    success: (function(data) { callback(data); }).bind(this)
+                });
+            } else {
+                return _sendOauthRequest(message, {
+                    type: "text",
+                    async: false
+                });
+            }
         },
         
         putFileContents: function(path, content, callback) {

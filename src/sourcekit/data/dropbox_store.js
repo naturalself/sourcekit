@@ -1,10 +1,18 @@
-define("sourcekit/filelist/store", ['sourcekit/fileutil'], function(FileUtil) {
+define("sourcekit/data/dropbox_store", ['sourcekit/fileutil'], function(FileUtil) {
 
-var FileListStore = function(dropbox) {
+var DropboxStore = function(dropbox) {
     var _dropbox = dropbox;
 
     return {
-        getValue: function(item, attribute, defaultValue) { console.log('Not Implemented Yet'); },
+        getValue: function(item, attribute, defaultValue) { 
+            if (item[attribute]) {
+                return attribute;
+            } else if (attribute == "content") {
+                return _dropbox.getFileContents(item.path);
+            }
+            
+            return defaultValue;
+        },
         getValues: function(item, attribute) {
             return (item[attribute] || []).slice(0); 
         },
@@ -28,20 +36,25 @@ var FileListStore = function(dropbox) {
             
             if (keywordArgs.item) {
                 var item = keywordArgs.item;
-
-                if (!item.loaded && (item.is_dir || item.is_dir == null)) {
+                
+                if (item.is_dir || item.root != null) {
                     _dropbox.getDirectoryContents(item.path, function(data) {
                         for (i in data.contents) {
                             if (data.contents[i].is_dir) {
                                 data.contents[i].children = [];
                                 data.contents[i].loaded = false;
                             } else {
-                                data.contents[i].loaded = true;
+                                data.contents[i].loaded = false;
                             }
-                    
+                
                             item.children.push(data.contents[i]);
                         }
-                        
+                    
+                        item.loaded = true;
+                        keywordArgs['onItem'].call(scope, item);
+                    });
+                } else if (!item.is_dir) {
+                    _dropbox.getFileContents(item.path, function(data) {
                         item.loaded = true;
                         keywordArgs['onItem'].call(scope, item);
                     });
@@ -50,6 +63,8 @@ var FileListStore = function(dropbox) {
             
             return true;
         },
+        
+        // Initial Fetch
         fetch: function(keywordArgs) { 
             var path = keywordArgs.query.path;
             var scope = keywordArgs.scope || dojo.global;
@@ -60,7 +75,8 @@ var FileListStore = function(dropbox) {
                         data.contents[i].children = [];
                         data.contents[i].loaded = false;
                     } else {
-                        data.contents[i].loaded = true;
+                        // ??
+                        data.contents[i].loaded = false;
                     }
                 }
                 
@@ -81,7 +97,12 @@ var FileListStore = function(dropbox) {
             });
         },
         getFeatures: function() { 
-            return {'dojo.data.api.Read':true, 'dojo.data.api.Identity':true, 'dojo.data.api.Write':true, 'dojo.data.api.Notification':true};
+            return {
+                'dojo.data.api.Read':true, 
+                'dojo.data.api.Identity':true, 
+                'dojo.data.api.Write':true, 
+                'dojo.data.api.Notification':true
+            };
         },
         close: function(request) { console.log('Not Implemented Yet'); },
         getLabel: function(item) { 
@@ -148,18 +169,29 @@ var FileListStore = function(dropbox) {
         },
         
         setValue: function(item, attribute, value) {
-            console.log('Not implemented yet (for renaming)');
+            var oldValue = null;
+            if (item[attribute]) {
+                oldValue = item[attribute];
+            }
+            
+            item[attribute] = value;
+            
+            if (attribute == "content") {
+                _dropbox.putFileContents(item.path, value, (function() {
+                    this.onSet(item, attribute, oldValue, value);
+                }).bind(this));
+            }
         },
         
         setValues: function(item, attribute, values) {
-            console.log('Not implemented yet');
+            item[attribute] = values;
         },
         
         unsetAttribute: function(/* item */ item, /* string */ attribute) {
             console.log('Not implemented yet');
         },
         
-        save: function(/* object */ keywordArgs) {
+        save: function(keywordArgs) {
             console.log('Not implemented yet');
         },
         
@@ -180,6 +212,6 @@ var FileListStore = function(dropbox) {
     }
 }
 
-return FileListStore;
+return DropboxStore;
 
 });

@@ -1,6 +1,6 @@
 define("sourcekit/filelist", 
-        ["dropbox/dropbox", "sourcekit/filelist/store", "sourcekit/notification"], 
-        function(Dropbox, FileListStore, Notification) {
+        ["dropbox/dropbox", "sourcekit/data/dropbox_store", "sourcekit/notification"], 
+        function(Dropbox, DropboxStore, Notification) {
 
 dojo.require("dijit.Tree");
 dojo.require("dijit.form.Button");
@@ -21,11 +21,11 @@ var FileList = function(editor, dropbox) {
 };
 
 FileList.prototype.setupInterface = function() {
-    this.store = new FileListStore(this.dropbox);
+    this.store = new DropboxStore(this.dropbox);
     
     this.treeModel = new dijit.tree.TreeStoreModel({
         store: this.store,
-        root: { label: "Dropbox", path: '/', children: [] },
+        root: { label: "Dropbox", path: '/', root: true, children: [] },
         childrenAttrs: ["children"],
         deferItemLoadingUntilExpand: true
     });
@@ -38,7 +38,12 @@ FileList.prototype.setupInterface = function() {
     }, "fileListTree");
     
     dojo.connect(this.fileListTree, "onClick", this, function(item, node, event) {
-        this.editor.openFile(item);
+        this.store.loadItem({
+            item: item,
+            onItem: (function(item) {
+                this.editor.openFile(item);
+            }).bind(this)
+        });
     });
     
     this.fileListContextMenu = new dijit.Menu({
@@ -50,70 +55,61 @@ FileList.prototype.setupInterface = function() {
         iconClass: "dijitEditorIcon dijitEditorIconNewPage",
         label: "New File...",
         onClick: (function() {
-            this.newFileDialog.show();
+            var fileName = prompt("Enter a new file name");
+            
+            if (fileName != null) {
+                var parentItem = null;
+            
+                if (this.fileNodeInContext.item.is_dir) {
+                    parentItem = this.fileNodeInContext.item;
+                } else if (this.fileNodeInContext.getParent() != null) {
+                    parentItem = this.fileNodeInContext.getParent().item;
+                } else {
+                    parentItem = this.treeModel.root;
+                }
+            
+                var item = { path: (parentItem.path + "/" + fileName).replace(/\/+/g, '/') };
+        
+                this.newFile(item, parentItem);
+            }
         }).bind(this)
     }));
-    this.newFileName = dijit.byId("newFileName");    
-    this.newFileDialog = dijit.byId("newFileDialog");
-    this.newFileDialogOkButton = dijit.byId("newFileDialogOkButton");
-
-    dojo.connect(this.newFileDialogOkButton, "onClick", (function() {
-        var parentItem = null;
-            
-        if (this.fileNodeInContext.item.is_dir) {
-            parentItem = this.fileNodeInContext.item;
-        } else if (this.fileNodeInContext.getParent() != null) {
-            parentItem = this.fileNodeInContext.getParent().item;
-        } else {
-            parentItem = this.treeModel.root;
-        }
-            
-        var item = { path: (parentItem.path + "/" + this.newFileName.get('value')).replace(/\/+/g, '/') };
-        
-        this.newFile(item, parentItem);
-    }).bind(this));
     
     // New Folder Context Menu and Dialog
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitIconFolderClosed",
         label: "New Folder...",
         onClick: (function() {
-            this.newFolderDialog.show();
+            var folderName = prompt("Enter a new folder name");
+            
+            if (folderName != null) {
+                var parentItem = null;
+            
+                if (this.fileNodeInContext.item.is_dir) {
+                    parentItem = this.fileNodeInContext.item;
+                } else if (this.fileNodeInContext.getParent() != null) {
+                    parentItem = this.fileNodeInContext.getParent().item;
+                } else {
+                    parentItem = this.treeModel.root;
+                }
+            
+                var item = { path: (parentItem.path + "/" + folderName).replace(/\/+/g, '/'), is_dir: true, children: [] };
+        
+                this.newFolder(item, parentItem);
+            }
         }).bind(this)
     }));
-    this.newFolderName = dijit.byId("newFolderName");
-    this.newFolderDialog = dijit.byId("newFolderDialog");
-    this.newFolderDialogOkButton = dijit.byId("newFolderDialogOkButton");
-    
-    dojo.connect(this.newFolderDialogOkButton, "onClick", (function() {
-        var parentItem = null;
-            
-        if (this.fileNodeInContext.item.is_dir) {
-            parentItem = this.fileNodeInContext.item;
-        } else if (this.fileNodeInContext.getParent() != null) {
-            parentItem = this.fileNodeInContext.getParent().item;
-        } else {
-            parentItem = this.treeModel.root;
-        }
-            
-        var item = { path: (parentItem.path + "/" + this.newFolderName.get('value')).replace(/\/+/g, '/'), is_dir: true, children: [] };
-        
-        this.newFolder(item, parentItem);
-    }).bind(this));
     
     // Delete Context Menu and Dialog
-    this.deleteConfirmationDialog = dijit.byId("deleteConfirmationDialog");
-    this.deleteConfirmationOkButton = dijit.byId("deleteConfirmationOkButton");
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitIconDelete",
         label: "Delete",
         onClick: (function() {
-            this.deleteConfirmationDialog.show();
+            if (confirm("Are you sure you want to delete this?")) {
+                this.deletePath(this.fileNodeInContext.item);
+            }
         }).bind(this)
     }));
-    dojo.connect(this.deleteConfirmationDialog, "onClick", (function() {
-        this.deletePath(this.fileNodeInContext.item);
-    }).bind(this));
     
     // Handle on open event of context menu to record the node being selected in FileListTree
     dojo.connect(this.fileListContextMenu, "_openMyself", this, function(e) {

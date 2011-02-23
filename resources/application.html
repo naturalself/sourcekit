@@ -11,9 +11,6 @@
             dojo.require("dijit.layout.BorderContainer");
             dojo.require("dijit.layout.ContentPane");
             dojo.require("dijit.layout.TabContainer");
-            dojo.require("dijit.Dialog");
-            dojo.require("dijit.form.TextBox");
-            dojo.require("dijit.form.Button");
         </script>
     </head>
     <body class="claro">
@@ -28,63 +25,6 @@
             </div>
         </div>
         <div id="editorContainer"></div>
-        <div id="newFileDialog" dojoType="dijit.Dialog" execute="console.log(this)">
-            <table>
-                <tr>
-                    <td>
-                        <label for="name">
-                            Enter File Name
-                        </label>
-                    </td>
-                    <td>
-                        <input dojoType="dijit.form.TextBox" type="text" name="newFileName" id="newFileName">
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" colspan="2">
-                        <button dojoType="dijit.form.Button" id="newFileDialogOkButton" type="submit">
-                            OK
-                        </button>
-                        <button dojoType="dijit.form.Button" type="button" onClick="dijit.byId('newFileDialog').hide();">
-                            Cancel
-                        </button>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div id="newFolderDialog" dojoType="dijit.Dialog">
-            <table>
-                <tr>
-                    <td>
-                        <label for="name">
-                            Enter Folder Name
-                        </label>
-                    </td>
-                    <td>
-                        <input dojoType="dijit.form.TextBox" type="text" name="newFolderName" id="newFolderName">
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center" colspan="2">
-                        <button dojoType="dijit.form.Button" id="newFolderDialogOkButton" type="submit">
-                            OK
-                        </button>
-                        <button dojoType="dijit.form.Button" type="button" onClick="dijit.byId('newFolderDialog').hide();">
-                            Cancel
-                        </button>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div id="deleteConfirmationDialog" dojoType="dijit.Dialog">
-            Are you sure you want to delete this?
-            <button dojoType="dijit.form.Button" id="deleteConfirmationOkButton" type="submit">
-                Yes
-            </button>
-            <button dojoType="dijit.form.Button" type="button" onClick="dijit.byId('deleteConfirmationDialog').hide();">
-                No
-            </button>
-        </div>
         <script src="../src/require.js"></script>
         <script src="../src/boot.js"></script>
     </body>
