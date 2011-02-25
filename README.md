@@ -27,6 +27,10 @@ Contributors
 
 Changelog
 ---------
+### 0.6.5 ###
+* Added Word Wrap selection
+* Added Theme selection
+
 ### 0.6.4 ###
 * Replaced direct calls to dropbox.js with Dojo data api (can you guess where I'm headed?!)
 * Added Perl, CoffeeScript, and C# highlighter support
