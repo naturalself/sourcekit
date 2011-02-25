@@ -12,8 +12,8 @@ dojo.require("dijit.MenuBar");
 dojo.require("dijit.Menu");
 dojo.require("dijit.MenuItem");
 
-var FileList = function(editor, dropbox) {
-    this.dropbox = dropbox;
+var FileList = function(store, editor) {
+    this.store = store;
     this.editor = editor;
     this.fileNodeInContext = null;
     
@@ -21,8 +21,6 @@ var FileList = function(editor, dropbox) {
 };
 
 FileList.prototype.setupInterface = function() {
-    this.store = new DropboxStore(this.dropbox);
-    
     this.treeModel = new dijit.tree.TreeStoreModel({
         store: this.store,
         root: { label: "Dropbox", path: '/', root: true, children: [] },

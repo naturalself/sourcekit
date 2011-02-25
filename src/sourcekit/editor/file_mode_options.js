@@ -1,4 +1,19 @@
-define('sourcekit/editor/file_mode_mapping', function() {
+define(
+    'sourcekit/editor/file_mode_options',
+    ['ace/mode/c_cpp',
+    'ace/mode/coffee',
+    'ace/mode/csharp',
+    'ace/mode/css',
+    'ace/mode/html',
+    'ace/mode/java',
+    'ace/mode/javascript',
+    'ace/mode/perl',
+    'ace/mode/php',
+    'ace/mode/python',
+    'ace/mode/ruby',
+    'ace/mode/text',
+    'ace/mode/xml'],
+function() {
 
 return {
     modes: {
@@ -17,7 +32,7 @@ return {
         'xml': { extensions: ['xml'], label: 'XML' }
     },
     
-    findMode: function(extension) {
+    findModeName: function(extension) {
         for (var key in this.modes) {
             var scanExtensions = this.modes[key].extensions;
             for (var i in scanExtensions) {
@@ -31,7 +46,7 @@ return {
         return 'text';
     },
     
-    findAllLabels: function(selectedMode) {
+    findOptions: function(selectedMode) {
         var labelsOptions = [];
         for (var key in this.modes) {
             if (selectedMode == key) {
@@ -41,6 +56,10 @@ return {
             }
         }
         return labelsOptions;
+    },
+
+    getModeByName: function(modeName) {
+        return require('ace/mode/' + modeName).Mode;
     }
 }
 

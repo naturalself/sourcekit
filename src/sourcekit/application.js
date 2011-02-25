@@ -1,4 +1,8 @@
-define('sourcekit/application', ['dropbox/dropbox', 'sourcekit/editor', 'sourcekit/filelist'], function (Dropbox, Editor, FileList) {
+define('sourcekit/application', [
+    'dropbox/dropbox', 
+    'sourcekit/data/dropbox_store', 
+    'sourcekit/editor', 
+    'sourcekit/filelist'], function (Dropbox, DropboxStore, Editor, FileList) {
 
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.layout.BorderContainer");
@@ -10,26 +14,14 @@ var Application = {};
 
 Application.start = function(editorEnv) {
     this.editorEnv = editorEnv;
+    
     dropbox.authorize((function() {
         dojo.addOnLoad((function() {
-            editor = new Editor(dropbox, this.editorEnv);
-            window.fileList = new FileList(editor, dropbox);
+            store = new DropboxStore(dropbox);
+            editor = new Editor(store, this.editorEnv);
+            fileList = new FileList(store, editor);
         }).bind(this));
     }).bind(this));
-    
-  
-    
-    // if (!dropbox.isAccessGranted()) {
-    //         chrome.tabs.getCurrent(function(tab) {
-    //             chrome.tabs.create({ url: "resources/options.html", selected: true });
-    //             chrome.tabs.remove(tab.id);
-    //         });
-    //     }
-    //     
-/*    dojo.addOnLoad((function() {
-        editor = new Editor(dropbox, editorEnv);
-        window.fileList = new FileList(editor, dropbox);
-    }).bind(this)); */
 };
 
 return Application;
