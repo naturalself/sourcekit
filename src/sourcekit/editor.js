@@ -3,6 +3,7 @@ define('sourcekit/editor',
         'sourcekit/notification',
         'sourcekit/editor/file_mode_options',
         'sourcekit/editor/theme_options',
+        'sourcekit/editor/wordwrap_options',
         'sourcekit/data/dropbox_store',
         
         'ace/editor',
@@ -10,7 +11,7 @@ define('sourcekit/editor',
         'ace/undomanager',
         'ace/virtual_renderer',
         ], 
-        function(FileUtil, Notification, FileModeOptions, ThemeOptions, DropboxStore) {
+        function(FileUtil, Notification, FileModeOptions, ThemeOptions, WordWrapOptions, DropboxStore) {
 
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.layout.TabContainer");
@@ -141,13 +142,16 @@ Editor.prototype.openFile = function(item) {
         
         // Add Syntax Highlighting Dropdown Menu
         var wordWrapSelect = new dijit.form.Select({
-            options: [
-                { label: 'No Wrapping', value: '' },
-                { label: '80 Chars', value: '80' }
-            ],
+            options: WordWrapOptions.findOptions(localStorage.getItem('editor.wrapLimit')),
             onChange: (function(newValue) {
-                this.editor.getSession().setUseWrapMode(true);
-                this.editor.getSession().setWrapLimitRange(newValue, newValue);
+                localStorage.setItem('editor.wrapLimit', newValue);
+                if (newValue != ' ') {
+                    this.editor.getSession().setUseWrapMode(true);
+                    this.editor.getSession().setWrapLimitRange(newValue, newValue);
+                } else {
+                    this.editor.getSession().setUseWrapMode(false);
+                    this.editor.getSession().setWrapLimitRange(0, 0);
+                }
                 
             }).bind(this)
         });
