@@ -23,7 +23,7 @@ var FileList = function(store, editor) {
 FileList.prototype.setupInterface = function() {
     this.treeModel = new dijit.tree.TreeStoreModel({
         store: this.store,
-        root: { label: "Dropbox", path: '/', root: true, children: [] },
+        root: { label: store.getName(), path: '/', root: true, children: [] },
         childrenAttrs: ["children"],
         deferItemLoadingUntilExpand: true
     });

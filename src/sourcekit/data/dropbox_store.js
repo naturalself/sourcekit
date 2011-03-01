@@ -4,6 +4,7 @@ var DropboxStore = function(dropbox) {
     var _dropbox = dropbox;
 
     return {
+		getName: function() { return "Dropbox"; },
         getValue: function(item, attribute, defaultValue) { 
             if (item[attribute]) {
                 return attribute;
