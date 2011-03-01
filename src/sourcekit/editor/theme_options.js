@@ -6,11 +6,14 @@ define('sourcekit/editor/theme_options', [
         'ace/theme/eclipse',
         'ace/theme/idle_fingers',
         'ace/theme/kr_theme',
+		'ace/theme/merbivore',
+		'ace/theme/merbivore_soft',
         'ace/theme/mono_industrial',
         'ace/theme/monokai',
         'ace/theme/pastel_on_dark',
         'ace/theme/textmate',
         'ace/theme/twilight',
+        'ace/theme/vibrant_ink',
     ], function() {
 
 return {
@@ -23,11 +26,14 @@ return {
         { label: 'Eclipse', value: 'eclipse' },
         { label: 'Idle Fingers', value: 'idle_fingers' },
         { label: 'KR Theme', value: 'kr_theme' },
+		{ label: 'Merbivore', value: 'merbivore' },
+		{ label: 'Merbivore Soft', value: 'merbivore_soft' },
         { label: 'Mono Industrial', value: 'mono_industrial' },
         { label: 'Monokai', value: 'monokai' },
         { label: 'Pastel on Dark', value: 'pastel_on_dark' },
         { label: 'Textmate', value: 'textmate' },
-        { label: 'Twilight', value: 'twilight'}
+        { label: 'Twilight', value: 'twilight'},
+        { label: 'Vibrant Ink', value: 'vibrant_ink'}
     ],
     
     findOptions: function(selectedTheme) {
