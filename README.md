@@ -24,9 +24,15 @@ Contributors
 ------------
 * antimatter15: https://github.com/antimatter15
 * csnodgrass: https://github.com/colesnodgrass
+* mrpants: https://github.com/mrpants
 
 Changelog
 ---------
+### 0.6.6 ###
+* Added several themes: THANKS to mrpants!!!
+* Added .pm syntax highlight for Perl module files (duh!)
+* New icons :) Hope you like it!!
+
 ### 0.6.5 ###
 * Added Word Wrap selection
 * Added Theme selection
