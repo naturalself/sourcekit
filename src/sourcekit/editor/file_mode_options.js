@@ -24,7 +24,7 @@ return {
         'html': { extensions: ['htm','html'], label: 'HTML' },
         'java': { extensions: ['java'], label: 'Java' },
         'javascript': { extensions: ['js'], label: 'Javascript' },
-        'perl': { extensions: ['perl', 'pl'], label: 'Perl' },
+        'perl': { extensions: ['perl', 'pl', 'pm'], label: 'Perl' },
         'php': { extensions: ['php', 'phtml', 'php3', 'php4'], label: 'PHP' },
         'python': { extensions: ['python', 'py'], label: 'Python' },
         'ruby': { extensions: ['rb', 'rhtml', 'erb'], label: 'Ruby' },
