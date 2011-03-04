@@ -11,10 +11,6 @@ Details
 -------
 Embedded is the excellent Ajax.org's Ace text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.
 
-Plugins
--------
-Arbitrary Javascript "plugins" are loaded post initialization from your Dropbox account. It is loaded from /.sourcekit/plugins/ 
-
 Installation
 ------------
 * Go to the Google Web Store, search for 'SourceKit' - install it!
