@@ -25,7 +25,7 @@ var AceUndoManager = require("ace/undomanager").UndoManager;
 var Renderer = require("ace/virtual_renderer").VirtualRenderer;
 var blankSession = new AceEditSession("");
 
-var Editor = function(store, editorEnv) {
+var Editor = function(store) {
     this.store = store;
     this.sessions = {};
     dojo.addOnLoad(this.setupInterface.bind(this));
