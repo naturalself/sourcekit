@@ -24,6 +24,9 @@ Contributors
 
 Changelog
 ---------
+### 0.7.1 ###
+* Fix version numbers...
+
 ### 0.7.0 ###
 * colesnodgrass added Options (saving to localStorage)!!!!!
 * kenotron updated icon text to be consistently white (it's so subtle, you probably didn't notice it...)
