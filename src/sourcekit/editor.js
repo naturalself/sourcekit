@@ -213,9 +213,13 @@ Editor.prototype.options = function() {
 	return new dijit.form.Button({
 		label: "Options",
 		onClick: (function() { 
+			dojo.byId('optionsWordwrap').innerHTML = '';
 			dojo.byId('optionsWordwrap').appendChild(optionsWordwrap.domNode);
+			dojo.byId('optionsTheme').innerHTML = '';
 			dojo.byId('optionsTheme').appendChild(optionsTheme.domNode);			
+			dojo.byId('optionsLineNumbers').innerHTML = '';
 			dojo.byId('optionsLineNumbers').appendChild(optionsLineNumbers.domNode);
+			dojo.byId('optionsPrintMargin').innerHTML = '';
 			dojo.byId('optionsPrintMargin').appendChild(optionsPrintMargin.domNode);
 			dijit.byId('optionsDialog').show();
 		}).bind(this)
