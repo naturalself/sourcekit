@@ -18,6 +18,24 @@
     ],
 function() {
 	return {
+		/** Gutter (Line Numbers) */
+		lineNumbers: {
+			key: 'editor.options.lineNumbers',
+			default: 'true',
+			options: [
+				{ label: 'Enabled', value: "true" },
+				{ label: 'Disabled', value: "false" }
+			]
+		},
+		/** Print Margin */
+		printMargin : {
+			key: 'editor.options.printMargin',
+			default: 'true',
+			options: [
+				{ label: 'Enabled', value: "true" },
+				{ label: 'Disabled', value: "false" }
+			]
+		},
 		/** Wordwrap */
 		wordwrap: {
 			key: 'editor.options.wordwrap',
@@ -25,7 +43,7 @@ function() {
 			options: [
 				{ label: 'No Wrapping', value: ' ' },
 				{ label: '80 Chars', value: '80' },
-				{ label: '120 Chars', value: '120' },
+				{ label: '120 Chars', value: '120' }
 			]
 			
 		},
