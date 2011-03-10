@@ -59,10 +59,11 @@ Editor.prototype.setupInterface = function() {
 	// TODO(csnodgrass): make this more programmatic
 	this.editor.renderer.setShowGutter(localStorage.getItem(Options.lineNumbers.key) == 'true');
 	this.editor.renderer.setShowPrintMargin(localStorage.getItem(Options.printMargin.key) == 'true');
-	if (localStorage.getItem(Options.wordwrap.key) == ' ') {
+	if (localStorage.getItem(Options.wordwrap.value) == ' ') {
 		this.editor.getSession().setUseWrapMode(false);
-		this.editor.getSession().setWrapLimitRange(0, 0);                    
+		this.editor.getSession().setWrapLimitRange(0, 0);
 	} else {
+	    var newValue = localStorage.getItem(Options.wordwrap.key);
 		this.editor.getSession().setUseWrapMode(true);
 		this.editor.getSession().setWrapLimitRange(newValue, newValue);
 	}
