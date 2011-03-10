@@ -24,6 +24,10 @@ Contributors
 
 Changelog
 ---------
+### 0.7.0 ###
+* colesnodgrass added Options (saving to localStorage)!!!!!
+* kenotron updated icon text to be consistently white (it's so subtle, you probably didn't notice it...)
+
 ### 0.6.6 ###
 * Added several themes: THANKS to mrpants!!!
 * Added .pm syntax highlight for Perl module files (duh!)
