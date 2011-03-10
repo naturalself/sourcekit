@@ -2,16 +2,14 @@ define('sourcekit/editor',
         ['sourcekit/fileutil',
         'sourcekit/notification',
         'sourcekit/editor/file_mode_options',
-        'sourcekit/editor/theme_options',
-        'sourcekit/editor/wordwrap_options',
-        'sourcekit/data/dropbox_store',
-        
+		'sourcekit/editor/options',
+        'sourcekit/data/dropbox_store',        
         'ace/editor',
         'ace/edit_session',
         'ace/undomanager',
         'ace/virtual_renderer',
         ], 
-        function(FileUtil, Notification, FileModeOptions, ThemeOptions, WordWrapOptions, DropboxStore) {
+        function(FileUtil, Notification, FileModeOptions, Options, DropboxStore) {
 
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.layout.TabContainer");
@@ -40,13 +38,13 @@ Editor.prototype.setupInterface = function() {
     
     this.introContainer = dojo.byId("introContainer");
     
-    if (localStorage.getItem('editor.theme') == null) {
-        localStorage.setItem('editor.theme', 'twilight');
+    if (localStorage.getItem(Options.theme.key) == null) {
+        localStorage.setItem(Options.theme.key, Options.theme.default);
     }
     
     this.editorContainer = dojo.byId("editorContainer");
     this.editor = new AceEditor(new Renderer(this.editorContainer, 
-        ThemeOptions.getThemeByName(localStorage.getItem('editor.theme')))
+		Options.theme.getByName(localStorage.getItem(Options.theme.key)))
     );
 
     dojo.connect(window, "onresize", this.resize.bind(this));
@@ -140,35 +138,33 @@ Editor.prototype.openFile = function(item) {
         
         editorToolbar.addChild(modeSelect);
         
-        // Add Syntax Highlighting Dropdown Menu
         var wordWrapSelect = new dijit.form.Select({
-            options: WordWrapOptions.findOptions(localStorage.getItem('editor.wrapLimit')),
+            options: Options.findOptions(Options.wordwrap.key, Options.wordwrap.options),
             onChange: (function(newValue) {
-                localStorage.setItem('editor.wrapLimit', newValue);
-                if (newValue != ' ') {
-                    this.editor.getSession().setUseWrapMode(true);
-                    this.editor.getSession().setWrapLimitRange(newValue, newValue);
+                localStorage.setItem(Options.wordwrap.key, newValue);
+                if (newValue == ' ') {
+					this.editor.getSession().setUseWrapMode(false);
+					this.editor.getSession().setWrapLimitRange(0, 0);                    
                 } else {
-                    this.editor.getSession().setUseWrapMode(false);
-                    this.editor.getSession().setWrapLimitRange(0, 0);
+					this.editor.getSession().setUseWrapMode(true);
+					this.editor.getSession().setWrapLimitRange(newValue, newValue);
                 }
                 
             }).bind(this)
         });
         
         editorToolbar.addChild(wordWrapSelect);
-        
-        // Add Theme Menu
+                
+		// Add Theme Menu
         var themeSelect = new dijit.form.Select({
-            options: ThemeOptions.findOptions(localStorage.getItem('editor.theme')),
+            options: Options.findOptions(localStorage.getItem(Options.theme.key), Options.theme.options),
             onChange: (function(newValue) {
-                localStorage.setItem('editor.theme', newValue);
-                this.editor.setTheme(ThemeOptions.getThemeByName(localStorage.getItem('editor.theme')));
+                localStorage.setItem(Options.theme.key, newValue);
+                this.editor.setTheme(Options.theme.getByName(newValue));
             }).bind(this)
         });
         
-        editorToolbar.addChild(themeSelect);
-        
+        editorToolbar.addChild(themeSelect);        
         editorContentPane.domNode.appendChild(editorToolbar.domNode);
 
         this.tabContainer.addChild(editorContentPane);
