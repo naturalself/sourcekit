@@ -7,13 +7,35 @@
         <link rel="stylesheet" href="css/themes/claro/claro.css" />
         <link rel="stylesheet" href="css/application.css" />
         <script src="../src/dojo/dojo.js.uncompressed.js" djConfig="parseOnLoad:true"></script>
-        <script>
-            dojo.require("dijit.layout.BorderContainer");
-            dojo.require("dijit.layout.ContentPane");
-            dojo.require("dijit.layout.TabContainer");
+        <script type="text/javascript">
+            dojo.require('dijit.layout.BorderContainer');
+            dojo.require('dijit.layout.ContentPane');
+            dojo.require('dijit.layout.TabContainer');
+			dojo.require('dijit.Dialog');
+			dojo.require('dijit.form.Select');
         </script>
     </head>
     <body class="claro">
+		<div dojoType="dijit.Dialog" id="optionsDialog" title="Options">
+			<table>
+				<tr>
+					<td><label for="optionsTheme">Theme:</label></td>
+					<td id="optionsTheme"></td>					
+				</tr>
+				<tr>
+					<td><label for="optionsWordwrap">WordWrap:</label></td>
+					<td id="optionsWordwrap"></td>					
+				</tr>
+				<tr>
+					<td><label for="optionsLineNumbers">Line Numbers:</label></td>
+					<td id="optionsLineNumbers"></td>				
+				</tr>
+				<tr>
+					<td><label for="optionsPrintMargin">Print Margin:</label></td>
+					<td id="optionsPrintMargin"></td>				
+				</tr>
+			</table>
+		</div>
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" gutters="false" liveSplitters="true">
             <div id="borderLeft" dojoType="dijit.layout.ContentPane" region="left" splitter="true">
                 <div id="fileListTree"></div>

@@ -11,10 +11,6 @@ Details
 -------
 Embedded is the excellent Ajax.org's Ace text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.
 
-Plugins
--------
-Arbitrary Javascript "plugins" are loaded post initialization from your Dropbox account. It is loaded from /.sourcekit/plugins/ 
-
 Installation
 ------------
 * Go to the Google Web Store, search for 'SourceKit' - install it!
@@ -24,9 +20,19 @@ Contributors
 ------------
 * antimatter15: https://github.com/antimatter15
 * csnodgrass: https://github.com/colesnodgrass
+* mrpants: https://github.com/mrpants
 
 Changelog
 ---------
+### 0.7.0 ###
+* colesnodgrass added Options (saving to localStorage)!!!!!
+* kenotron updated icon text to be consistently white (it's so subtle, you probably didn't notice it...)
+
+### 0.6.6 ###
+* Added several themes: THANKS to mrpants!!!
+* Added .pm syntax highlight for Perl module files (duh!)
+* New icons :) Hope you like it!!
+
 ### 0.6.5 ###
 * Added Word Wrap selection
 * Added Theme selection

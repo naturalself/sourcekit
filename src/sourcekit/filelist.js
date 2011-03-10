@@ -1,6 +1,6 @@
 define("sourcekit/filelist", 
-        ["dropbox/dropbox", "sourcekit/data/dropbox_store", "sourcekit/notification"], 
-        function(Dropbox, DropboxStore, Notification) {
+        ["sourcekit/notification"], 
+        function(Notification) {
 
 dojo.require("dijit.Tree");
 dojo.require("dijit.form.Button");
@@ -23,9 +23,9 @@ var FileList = function(store, editor) {
 FileList.prototype.setupInterface = function() {
     this.treeModel = new dijit.tree.TreeStoreModel({
         store: this.store,
-        root: { label: store.getName(), path: '/', root: true, children: [] },
+        root: { label: this.store.getName(), path: '/', root: true, children: [] },
         childrenAttrs: ["children"],
-        deferItemLoadingUntilExpand: true
+        deferItemLoadingUntilExpand: true,
     });
 
     // Set up the Tree view and hook up events

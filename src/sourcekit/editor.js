@@ -2,21 +2,22 @@ define('sourcekit/editor',
         ['sourcekit/fileutil',
         'sourcekit/notification',
         'sourcekit/editor/file_mode_options',
-        'sourcekit/editor/theme_options',
-        'sourcekit/editor/wordwrap_options',
-        'sourcekit/data/dropbox_store',
-        
+		'sourcekit/editor/options',
+        'sourcekit/data/dropbox_store',        
         'ace/editor',
         'ace/edit_session',
         'ace/undomanager',
         'ace/virtual_renderer',
         ], 
-        function(FileUtil, Notification, FileModeOptions, ThemeOptions, WordWrapOptions, DropboxStore) {
+        function(FileUtil, Notification, FileModeOptions, Options, DropboxStore) {
 
-dojo.require("dijit.layout.ContentPane");
-dojo.require("dijit.layout.TabContainer");
-dojo.require("dijit.form.Select");
-dojo.require("dijit.Toolbar");
+dojo.require('dijit.layout.ContentPane');
+dojo.require('dijit.layout.TabContainer');
+dojo.require('dijit.form.Select');
+dojo.require('dijit.form.Button');
+dojo.require('dijit.Toolbar');
+dojo.require("dijit.ToolbarSeparator");
+dojo.require('dijit.Dialog');
 
 var AceEditor = require("ace/editor").Editor;
 var AceEditSession = require("ace/edit_session").EditSession;
@@ -25,7 +26,7 @@ var AceUndoManager = require("ace/undomanager").UndoManager;
 var Renderer = require("ace/virtual_renderer").VirtualRenderer;
 var blankSession = new AceEditSession("");
 
-var Editor = function(store, editorEnv) {
+var Editor = function(store) {
     this.store = store;
     this.sessions = {};
     dojo.addOnLoad(this.setupInterface.bind(this));
@@ -39,15 +40,33 @@ Editor.prototype.setupInterface = function() {
     });
     
     this.introContainer = dojo.byId("introContainer");
-    
-    if (localStorage.getItem('editor.theme') == null) {
-        localStorage.setItem('editor.theme', 'twilight');
-    }
+	
+	// Initialize all options
+	for (var k in Options) {
+		if (typeof Options[k] == 'object') {
+			if (localStorage.getItem(Options[k].key) == null) {
+				localStorage.setItem(Options[k].key, Options[k].default);
+			}
+		}
+	}
     
     this.editorContainer = dojo.byId("editorContainer");
     this.editor = new AceEditor(new Renderer(this.editorContainer, 
-        ThemeOptions.getThemeByName(localStorage.getItem('editor.theme')))
+		Options.theme.getByName(localStorage.getItem(Options.theme.key)))
     );
+	
+	// Set all options
+	// TODO(csnodgrass): make this more programmatic
+	this.editor.renderer.setShowGutter(localStorage.getItem(Options.lineNumbers.key) == 'true');
+	this.editor.renderer.setShowPrintMargin(localStorage.getItem(Options.printMargin.key) == 'true');
+	if (localStorage.getItem(Options.wordwrap.value) == ' ') {
+		this.editor.getSession().setUseWrapMode(false);
+		this.editor.getSession().setWrapLimitRange(0, 0);
+	} else {
+	    var newValue = localStorage.getItem(Options.wordwrap.key);
+		this.editor.getSession().setUseWrapMode(true);
+		this.editor.getSession().setWrapLimitRange(newValue, newValue);
+	}
 
     dojo.connect(window, "onresize", this.resize.bind(this));
     
@@ -123,51 +142,24 @@ Editor.prototype.openFile = function(item) {
         });
         
         editorToolbar.addChild(saveButton);
+		editorToolbar.addChild(new dijit.ToolbarSeparator());
         
         // Handle file type autodetection
         var extension = FileUtil.fileExtension(item.path);
         var defaultMode = FileModeOptions.findModeName(extension);
         
-        //TODO FIX!
-        // Add Syntax Highlighting Dropdown Menu
-        var modeSelect = new dijit.form.Select({
-            options: FileModeOptions.findOptions(defaultMode),
+		var modeSelect = new dijit.form.Select({
+			options: FileModeOptions.findOptions(defaultMode),
             onChange: (function(newValue) {
                 var Mode = FileModeOptions.getModeByName(newValue);
                 this.editor.getSession().setMode(new Mode());
             }).bind(this)
         });
-        
+		        
         editorToolbar.addChild(modeSelect);
-        
-        // Add Syntax Highlighting Dropdown Menu
-        var wordWrapSelect = new dijit.form.Select({
-            options: WordWrapOptions.findOptions(localStorage.getItem('editor.wrapLimit')),
-            onChange: (function(newValue) {
-                localStorage.setItem('editor.wrapLimit', newValue);
-                if (newValue != ' ') {
-                    this.editor.getSession().setUseWrapMode(true);
-                    this.editor.getSession().setWrapLimitRange(newValue, newValue);
-                } else {
-                    this.editor.getSession().setUseWrapMode(false);
-                    this.editor.getSession().setWrapLimitRange(0, 0);
-                }
-                
-            }).bind(this)
-        });
-        
-        editorToolbar.addChild(wordWrapSelect);
-        
-        // Add Theme Menu
-        var themeSelect = new dijit.form.Select({
-            options: ThemeOptions.findOptions(localStorage.getItem('editor.theme')),
-            onChange: (function(newValue) {
-                localStorage.setItem('editor.theme', newValue);
-                this.editor.setTheme(ThemeOptions.getThemeByName(localStorage.getItem('editor.theme')));
-            }).bind(this)
-        });
-        
-        editorToolbar.addChild(themeSelect);
+		editorToolbar.addChild(new dijit.ToolbarSeparator());
+		
+		editorToolbar.addChild(this.options());  
         
         editorContentPane.domNode.appendChild(editorToolbar.domNode);
 
@@ -176,6 +168,58 @@ Editor.prototype.openFile = function(item) {
     } else {
         this.tabContainer.selectChild(id, true);
     }
+}
+
+Editor.prototype.options = function() {
+	var optionsWordwrap = new dijit.form.Select({
+		options: Options.findOptions(Options.wordwrap.key, Options.wordwrap.options),
+		onChange: (function(newValue) {
+			localStorage.setItem(Options.wordwrap.key, newValue);
+			if (newValue == ' ') {
+				this.editor.getSession().setUseWrapMode(false);
+				this.editor.getSession().setWrapLimitRange(0, 0);                    
+			} else {
+				this.editor.getSession().setUseWrapMode(true);
+				this.editor.getSession().setWrapLimitRange(newValue, newValue);
+			}
+			
+		}).bind(this)
+	});
+	
+	var optionsTheme = new dijit.form.Select({
+		options: Options.findOptions(localStorage.getItem(Options.theme.key), Options.theme.options),
+		onChange: (function(newValue) {
+			localStorage.setItem(Options.theme.key, newValue);
+			this.editor.setTheme(Options.theme.getByName(newValue));
+		}).bind(this)
+	}); 
+	
+	var optionsLineNumbers = new dijit.form.Select({
+		options: Options.findOptions(localStorage.getItem(Options.lineNumbers.key), Options.lineNumbers.options),
+		onChange: (function(newValue) {			
+			localStorage.setItem(Options.lineNumbers.key, newValue == 'true');
+			this.editor.renderer.setShowGutter(newValue == 'true');
+		}).bind(this)
+	});
+	
+	var optionsPrintMargin = new dijit.form.Select({
+		options: Options.findOptions(localStorage.getItem(Options.printMargin.key), Options.printMargin.options),
+		onChange: (function(newValue) {			
+			localStorage.setItem(Options.printMargin.key, newValue == 'true');
+			this.editor.renderer.setShowPrintMargin(newValue == 'true');
+		}).bind(this)
+	});
+	
+	return new dijit.form.Button({
+		label: "Options",
+		onClick: (function() { 
+			dojo.byId('optionsWordwrap').appendChild(optionsWordwrap.domNode);
+			dojo.byId('optionsTheme').appendChild(optionsTheme.domNode);			
+			dojo.byId('optionsLineNumbers').appendChild(optionsLineNumbers.domNode);
+			dojo.byId('optionsPrintMargin').appendChild(optionsPrintMargin.domNode);
+			dijit.byId('optionsDialog').show();
+		}).bind(this)
+	});
 }
 
 Editor.prototype.saveCurrentFile = function() {
