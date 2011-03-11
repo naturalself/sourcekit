@@ -24,6 +24,12 @@ Contributors
 
 Changelog
 ---------
+### 0.7.2 ###
+* Fixed a rendering bug with the options dialog
+
+### 0.7.1 ###
+* Fixed version numbering
+
 ### 0.7.0 ###
 * colesnodgrass added Options (saving to localStorage)!!!!!
 * kenotron updated icon text to be consistently white (it's so subtle, you probably didn't notice it...)
