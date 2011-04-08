@@ -279,8 +279,8 @@ var Dropbox = function(consumerKey, consumerSecret) {
         authorize: function(callback) {
             if (!_tokens['accessToken'] && !_tokens['accessTokenSecret']) {
                 if (!_tokens['requestToken'] && !_tokens['requestTokenSecret']) { // Step 1
-                    var requestTokenUrl = "https://api.dropbox.com/" + _dropboxApiVersion + "/oauth/request_token";
-                    var authorizeUrl = "https://api.dropbox.com/" + _dropboxApiVersion + "/oauth/authorize";
+                    var requestTokenUrl = "https://www.dropbox.com/" + _dropboxApiVersion + "/oauth/request_token";
+                    var authorizeUrl = "https://www.dropbox.com/" + _dropboxApiVersion + "/oauth/authorize";
                     var message = _createOauthRequest(requestTokenUrl);
             
                     _sendOauthRequest(message, {
@@ -314,7 +314,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
                         }).bind(this)
                     });
                 } else { // Step 2
-                    var accessTokenUrl = "https://api.dropbox.com/" + _dropboxApiVersion + "/oauth/access_token";
+                    var accessTokenUrl = "https://www.dropbox.com/" + _dropboxApiVersion + "/oauth/access_token";
                     var message = _createOauthRequest(accessTokenUrl);
             
                     _sendOauthRequest(message, {
@@ -351,7 +351,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
         },
         
         getAccountInfo: function(callback) {
-            var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/account/info";
+            var url = "https://www.dropbox.com/" + _dropboxApiVersion + "/account/info";
             var message = _createOauthRequest(url);
             _sendOauthRequest(message, {
                 type: "json",
@@ -362,7 +362,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
         getDirectoryContents: function(path, callback) {
             if (path != null) {
                 var filename = path.replace(/^\//, '');
-                var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + escape(filename);
+                var url = "https://www.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + escape(filename);
                 var message = _createOauthRequest(url, {
                     file_limit: _fileListLimit,
                     list: "true"
@@ -378,7 +378,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
         
         getMetadata: function(path, callback) {
             var filename = path.replace(/^\//, '');
-            var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + escape(filename);
+            var url = "https://www.dropbox.com/" + _dropboxApiVersion + "/metadata/dropbox/" + escape(filename);
             var message = _createOauthRequest(url, {
                 list: "false"
             });
@@ -423,7 +423,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
         },
         
         createDirectory: function(path, callback) {
-            var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/fileops/create_folder";
+            var url = "https://www.dropbox.com/" + _dropboxApiVersion + "/fileops/create_folder";
             var message = _createOauthRequest(url, {
                 path: path,
                 root: 'dropbox'
@@ -435,7 +435,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
         },
         
         deletePath: function(path, callback) {
-            var url = "https://api.dropbox.com/" + _dropboxApiVersion + "/fileops/delete";
+            var url = "https://www.dropbox.com/" + _dropboxApiVersion + "/fileops/delete";
             var message = _createOauthRequest(url, {
                 path: path,
                 root: 'dropbox'
