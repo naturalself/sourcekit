@@ -6,7 +6,7 @@ dojo.require("dijit.layout.BorderContainer");
 var Application = {};
 
 Application.start = function() {
-    var workspace = Workspace.getDropboxWorkspace();
+    var workspace = Workspace.getAllWorkspace();
 };
 
 return Application;

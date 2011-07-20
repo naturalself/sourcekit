@@ -1,5 +1,5 @@
-define("sourcekit/filelist", 
-        ["sourcekit/notification"], 
+define("sourcekit/filelist",
+        ["sourcekit/notification"],
         function(Notification) {
 
 dojo.require("dijit.Tree");
@@ -16,7 +16,7 @@ var FileList = function(store, editor) {
     this.store = store;
     this.editor = editor;
     this.fileNodeInContext = null;
-    
+
     dojo.addOnLoad(this.setupInterface.bind(this));
 };
 
@@ -28,36 +28,41 @@ FileList.prototype.setupInterface = function() {
         deferItemLoadingUntilExpand: true,
     });
 
+    var divId = 'fileListTree-' + this.store.getName();
+    var fileListTopDiv = document.createElement('div');
+    fileListTopDiv.id = divId;
+    document.getElementById('fileListTree').appendChild(fileListTopDiv);
     // Set up the Tree view and hook up events
     this.fileListTree = new dijit.Tree({
-        model: this.treeModel, 
+        model: this.treeModel,
         //showRoot: false,
         openOnClick: true
-    }, "fileListTree");
-    
+    }, divId);
+
     dojo.connect(this.fileListTree, "onClick", this, function(item, node, event) {
+        item.storeName = this.store.getName();
         this.store.loadItem({
             item: item,
             onItem: (function(item) {
-                this.editor.openFile(item);
+              this.editor.openFile(item);
             }).bind(this)
         });
     });
-    
+
     this.fileListContextMenu = new dijit.Menu({
-       targetNodeIds: ["fileListTree"]
+       targetNodeIds: [divId]
     });
-    
+
     // New File Context Menu and Dialog
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitEditorIcon dijitEditorIconNewPage",
         label: "New File...",
         onClick: (function() {
             var fileName = prompt("Enter a new file name");
-            
+
             if (fileName != null) {
                 var parentItem = null;
-            
+
                 if (this.fileNodeInContext.item.is_dir) {
                     parentItem = this.fileNodeInContext.item;
                 } else if (this.fileNodeInContext.getParent() != null) {
@@ -65,24 +70,24 @@ FileList.prototype.setupInterface = function() {
                 } else {
                     parentItem = this.treeModel.root;
                 }
-            
+
                 var item = { path: (parentItem.path + "/" + fileName).replace(/\/+/g, '/') };
-        
+
                 this.newFile(item, parentItem);
             }
         }).bind(this)
     }));
-    
+
     // New Folder Context Menu and Dialog
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitIconFolderClosed",
         label: "New Folder...",
         onClick: (function() {
             var folderName = prompt("Enter a new folder name");
-            
+
             if (folderName != null) {
                 var parentItem = null;
-            
+
                 if (this.fileNodeInContext.item.is_dir) {
                     parentItem = this.fileNodeInContext.item;
                 } else if (this.fileNodeInContext.getParent() != null) {
@@ -90,14 +95,14 @@ FileList.prototype.setupInterface = function() {
                 } else {
                     parentItem = this.treeModel.root;
                 }
-            
+
                 var item = { path: (parentItem.path + "/" + folderName).replace(/\/+/g, '/'), is_dir: true, children: [] };
-        
+
                 this.newFolder(item, parentItem);
             }
         }).bind(this)
     }));
-    
+
     // Delete Context Menu and Dialog
     this.fileListContextMenu.addChild(new dijit.MenuItem({
         iconClass: "dijitIconDelete",
@@ -108,19 +113,19 @@ FileList.prototype.setupInterface = function() {
             }
         }).bind(this)
     }));
-    
+
     // Handle on open event of context menu to record the node being selected in FileListTree
     dojo.connect(this.fileListContextMenu, "_openMyself", this, function(e) {
         var tn = dijit.getEnclosingWidget(e.target);
         this.fileNodeInContext = tn;
     });
-    
+
     // Set up notification
     dojo.connect(this.treeModel, "onNewItem", this, function(item, parentInfo) {
         this.fileListTree.set('selectedItem', item);
         Notification.notify('/resources/images/check.png', 'SourceKit Notification', 'New file created: ' + item.path);
     });
-    
+
     dojo.connect(this.treeModel, "onDeleteItem", this, function(deletedItem) {
         Notification.notify('/resources/images/check.png', 'SourceKit Notification', 'Deleted: ' + deletedItem.path);
     });
