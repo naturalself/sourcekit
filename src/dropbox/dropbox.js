@@ -12,7 +12,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
     var _authCallback = "";
     var _fileListLimit = 10000;
     var _cookieTimeOut = 3650;
-    var _dropboxApiVersion = 1;
+    var _dropboxApiVersion = 0;
     
     var _serialize = function(a) {
         serialized = [];

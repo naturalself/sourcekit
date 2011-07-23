@@ -24,6 +24,9 @@ Contributors
 
 Changelog
 ---------
+### 0.7.4 ###
+* Fixed the version number to Dropbox's API calls.
+
 ### 0.7.3 ###
 * Fixed the url to Dropbox's API calls.
 
