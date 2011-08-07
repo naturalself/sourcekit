@@ -2,9 +2,9 @@ define("sourcekit/data/localStorage_store", ['sourcekit/fileutil'], function(Fil
 
 var kStoragePrefix = '__file_data_';
 
-function LocalStorageStore(prefix) {
+function LocalStorageStore() {
     function _GetStorageName(name) {
-        return kStoragePrefix + prefix + name;
+        return kStoragePrefix + name;
     }
     function _GetFileList() {
         var files = localStorage.getItem(_GetStorageName('/'));
@@ -31,12 +31,12 @@ function LocalStorageStore(prefix) {
             path: path,
             is_dir: false,
             loaded: true,
-            content: _GetFile(path),
+            content: _GetFile(path)
         };
     }
 
     return {
-        getName: function() { return 'LocalStorage-' + prefix; },
+        getName: function() { return 'LocalStorage'; },
         getValue: function(item, attribute, defaultValue) {
             if (item[attribute]) {
                 // 'content' is already in 'item' field, so we don't
@@ -47,6 +47,10 @@ function LocalStorageStore(prefix) {
             return '';
           }
             return defaultValue;
+        },
+        getContent: function(item, callback) {
+          var content = this.getValue(item, 'content');
+          callback(content);
         },
         getValues: function(item, attribute) {
             return (item[attribute] || []).slice(0);
@@ -92,6 +96,7 @@ function LocalStorageStore(prefix) {
             var path = keywordArgs.query.path;
             var scope = keywordArgs.scope || dojo.global;
 
+            console.log(keywordArgs);
           if (path == '/') {
               // root
               var fileList = _GetFileList('/');

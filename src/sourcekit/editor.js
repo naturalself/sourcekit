@@ -113,22 +113,25 @@ Editor.prototype.openFile = function(item) {
         this.editor.setSession(blankSession);
 
         // Load the content
-        var data = store.getValue(item, "content");
         var extension = FileUtil.fileExtension(item.path);
         var Mode = null;
         if (extension != null) {
             Mode = FileModeOptions.getModeByName(FileModeOptions.findModeName(extension));
         }
+        // setup session
+        store.getContent(item, function(data) {
+                           console.log(data);
+            if (Mode != null) {
+                this.sessions[id] = new AceEditSession(data, new Mode());
+            } else {
+                this.sessions[id] = new AceEditSession(data);
+            }
+            this.sessions[id].setUndoManager(new AceUndoManager());
+            this.sessions[id].path = item.path;
+            this.sessions[id].item = item;
+            this.editor.setSession(this.sessions[id]);
+        }.bind(this));
 
-        if (Mode != null) {
-            this.sessions[id] = new AceEditSession(data, new Mode());
-        } else {
-            this.sessions[id] = new AceEditSession(data);
-        }
-        this.sessions[id].setUndoManager(new AceUndoManager());
-        this.sessions[id].path = item.path;
-        this.sessions[id].item = item;
-        this.editor.setSession(this.sessions[id]);
 
         // Deal with the UI
         var editorContentPane = new dijit.layout.ContentPane({

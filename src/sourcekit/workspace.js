@@ -2,8 +2,9 @@ define('sourcekit/workspace', [
     'dropbox/dropbox',
     'sourcekit/data/dropbox_store',
     'sourcekit/data/localStorage_store',
+    'sourcekit/data/extension_store',
     'sourcekit/editor',
-    'sourcekit/filelist'], function (Dropbox, DropboxStore, LocalStorageStore, Editor, FileList) {
+    'sourcekit/filelist'], function (Dropbox, DropboxStore, LocalStorageStore, ExtensionStore, Editor, FileList) {
 
 var Workspace = function() {
     this.stores = { };
@@ -37,32 +38,39 @@ Workspace.getDropboxWorkspace = function(ws, callback) {
         ws.registerStore(store);
 
         if (callback) {
-            callback.call(this, workspace);
+            callback.call(this, ws);
         }
     }).bind(this));
 
     return true;
 };
 
-Workspace.getLocalStorageWorkspace_A = function(ws, callback) {
-    var store = new LocalStorageStore('A');
+Workspace.getLocalStorageWorkspace = function(ws, callback) {
+    var store = new LocalStorageStore();
     ws.registerStore(store);
     if (callback) {
-        callback.call(this, workspace);
+        callback.call(this, ws);
     }
+  return true;
 };
 
-Workspace.getLocalStorageWorkspace_B = function(ws, callback) {
-    var store = new LocalStorageStore('B');
+Workspace.getExtensionWorkspaces = function(ws, callback) {
+  var bgPage = chrome.extension.getBackgroundPage();
+  for (var id in bgPage._registeredStorageExtensions) {
+    var store = new ExtensionStore(
+      id, bgPage._registeredStorageExtensions[id]);
     ws.registerStore(store);
     if (callback) {
-        callback.call(this, workspace);
+      callback.call(this, ws);
     }
+  }
+  return true;
 };
 
 Workspace.getAllWorkspace = function(callback) {
   var methods = [
-    Workspace.getLocalStorageWorkspace_A
+    Workspace.getLocalStorageWorkspace,
+    Workspace.getExtensionWorkspaces
   ];
   var retval = true;
   var ws = new Workspace();
