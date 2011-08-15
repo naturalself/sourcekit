@@ -69,17 +69,25 @@ Workspace.getExtensionWorkspaces = function(ws, callback) {
 
 Workspace.getAllWorkspace = function(callback) {
   var methods = [
+    Workspace.getDropboxWorkspace,
     Workspace.getLocalStorageWorkspace,
     Workspace.getExtensionWorkspaces
   ];
   var retval = true;
   var ws = new Workspace();
-  for (var i = 0; i < methods.length; ++i) {
-    if (!methods[i](ws, callback)) {
-        retval = false;
+  var method_counter = 0;
+  var method_callback = function(ws) {
+    if (callback) {
+      callback.call(this, ws);
     }
+    method_counter++;
+    if (method_counter == methods.length) {
+      ws.setupEditor();
+    }
+  };
+  for (var i = 0; i < methods.length; ++i) {
+    methods[i](ws, method_callback);
   }
-  ws.setupEditor();
   return retval;
 };
 
