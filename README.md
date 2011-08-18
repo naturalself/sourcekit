@@ -21,9 +21,14 @@ Contributors
 * antimatter15: https://github.com/antimatter15
 * csnodgrass: https://github.com/colesnodgrass
 * mrpants: https://github.com/mrpants
+* jmuk: https://github.com/jmuk
 
 Changelog
 ---------
+### 0.8.0 ###
+* Added localstorage support (jmuk)
+* Added extension based storage engines support (jmuk)
+
 ### 0.7.4 ###
 * Fixed the version number to Dropbox's API calls.
 
