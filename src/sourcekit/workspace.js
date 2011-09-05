@@ -60,9 +60,9 @@ Workspace.getExtensionWorkspaces = function(ws, callback) {
     var store = new ExtensionStore(
       id, bgPage._registeredStorageExtensions[id]);
     ws.registerStore(store);
-    if (callback) {
-      callback.call(this, ws);
-    }
+  }
+  if (callback) {
+    callback.call(this, ws);
   }
   return true;
 };
