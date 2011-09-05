@@ -76,7 +76,7 @@ Workspace.getExtensionWorkspaces = function(ws, callback) {
 Workspace.getAllWorkspace = function(callback) {
   var methods = [
     Workspace.getDropboxWorkspace,
-    Workspace.getLocalStorageWorkspace,
+//    Workspace.getLocalStorageWorkspace,
     Workspace.getExtensionWorkspaces
   ];
   var retval = true;
