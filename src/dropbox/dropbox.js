@@ -275,7 +275,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
             return this;
         },
 
-        authorize: function(callback) {
+        authorize: function(callback, error_callback) {
             if (!_tokens['accessToken'] && !_tokens['accessTokenSecret']) {
                 if (!_tokens['requestToken'] && !_tokens['requestTokenSecret']) { // Step 1
                     var requestTokenUrl = "https://www.dropbox.com/" + _dropboxApiVersion + "/oauth/request_token";
@@ -304,13 +304,14 @@ var Dropbox = function(consumerKey, consumerSecret) {
                                     chrome.tabs.onUpdated.addListener((function(tabId, changeInfo, tab) {
                                         if (tabId == dropboxTab.id && tab.title.indexOf("API Request Authorized") != -1) {
                                             // Recurse, next step!
-                                            this.authorize(callback);
+                                            this.authorize(callback, error_callback);
                                             chrome.tabs.remove(tabId);
                                         }
                                     }).bind(this));
                                 }).bind(this));
                             }).bind(this));
-                        }).bind(this)
+                        }).bind(this),
+                        error: function(data) { if (error_callback) { error_callback(data); } },
                     });
                 } else { // Step 2
                     var accessTokenUrl = "https://www.dropbox.com/" + _dropboxApiVersion + "/oauth/access_token";
@@ -337,7 +338,8 @@ var Dropbox = function(consumerKey, consumerSecret) {
                             authTokens['accessTokenSecret'] = _tokens['accessTokenSecret'];
                             _storeAuth(authTokens);
                             callback();
-                        }
+                        },
+                        error: function(data) { if (error_callback) { error_callback(data); } },
                     });
                 }
             } else {

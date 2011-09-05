@@ -40,7 +40,13 @@ Workspace.getDropboxWorkspace = function(ws, callback) {
         if (callback) {
             callback.call(this, ws);
         }
-    }).bind(this));
+    }).bind(this),
+    /* error callback */
+    function() {
+        if (callback) {
+            callback.call(this, ws);
+        }
+    });
 
     return true;
 };
