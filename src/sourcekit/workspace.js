@@ -40,7 +40,13 @@ Workspace.getDropboxWorkspace = function(ws, callback) {
         if (callback) {
             callback.call(this, ws);
         }
-    }).bind(this));
+    }).bind(this),
+    /* error callback */
+    function() {
+        if (callback) {
+            callback.call(this, ws);
+        }
+    });
 
     return true;
 };
@@ -60,9 +66,9 @@ Workspace.getExtensionWorkspaces = function(ws, callback) {
     var store = new ExtensionStore(
       id, bgPage._registeredStorageExtensions[id]);
     ws.registerStore(store);
-    if (callback) {
-      callback.call(this, ws);
-    }
+  }
+  if (callback) {
+    callback.call(this, ws);
   }
   return true;
 };
@@ -70,7 +76,7 @@ Workspace.getExtensionWorkspaces = function(ws, callback) {
 Workspace.getAllWorkspace = function(callback) {
   var methods = [
     Workspace.getDropboxWorkspace,
-    Workspace.getLocalStorageWorkspace,
+//    Workspace.getLocalStorageWorkspace,
     Workspace.getExtensionWorkspaces
   ];
   var retval = true;
