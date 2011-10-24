@@ -21,8 +21,9 @@
  *
  * Contributor(s):
  *      Fabian Jakobs <fabian AT ajax DOT org>
- *      Julian Viereck <julian.viereck@gmail.com>
+ *      Julian Viereck <julian DOT viereck AT gmail DOT com>
  *      Mihai Sucan <mihai.sucan@gmail.com>
+ *      Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -43,14 +44,16 @@ define(function(require, exports, module) {
 var oop = require("pilot/oop");
 var dom = require("pilot/dom");
 var lang = require("pilot/lang");
+var useragent = require("pilot/useragent");
 var EventEmitter = require("pilot/event_emitter").EventEmitter;
 
 var Text = function(parentEl) {
     this.element = dom.createElement("div");
     this.element.className = "ace_layer ace_text-layer";
+    this.element.style.width = "auto";
     parentEl.appendChild(this.element);
 
-    this.$characterSize = this.$measureSizes();
+    this.$characterSize = this.$measureSizes() || {width: 0, height: 0};
     this.$pollSizeChanges();
 };
 
@@ -58,13 +61,15 @@ var Text = function(parentEl) {
 
     oop.implement(this, EventEmitter);
 
-    this.EOF_CHAR = "&para;";
-    this.EOL_CHAR = "&not;";
-    this.TAB_CHAR = "&rarr;";
-    this.SPACE_CHAR = "&middot;";
+    this.EOF_CHAR = "\xB6"; //"&para;";
+    this.EOL_CHAR = "\xAC"; //"&not;";
+    this.TAB_CHAR = "\u2192"; //"&rarr;";
+    this.SPACE_CHAR = "\xB7"; //"&middot;";
+    this.$padding = 0;
 
-    this.setTokenizer = function(tokenizer) {
-        this.tokenizer = tokenizer;
+    this.setPadding = function(padding) {
+        this.$padding = padding;
+        this.element.style.padding = "0 " + padding + "px";
     };
 
     this.getLineHeight = function() {
@@ -75,14 +80,18 @@ var Text = function(parentEl) {
         return this.$characterSize.width || 1;
     };
 
+    this.checkForSizeChanges = function() {
+        var size = this.$measureSizes();
+        if (size && (this.$characterSize.width !== size.width || this.$characterSize.height !== size.height)) {
+            this.$characterSize = size;
+            this._dispatchEvent("changeCharaterSize", {data: size});
+        }
+    };
+
     this.$pollSizeChanges = function() {
         var self = this;
-        setInterval(function() {
-            var size = self.$measureSizes();
-            if (self.$characterSize.width !== size.width || self.$characterSize.height !== size.height) {
-                self.$characterSize = size;
-                self._dispatchEvent("changeCharaterSize", {data: size});
-            }
+        this.$pollSizeChangesTimer = setInterval(function() {
+            self.checkForSizeChanges();
         }, 500);
     };
 
@@ -92,7 +101,7 @@ var Text = function(parentEl) {
         fontWeight : 1,
         fontStyle : 1,
         lineHeight : 1
-    },
+    };
 
     this.$measureSizes = function() {
         var n = 1000;
@@ -113,23 +122,32 @@ var Text = function(parentEl) {
             // Note: characterWidth can be a float!
             measureNode.innerHTML = lang.stringRepeat("Xy", n);
 
-            var container = this.element.parentNode;
-            while (!dom.hasCssClass(container, "ace_editor"))
-                container = container.parentNode;
+            if (this.element.ownerDocument.body) {
+                this.element.ownerDocument.body.appendChild(measureNode);
+            } else {
+                var container = this.element.parentNode;
+                while (!dom.hasCssClass(container, "ace_editor"))
+                    container = container.parentNode;
+                container.appendChild(measureNode);
+            }
 
-            container.appendChild(measureNode);
         }
 
         var style = this.$measureNode.style;
-        for (var prop in this.$fontStyles) {
-            var value = dom.computedStyle(this.element, prop);
-            style[prop] = value;
-        }
+        var computedStyle = dom.computedStyle(this.element);
+        for (var prop in this.$fontStyles)
+            style[prop] = computedStyle[prop];
 
         var size = {
             height: this.$measureNode.offsetHeight,
             width: this.$measureNode.offsetWidth / (n * 2)
         };
+
+        // Size and width can be null if the editor is not visible or
+        // detached from the document
+        if (size.width == 0 && size.height == 0)
+            return null;
+
         return size;
     };
 
@@ -146,18 +164,21 @@ var Text = function(parentEl) {
         return true;
     };
 
+    this.$tabStrings = [];
     this.$computeTabString = function() {
         var tabSize = this.session.getTabSize();
-        if (this.showInvisibles) {
-            var halfTab = (tabSize) / 2;
-            this.$tabString = "<span class='ace_invisible'>"
-                + new Array(Math.floor(halfTab)).join("&#160;")
-                + this.TAB_CHAR
-                + new Array(Math.ceil(halfTab)+1).join("&#160;")
-                + "</span>";
-        } else {
-            this.$tabString = new Array(tabSize+1).join("&#160;");
+        var tabStr = this.$tabStrings = [0];
+        for (var i = 1; i < tabSize + 1; i++) {
+            if (this.showInvisibles) {
+                tabStr.push("<span class='ace_invisible'>"
+                    + this.TAB_CHAR
+                    + new Array(i).join("&#160;")
+                    + "</span>");
+            } else {
+                tabStr.push(new Array(i+1).join("&#160;"));
+            }
         }
+
     };
 
     this.updateLines = function(config, firstRow, lastRow) {
@@ -174,17 +195,31 @@ var Text = function(parentEl) {
         var last = Math.min(lastRow, config.lastRow);
 
         var lineElements = this.element.childNodes;
-        var tokens = this.tokenizer.getTokens(first, last);
+        var lineElementsIdx = 0;
+
+        for (var row = config.firstRow; row < first; row++) {
+            var foldLine = this.session.getFoldLine(row);
+            if (foldLine) {
+                if (foldLine.containsRow(first)) {
+                    break;
+                } else {
+                    row = foldLine.end.row;
+                }
+            }
+            lineElementsIdx ++;
+        }
+
         for (var i=first; i<=last; i++) {
-            var lineElement = lineElements[i - config.firstRow];
+            var lineElement = lineElements[lineElementsIdx++];
             if (!lineElement)
                 continue;
 
             var html = [];
-            this.$renderLine(html, i, tokens[i-first].tokens);
+            var tokens = this.session.getTokens(i, i);
+            this.$renderLine(html, i, tokens[0].tokens, !this.$useLineGroups());
             lineElement = dom.setInnerHtml(lineElement, html.join(""));
-            lineElement.style.height =
-                    this.session.getRowHeight(config, i) + "px";
+
+            i = this.session.getRowFoldEnd(i);
         }
     };
 
@@ -200,13 +235,12 @@ var Text = function(parentEl) {
             return this.update(config);
 
         var el = this.element;
-
         if (oldConfig.firstRow < config.firstRow)
-            for (var row=oldConfig.firstRow; row<config.firstRow; row++)
+            for (var row=this.session.getFoldedRowCount(oldConfig.firstRow, config.firstRow - 1); row>0; row--)
                 el.removeChild(el.firstChild);
 
         if (oldConfig.lastRow > config.lastRow)
-            for (var row=config.lastRow+1; row<=oldConfig.lastRow; row++)
+            for (var row=this.session.getFoldedRowCount(config.lastRow + 1, oldConfig.lastRow); row>0; row--)
                 el.removeChild(el.lastChild);
 
         if (config.firstRow < oldConfig.firstRow) {
@@ -224,21 +258,43 @@ var Text = function(parentEl) {
     };
 
     this.$renderLinesFragment = function(config, firstRow, lastRow) {
-        var fragment = document.createDocumentFragment();
-        var tokens = this.tokenizer.getTokens(firstRow, lastRow);
-        for (var row=firstRow; row<=lastRow; row++) {
-            var lineEl = dom.createElement("div");
-            lineEl.className = "ace_line";
-            var style = lineEl.style;
-            style.height = this.session.getRowHeight(config, row) + "px";
-            style.width = config.width + "px";
+        var fragment = this.element.ownerDocument.createDocumentFragment(),
+            row = firstRow,
+            fold = this.session.getNextFoldLine(row),
+            foldStart = fold ?fold.start.row :Infinity;
+
+        while (true) {
+            if(row > foldStart) {
+                row = fold.end.row+1;
+                fold = this.session.getNextFoldLine(row, fold);
+                foldStart = fold ?fold.start.row :Infinity;
+            }
+            if(row > lastRow)
+                break;
+
+            var container = dom.createElement("div");
 
             var html = [];
-            if (tokens.length > row-firstRow)
-                this.$renderLine(html, row, tokens[row-firstRow].tokens);
+            // Get the tokens per line as there might be some lines in between
+            // beeing folded.
+            // OPTIMIZE: If there is a long block of unfolded lines, just make
+            // this call once for that big block of unfolded lines.
+            var tokens = this.session.getTokens(row, row);
+            if (tokens.length == 1)
+                this.$renderLine(html, row, tokens[0].tokens, false);
+
             // don't use setInnerHtml since we are working with an empty DIV
-            lineEl.innerHTML = html.join("");
-            fragment.appendChild(lineEl);
+            container.innerHTML = html.join("");
+            if (this.$useLineGroups()) {
+                container.className = 'ace_line_group';
+                fragment.appendChild(container);
+            } else {
+                var lines = container.childNodes
+                while(lines.length)
+                    fragment.appendChild(lines[0]);
+            }
+
+            row++;
         }
         return fragment;
     };
@@ -248,12 +304,38 @@ var Text = function(parentEl) {
         this.config = config;
 
         var html = [];
-        var tokens = this.tokenizer.getTokens(config.firstRow, config.lastRow)
-        var fragment = this.$renderLinesFragment(config, config.firstRow, config.lastRow);
+        var firstRow = config.firstRow, lastRow = config.lastRow;
 
-        // Clear the current content of the element and add the rendered fragment.
-        this.element.innerHTML =  "";
-        this.element.appendChild(fragment);
+        var row = firstRow,
+            fold = this.session.getNextFoldLine(row),
+            foldStart = fold ?fold.start.row :Infinity;
+
+        while (true) {
+            if(row > foldStart) {
+                row = fold.end.row+1;
+                fold = this.session.getNextFoldLine(row, fold);
+                foldStart = fold ?fold.start.row :Infinity;
+            }
+            if(row > lastRow)
+                break;
+
+            if (this.$useLineGroups())
+                html.push("<div class='ace_line_group'>")
+
+            // Get the tokens per line as there might be some lines in between
+            // beeing folded.
+            // OPTIMIZE: If there is a long block of unfolded lines, just make
+            // this call once for that big block of unfolded lines.
+            var tokens = this.session.getTokens(row, row);
+            if (tokens.length == 1)
+                this.$renderLine(html, row, tokens[0].tokens, false);
+
+            if (this.$useLineGroups())
+                html.push("</div>"); // end the line group
+
+            row++;
+        }
+        this.element = dom.setInnerHtml(this.element, html.join(""));
     };
 
     this.$textToken = {
@@ -262,92 +344,219 @@ var Text = function(parentEl) {
         "lparen": true
     };
 
-    this.$renderLine = function(stringBuilder, row, tokens) {
-        if (this.showInvisibles) {
-            var self = this;
-            var spaceRe = /( +)|([\v\f \u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000])/g;
-            var spaceReplace = function(space) {
-                if (space.charCodeAt(0) == 32)
-                    return new Array(space.length+1).join("&#160;");
-                else {
-                    var space = new Array(space.length+1).join(self.SPACE_CHAR);
+    this.$renderToken = function(stringBuilder, screenColumn, token, value) {        
+        var self = this;
+        var replaceReg = /\t|&|<|( +)|([\v\f \u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000])|[\u1100-\u115F]|[\u11A3-\u11A7]|[\u11FA-\u11FF]|[\u2329-\u232A]|[\u2E80-\u2E99]|[\u2E9B-\u2EF3]|[\u2F00-\u2FD5]|[\u2FF0-\u2FFB]|[\u3000-\u303E]|[\u3041-\u3096]|[\u3099-\u30FF]|[\u3105-\u312D]|[\u3131-\u318E]|[\u3190-\u31BA]|[\u31C0-\u31E3]|[\u31F0-\u321E]|[\u3220-\u3247]|[\u3250-\u32FE]|[\u3300-\u4DBF]|[\u4E00-\uA48C]|[\uA490-\uA4C6]|[\uA960-\uA97C]|[\uAC00-\uD7A3]|[\uD7B0-\uD7C6]|[\uD7CB-\uD7FB]|[\uF900-\uFAFF]|[\uFE10-\uFE19]|[\uFE30-\uFE52]|[\uFE54-\uFE66]|[\uFE68-\uFE6B]|[\uFF01-\uFF60]|[\uFFE0-\uFFE6]/g;
+        var replaceFunc = function(c, a, b, tabIdx, idx4) {
+            if (c.charCodeAt(0) == 32) {
+                return new Array(c.length+1).join("&#160;");
+            } else if (c == "\t") {
+                var tabSize = self.session.getScreenTabSize(screenColumn + tabIdx);
+                screenColumn += tabSize - 1;
+                return self.$tabStrings[tabSize];
+            } else if (c == "&") {
+                if (useragent.isOldGecko)
+                    return "&";
+                else
+                    return "&amp;";
+            } else if (c == "<") {
+                return "&lt;";
+            } else if (c == "\u3000") {
+                // U+3000 is both invisible AND full-width, so must be handled uniquely
+                var classToUse = self.showInvisibles ? "ace_cjk ace_invisible" : "ace_cjk";
+                var space = self.showInvisibles ? self.SPACE_CHAR : "";
+                screenColumn += 1;
+                return "<span class='" + classToUse + "' style='width:" +
+                    (self.config.characterWidth * 2) +
+                    "px'>" + space + "</span>";
+            } else if (c.match(/[\v\f \u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]/)) {
+                if (self.showInvisibles) {
+                    var space = new Array(c.length+1).join(self.SPACE_CHAR);
                     return "<span class='ace_invisible'>" + space + "</span>";
+                } else {
+                    return "&#160;";
                 }
+            } else {
+                screenColumn += 1;
+                return "<span class='ace_cjk' style='width:" +
+                    (self.config.characterWidth * 2) +
+                    "px'>" + c + "</span>";
+            }
+        };
 
-            };
+        var output = value.replace(replaceReg, replaceFunc);
+
+        if (!this.$textToken[token.type]) {
+            var classes = "ace_" + token.type.replace(/\./g, " ace_");
+            stringBuilder.push("<span class='", classes, "'>", output, "</span>");
         }
         else {
-            var spaceRe = /[\v\f \u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]/g;
-            var spaceReplace = "&#160;";
+            stringBuilder.push(output);
         }
+        return screenColumn + value.length;
+    };
 
-        var _self = this;
+    this.$renderLineCore = function(stringBuilder, lastRow, tokens, splits, onlyContents) {
+        var chars = 0;
+        var split = 0;
+        var splitChars;
         var characterWidth = this.config.characterWidth;
-        function addToken(token, value) {
-            var output = value
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(spaceRe, spaceReplace)
-                .replace(/\t/g, _self.$tabString)
-                .replace(/[\u3040-\u309F]|[\u30A0-\u30FF]|[\u4E00-\u9FFF\uF900-\uFAFF\u3400-\u4DBF]/g, function(c) {
-                    return "<span class='ace_cjk' style='width:" + (characterWidth * 2) + "px'>" + c + "</span>"
-                });
+        var screenColumn = 0;
+        var self = this;
 
-            if (!_self.$textToken[token.type]) {
-                var classes = "ace_" + token.type.replace(/\./g, " ace_");
-                stringBuilder.push("<span class='", classes, "'>", output, "</span>");
-            }
-            else {
-                stringBuilder.push(output);
-            }
-        }
-
-        var splits = this.session.getRowSplitData(row);
-        var chars = 0, split = 0, splitChars;
-
-        if (!splits || splits.length == 0) {
+        if (!splits || splits.length == 0)
             splitChars = Number.MAX_VALUE;
-        } else {
+        else
             splitChars = splits[0];
-        }
 
-        stringBuilder.push("<div style='height:",
-            this.config.lineHeight, "px",
-            "'>");
+        if (!onlyContents) {
+            stringBuilder.push("<div class='ace_line' style='height:",
+                this.config.lineHeight, "px",
+                "'>"
+            );
+        }
+        
         for (var i = 0; i < tokens.length; i++) {
             var token = tokens[i];
             var value = token.value;
 
             if (chars + value.length < splitChars) {
-                addToken(token, value);
+                screenColumn = self.$renderToken(
+                    stringBuilder, screenColumn, token, value
+                );
                 chars += value.length;
-            } else {
+            }
+            else {
                 while (chars + value.length >= splitChars) {
-                    addToken(token, value.substring(0, splitChars - chars));
+                    screenColumn = self.$renderToken(
+                        stringBuilder, screenColumn, 
+                        token, value.substring(0, splitChars - chars)
+                    );
                     value = value.substring(splitChars - chars);
                     chars = splitChars;
-                    stringBuilder.push("</div>",
-                        "<div style='height:",
-                        this.config.lineHeight, "px",
-                        "'>");
+                    
+                    if (!onlyContents) {
+                        stringBuilder.push("</div>",
+                            "<div class='ace_line' style='height:",
+                            this.config.lineHeight, "px",
+                            "'>"
+                        );
+                    }
+
                     split ++;
+                    screenColumn = 0;
                     splitChars = splits[split] || Number.MAX_VALUE;
                 }
                 if (value.length != 0) {
                     chars += value.length;
-                    addToken(token, value);
+                    screenColumn = self.$renderToken(
+                        stringBuilder, screenColumn, token, value
+                    );
                 }
             }
-        };
+        }
 
         if (this.showInvisibles) {
-            if (row !== this.session.getLength() - 1) {
+            if (lastRow !== this.session.getLength() - 1)
                 stringBuilder.push("<span class='ace_invisible'>" + this.EOL_CHAR + "</span>");
-            } else {
+            else
                 stringBuilder.push("<span class='ace_invisible'>" + this.EOF_CHAR + "</span>");
+        }
+        if (!onlyContents)
+            stringBuilder.push("</div>");
+    };
+
+    this.$renderLine = function(stringBuilder, row, tokens, onlyContents) {
+        // Check if the line to render is folded or not. If not, things are
+        // simple, otherwise, we need to fake some things...
+        if (!this.session.isRowFolded(row)) {
+            var splits = this.session.getRowSplitData(row);
+            this.$renderLineCore(stringBuilder, row, tokens, splits, onlyContents);
+        } else {
+            this.$renderFoldLine(stringBuilder, row, tokens, onlyContents);
+        }
+    };
+
+    this.$renderFoldLine = function(stringBuilder, row, tokens, onlyContents) {
+        var session = this.session,
+            foldLine = session.getFoldLine(row),
+            renderTokens = [];
+
+        function addTokens(tokens, from, to) {
+            var idx = 0, col = 0;
+            while ((col + tokens[idx].value.length) < from) {
+                col += tokens[idx].value.length;
+                idx++;
+
+                if (idx == tokens.length) {
+                    return;
+                }
+            }
+            if (col != from) {
+                var value = tokens[idx].value.substring(from - col);
+                // Check if the token value is longer then the from...to spacing.
+                if (value.length > (to - from)) {
+                    value = value.substring(0, to - from);
+                }
+
+                renderTokens.push({
+                    type: tokens[idx].type,
+                    value: value
+                });
+
+                col = from + value.length;
+                idx += 1;
+            }
+
+            while (col < to) {
+                var value = tokens[idx].value;
+                if (value.length + col > to) {
+                    value = value.substring(0, to - col);
+                }
+                renderTokens.push({
+                    type: tokens[idx].type,
+                    value: value
+                });
+                col += value.length;
+                idx += 1;
             }
         }
-        stringBuilder.push("</div>");
+
+        foldLine.walk(function(placeholder, row, column, lastColumn, isNewRow) {
+            if (placeholder) {
+               renderTokens.push({
+                    type: "fold",
+                    value: placeholder
+                });
+            } else {
+                if (isNewRow) {
+                   tokens = this.session.getTokens(row, row)[0].tokens;
+                }
+                if (tokens.length != 0) {
+                    addTokens(tokens, lastColumn, column);
+                }
+            }
+        }.bind(this), foldLine.end.row, this.session.getLine(foldLine.end.row).length);
+
+        // TODO: Build a fake splits array!
+        var splits = this.session.$useWrapMode?this.session.$wrapData[row]:null;
+        this.$renderLineCore(stringBuilder, row, renderTokens, splits, onlyContents);
+    };
+    
+    this.$useLineGroups = function() {
+        // For the updateLines function to work correctly, it's important that the
+        // child nodes of this.element correspond on a 1-to-1 basis to rows in the 
+        // document (as distinct from lines on the screen). For sessions that are
+        // wrapped, this means we need to add a layer to the node hierarchy (tagged
+        // with the class name ace_line_group).
+        return this.session.getUseWrapMode();
+    };
+
+    this.destroy = function() {
+        clearInterval(this.$pollSizeChangesTimer);
+        if (this.$measureNode)
+            this.$measureNode.parentNode.removeChild(this.$measureNode);
+        delete this.$measureNode;
     };
 
 }).call(Text.prototype);

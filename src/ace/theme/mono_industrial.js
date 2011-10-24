@@ -37,9 +37,7 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-mono-industrial .ace_editor {\
+exports.cssText = ".ace-mono-industrial .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -188,10 +186,72 @@ background-color:#151C19;\
 \
 .ace-mono-industrial .ace_xml_pe {\
   \
+}\
+\
+.ace-mono-industrial .ace_meta {\
+  \
+}\
+\
+.ace-mono-industrial .ace_meta.ace_tag {\
+  \
+}\
+\
+.ace-mono-industrial .ace_meta.ace_tag.ace_input {\
+  \
+}\
+\
+.ace-mono-industrial .ace_entity.ace_other.ace_attribute-name {\
+  color:#909993;\
+}\
+\
+.ace-mono-industrial .ace_entity.ace_name {\
+  color:#5778B6;\
+}\
+\
+.ace-mono-industrial .ace_entity.ace_name.ace_function {\
+  color:#A8B3AB;\
+}\
+\
+.ace-mono-industrial .ace_markup.ace_underline {\
+    text-decoration:underline;\
+}\
+\
+.ace-mono-industrial .ace_markup.ace_heading {\
+  \
+}\
+\
+.ace-mono-industrial .ace_markup.ace_heading.ace_1 {\
+  \
+}\
+\
+.ace-mono-industrial .ace_markup.ace_heading.ace_2 {\
+  \
+}\
+\
+.ace-mono-industrial .ace_markup.ace_heading.ace_3 {\
+  \
+}\
+\
+.ace-mono-industrial .ace_markup.ace_heading.ace_4 {\
+  \
+}\
+\
+.ace-mono-industrial .ace_markup.ace_heading.ace_5 {\
+  \
+}\
+\
+.ace-mono-industrial .ace_markup.ace_heading.ace_6 {\
+  \
+}\
+\
+.ace-mono-industrial .ace_markup.ace_list {\
+  \
+}\
+\
+.ace-mono-industrial .ace_collab.ace_user1 {\
+     \
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
+exports.cssClass = "ace-mono-industrial";
 
-    exports.cssClass = "ace-mono-industrial";
 });

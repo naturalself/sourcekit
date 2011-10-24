@@ -44,23 +44,23 @@ var DocCommentHighlightRules = function() {
 
     this.$rules = {
         "start" : [ {
-            token : "comment.doc", // closing comment
-            regex : "\\*\\/",
-            next : "start"
-        }, {
             token : "comment.doc.tag",
             regex : "@[\\w\\d_]+" // TODO: fix email addresses
         }, {
             token : "comment.doc",
-            regex : "\s+"
+            merge : true,
+            regex : "\\s+"
         }, {
             token : "comment.doc",
+            merge : true,
             regex : "TODO"
         }, {
             token : "comment.doc",
+            merge : true,
             regex : "[^@\\*]+"
         }, {
             token : "comment.doc",
+            merge : true,
             regex : "."
         }]
     };
@@ -73,8 +73,18 @@ oop.inherits(DocCommentHighlightRules, TextHighlightRules);
     this.getStartRule = function(start) {
         return {
             token : "comment.doc", // doc comment
+            merge : true,
             regex : "\\/\\*(?=\\*)",
-            next: start
+            next  : start
+        };
+    };
+    
+    this.getEndRule = function (start) {
+        return {
+            token : "comment.doc", // closing comment
+            merge : true,
+            regex : "\\*\\/",
+            next  : start
         };
     };
 

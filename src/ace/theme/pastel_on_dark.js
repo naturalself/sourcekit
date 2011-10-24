@@ -37,9 +37,7 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-pastel-on-dark .ace_editor {\
+exports.cssText = ".ace-pastel-on-dark .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -187,12 +185,14 @@ color:#D2A8A1;\
   color:#bebf55;\
 }\
 \
+.ace-pastel-on-dark .ace_markup.ace_underline {\
+    text-decoration:underline;\
+}\
+\
 .ace-pastel-on-dark .ace_xml_pe {\
   color:#494949;\
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
+exports.cssClass = "ace-pastel-on-dark";
 
-    exports.cssClass = "ace-pastel-on-dark";
 });

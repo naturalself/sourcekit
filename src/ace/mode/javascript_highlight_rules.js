@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *      Fabian Jakobs <fabian AT ajax DOT org>
+ *      Mihai Sucan <mihai DOT sucan AT gmail DOT com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -39,133 +40,236 @@ define(function(require, exports, module) {
 
 var oop = require("pilot/oop");
 var lang = require("pilot/lang");
+var unicode = require("ace/unicode");
 var DocCommentHighlightRules = require("ace/mode/doc_comment_highlight_rules").DocCommentHighlightRules;
 var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
 
 var JavaScriptHighlightRules = function() {
 
-    var docComment = new DocCommentHighlightRules();
+    // see: https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects
+    var globals = lang.arrayToMap(
+      // Constructors
+        ("Array|Boolean|Date|Function|Iterator|Number|Object|RegExp|String|Proxy|" +
+      // E4X
+         "Namespace|QName|XML|XMLList|" +
+         "ArrayBuffer|Float32Array|Float64Array|Int16Array|Int32Array|Int8Array|" +
+         "Uint16Array|Uint32Array|Uint8Array|Uint8ClampedArray|" +
+      // Errors
+        "Error|EvalError|InternalError|RangeError|ReferenceError|StopIteration|" +
+        "SyntaxError|TypeError|URIError|" +
+      //  Non-constructor functions
+        "decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|eval|isFinite|" +
+        "isNaN|parseFloat|parseInt|" +
+      // Other
+        "JSON|Math|" +
+      // Pseudo
+        "this|arguments|prototype|window|document"
+      ).split("|")
+    );
 
     var keywords = lang.arrayToMap(
         ("break|case|catch|continue|default|delete|do|else|finally|for|function|" +
-        "if|in|instanceof|new|return|switch|throw|try|typeof|var|while|with").split("|")
+        "if|in|instanceof|new|return|switch|throw|try|typeof|let|var|while|with|" +
+        "const|yield|import|get|set").split("|")
     );
+
+    // keywords which can be followed by regular expressions
+    var kwBeforeRe = "case|do|else|finally|in|instanceof|return|throw|try|typeof|yield";
+
+    var deprecated = lang.arrayToMap(
+        ("__parent__|__count__|escape|unescape|with|__proto__").split("|")
+    );
+
+    var definitions = lang.arrayToMap(("const|let|var|function").split("|"));
 
     var buildinConstants = lang.arrayToMap(
         ("null|Infinity|NaN|undefined").split("|")
     );
 
     var futureReserved = lang.arrayToMap(
-        ("class|enum|extends|super|const|export|import|implements|let|private|" +
-        "public|yield|interface|package|protected|static").split("|")
+        ("class|enum|extends|super|export|implements|private|" +
+        "public|interface|package|protected|static").split("|")
     );
 
+    // TODO: Unicode escape sequences
+    var identifierRe = "[" + unicode.packages.L + "\\$_][" 
+        + unicode.packages.L
+        + unicode.packages.Mn + unicode.packages.Mc
+        + unicode.packages.Nd
+        + unicode.packages.Pc + "\\$_]*\\b";
+        
     // regexp must not have capturing parentheses. Use (?:) instead.
     // regexps are ordered -> the first match is used
 
     this.$rules = {
         "start" : [
-	        {
-	            token : "comment",
-	            regex : "\\/\\/.*$"
-	        },
-	        docComment.getStartRule("doc-start"),
-	        {
-	            token : "comment", // multi line comment
-	            regex : "\\/\\*",
-	            next : "comment"
-	        }, {
-	            token : "string.regexp",
-	            regex : "[/](?:(?:\\[(?:\\\\]|[^\\]])+\\])|(?:\\\\/|[^\\]/]))*[/]\\w*\\s*(?=[).,;]|$)"
-	        }, {
-	            token : "string", // single line
-	            regex : '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]'
-	        }, {
-	            token : "string", // multi line string start
-	            regex : '["].*\\\\$',
-	            next : "qqstring"
-	        }, {
-	            token : "string", // single line
-	            regex : "['](?:(?:\\\\.)|(?:[^'\\\\]))*?[']"
-	        }, {
-	            token : "string", // multi line string start
-	            regex : "['].*\\\\$",
-	            next : "qstring"
-	        }, {
-	            token : "constant.numeric", // hex
-	            regex : "0[xX][0-9a-fA-F]+\\b"
-	        }, {
-	            token : "constant.numeric", // float
-	            regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
-	        }, {
-	            token : "constant.language.boolean",
-	            regex : "(?:true|false)\\b"
-	        }, {
-	            token : function(value) {
-	                if (value == "this")
-	                    return "variable.language";
-	                else if (keywords.hasOwnProperty(value))
-	                    return "keyword";
-	                else if (buildinConstants.hasOwnProperty(value))
-	                    return "constant.language";
-	                else if (futureReserved.hasOwnProperty(value))
-	                    return "invalid.illegal";
-	                else if (value == "debugger")
-	                    return "invalid.deprecated";
-	                else
-	                    return "identifier";
-	            },
-	            // TODO: Unicode escape sequences
-	            // TODO: Unicode identifiers
-	            regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
-	        }, {
-	            token : "keyword.operator",
-	            regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|=|!=|!==|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)"
-	        }, {
-	            token : "lparen",
-	            regex : "[[({]"
-	        }, {
-	            token : "rparen",
-	            regex : "[\\])}]"
-	        }, {
-	            token : "text",
-	            regex : "\\s+"
-	        }
+            {
+                token : "comment",
+                regex : "\\/\\/.*$"
+            },
+            new DocCommentHighlightRules().getStartRule("doc-start"),
+            {
+                token : "comment", // multi line comment
+                merge : true,
+                regex : "\\/\\*",
+                next : "comment"
+            }, {
+                token : "string", // single line
+                regex : '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]'
+            }, {
+                token : "string", // multi line string start
+                merge : true,
+                regex : '["].*\\\\$',
+                next : "qqstring"
+            }, {
+                token : "string", // single line
+                regex : "['](?:(?:\\\\.)|(?:[^'\\\\]))*?[']"
+            }, {
+                token : "string", // multi line string start
+                merge : true,
+                regex : "['].*\\\\$",
+                next : "qstring"
+            }, {
+                token : "constant.numeric", // hex
+                regex : "0[xX][0-9a-fA-F]+\\b"
+            }, {
+                token : "constant.numeric", // float
+                regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
+            }, {
+                token : ["keyword.definition", "text", "entity.name.function"],
+                regex : "(function)(\\s+)(" + identifierRe + ")"
+            }, {
+                token : "constant.language.boolean",
+                regex : "(?:true|false)\\b"
+            }, {
+                token : "keyword",
+                regex : "(?:" + kwBeforeRe + ")\\b",
+                next : "regex_allowed"
+            }, {
+                token : function(value) {
+                    if (globals.hasOwnProperty(value))
+                        return "variable.language";
+                    else if (deprecated.hasOwnProperty(value))
+                        return "invalid.deprecated";
+                    else if (definitions.hasOwnProperty(value))
+                        return "keyword.definition";
+                    else if (keywords.hasOwnProperty(value))
+                        return "keyword";
+                    else if (buildinConstants.hasOwnProperty(value))
+                        return "constant.language";
+                    else if (futureReserved.hasOwnProperty(value))
+                        return "invalid.illegal";
+                    else if (value == "debugger")
+                        return "invalid.deprecated";
+                    else
+                        return "identifier";
+                },
+                regex : identifierRe
+            }, {
+                token : "keyword.operator",
+                regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|=|!=|!==|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)",
+                next  : "regex_allowed"
+            }, {
+                token : "punctuation.operator",
+                regex : "\\?|\\:|\\,|\\;|\\.",
+                next  : "regex_allowed"
+            }, {
+                token : "paren.lparen",
+                regex : "[[({]",
+                next  : "regex_allowed"
+            }, {
+                token : "paren.rparen",
+                regex : "[\\])}]"
+            }, {
+                token : "keyword.operator",
+                regex : "\\/=?",
+                next  : "regex_allowed"
+            }, {
+                token: "comment",
+                regex: "^#!.*$" 
+            }, {
+                token : "text",
+                regex : "\\s+"
+            }
+        ],
+        // regular expressions are only allowed after certain tokens. This
+        // makes sure we don't mix up regexps with the divison operator
+        "regex_allowed": [
+            {
+                token : "comment", // multi line comment
+                merge : true,
+                regex : "\\/\\*",
+                next : "comment_regex_allowed"
+            }, {
+                token : "comment",
+                regex : "\\/\\/.*$"
+            }, {
+                token: "string.regexp",
+                regex: "\\/(?:(?:\\[(?:\\\\]|[^\\]])+\\])"
+                    + "|(?:\\\\/|[^\\]/]))*" 
+                    + "[/]\\w*",
+                next: "start"
+            }, {
+                token : "text",
+                regex : "\\s+"
+            }, {
+                // immediately return to the start mode without matching
+                // anything
+                token: "empty", 
+                regex: "",
+                next: "start"
+            }
+        ],
+        "comment_regex_allowed" : [
+            {
+                token : "comment", // closing comment
+                regex : ".*?\\*\\/",
+                merge : true,
+                next : "regex_allowed"
+            }, {
+                token : "comment", // comment spanning whole line
+                merge : true,
+                regex : ".+"
+            }
         ],
         "comment" : [
-	        {
-	            token : "comment", // closing comment
-	            regex : ".*?\\*\\/",
-	            next : "start"
-	        }, {
-	            token : "comment", // comment spanning whole line
-	            regex : ".+"
-	        }
+            {
+                token : "comment", // closing comment
+                regex : ".*?\\*\\/",
+                merge : true,
+                next : "start"
+            }, {
+                token : "comment", // comment spanning whole line
+                merge : true,
+                regex : ".+"
+            }
         ],
         "qqstring" : [
             {
-	            token : "string",
-	            regex : '(?:(?:\\\\.)|(?:[^"\\\\]))*?"',
-	            next : "start"
-	        }, {
-	            token : "string",
-	            regex : '.+'
-	        }
+                token : "string",
+                regex : '(?:(?:\\\\.)|(?:[^"\\\\]))*?"',
+                next : "start"
+            }, {
+                token : "string",
+                merge : true,
+                regex : '.+'
+            }
         ],
         "qstring" : [
-	        {
-	            token : "string",
-	            regex : "(?:(?:\\\\.)|(?:[^'\\\\]))*?'",
-	            next : "start"
-	        }, {
-	            token : "string",
-	            regex : '.+'
-	        }
+            {
+                token : "string",
+                regex : "(?:(?:\\\\.)|(?:[^'\\\\]))*?'",
+                next : "start"
+            }, {
+                token : "string",
+                merge : true,
+                regex : '.+'
+            }
         ]
     };
-
-    this.addRules(docComment.getRules(), "doc-");
-    this.$rules["doc-start"][0].next = "start";
+    
+    this.embedRules(DocCommentHighlightRules, "doc-",
+        [ new DocCommentHighlightRules().getEndRule("start") ]);
 };
 
 oop.inherits(JavaScriptHighlightRules, TextHighlightRules);

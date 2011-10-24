@@ -43,6 +43,13 @@ var lang = require("pilot/lang");
 var EventEmitter = require("pilot/event_emitter").EventEmitter;
 var Range = require("ace/range").Range;
 
+/**
+ * Keeps cursor position and the text selection of an edit session.
+ * 
+ * The row/columns used in the selection are in document coordinates
+ * representing ths coordinates as thez appear in the document
+ * before applying soft wrap and folding.
+ */ 
 var Selection = function(session) {
     this.session = session;
     this.doc = session.getDocument();
@@ -50,16 +57,16 @@ var Selection = function(session) {
     this.clearSelection();
     this.selectionLead = this.doc.createAnchor(0, 0);
     this.selectionAnchor = this.doc.createAnchor(0, 0);
-    
+
     var _self = this;
     this.selectionLead.on("change", function(e) {
         _self._dispatchEvent("changeCursor");
         if (!_self.$isEmpty)
             _self._dispatchEvent("changeSelection");
-        if (e.old.row == e.value.row)
+        if (!_self.$preventUpdateDesiredColumnOnChange && e.old.column != e.value.column)
             _self.$updateDesiredColumn();
     });
-    
+
     this.selectionAnchor.on("change", function() {
         if (!_self.$isEmpty)
             _self._dispatchEvent("changeSelection");
@@ -247,9 +254,19 @@ var Selection = function(session) {
     };
 
     this.selectLine = function() {
-        this.setSelectionAnchor(this.selectionLead.row, 0);
+        var rowStart = this.selectionLead.row;
+        var rowEnd;
+
+        var foldLine = this.session.getFoldLine(rowStart);
+        if (foldLine) {
+            rowStart = foldLine.start.row;
+            rowEnd = foldLine.end.row;
+        } else {
+            rowEnd = rowStart;
+        }
+        this.setSelectionAnchor(rowStart, 0);
         this.$moveSelection(function() {
-            this.moveCursorTo(this.selectionLead.row + 1, 0);
+            this.moveCursorTo(rowEnd + 1, 0);
         });
     };
 
@@ -262,8 +279,12 @@ var Selection = function(session) {
     };
 
     this.moveCursorLeft = function() {
-        var cursor = this.selectionLead.getPosition();
-        if (cursor.column == 0) {
+        var cursor = this.selectionLead.getPosition(),
+            fold;
+
+        if (fold = this.session.getFoldAt(cursor.row, cursor.column, -1)) {
+            this.moveCursorTo(fold.start.row, fold.start.column);
+        } else if (cursor.column == 0) {
             // cursor is a line (start
             if (cursor.row > 0) {
                 this.moveCursorTo(cursor.row - 1, this.doc.getLine(cursor.row - 1).length);
@@ -279,7 +300,12 @@ var Selection = function(session) {
     };
 
     this.moveCursorRight = function() {
-        if (this.selectionLead.column == this.doc.getLine(this.selectionLead.row).length) {
+        var cursor = this.selectionLead.getPosition(),
+            fold;
+        if (fold = this.session.getFoldAt(cursor.row, cursor.column, 1)) {
+            this.moveCursorTo(fold.end.row, fold.end.column);
+        }
+        else if (this.selectionLead.column == this.doc.getLine(this.selectionLead.row).length) {
             if (this.selectionLead.row < this.doc.getLength() - 1) {
                 this.moveCursorTo(this.selectionLead.row + 1, 0);
             }
@@ -298,25 +324,38 @@ var Selection = function(session) {
         var row = this.selectionLead.row;
         var column = this.selectionLead.column;
         var screenRow = this.session.documentToScreenRow(row, column);
-        var firstRowColumn = this.session.getScreenFirstRowColumn(screenRow);
-        var beforeCursor = this.doc.getLine(row).slice(firstRowColumn, column);
+
+        // Determ the doc-position of the first character at the screen line.
+        var firstColumnPosition = this.session.screenToDocumentPosition(screenRow, 0);
+
+        // Determ the line
+        var beforeCursor = this.session.getDisplayLine(
+            row, null,
+            firstColumnPosition.row, firstColumnPosition.column
+        );
+
         var leadingSpace = beforeCursor.match(/^\s*/);
-        if (leadingSpace[0].length == 0) {
-            var lastRowColumn = this.session.getDocumentLastRowColumn(row, column);
-            leadingSpace = this.doc.getLine(row).
-                                substring(firstRowColumn, lastRowColumn).
-                                match(/^\s*/);
-            this.moveCursorTo(row, firstRowColumn + leadingSpace[0].length);
-        } else if (leadingSpace[0].length >= column) {
-            this.moveCursorTo(row, firstRowColumn);
-        } else {
-            this.moveCursorTo(row, firstRowColumn + leadingSpace[0].length);
+        if (leadingSpace[0].length == column) {
+            this.moveCursorTo(
+                firstColumnPosition.row, firstColumnPosition.column
+            );
+        }
+        else {
+            this.moveCursorTo(
+                firstColumnPosition.row,
+                firstColumnPosition.column + leadingSpace[0].length
+            );
         }
     };
 
     this.moveCursorLineEnd = function() {
         var lead = this.selectionLead;
-        this.moveCursorTo(lead.row, this.session.getDocumentLastRowColumn(lead.row, lead.column));
+        var lastRowColumnPosition =
+            this.session.getDocumentLastRowColumnPosition(lead.row, lead.column);
+        this.moveCursorTo(
+            lastRowColumnPosition.row,
+            lastRowColumnPosition.column
+        );
     };
 
     this.moveCursorFileEnd = function() {
@@ -339,7 +378,11 @@ var Selection = function(session) {
         this.session.nonTokenRe.lastIndex = 0;
         this.session.tokenRe.lastIndex = 0;
 
-        if (column == line.length) {
+        var fold;
+        if (fold = this.session.getFoldAt(row, column, 1)) {
+            this.moveCursorTo(fold.end.row, fold.end.column);
+            return;
+        } else if (column == line.length) {
             this.moveCursorRight();
             return;
         }
@@ -358,18 +401,29 @@ var Selection = function(session) {
     this.moveCursorWordLeft = function() {
         var row = this.selectionLead.row;
         var column = this.selectionLead.column;
-        var line = this.doc.getLine(row);
-        var leftOfCursor = lang.stringReverse(line.substring(0, column));
 
-        var match;
-        this.session.nonTokenRe.lastIndex = 0;
-        this.session.tokenRe.lastIndex = 0;
+        var fold;
+        if (fold = this.session.getFoldAt(row, column, -1)) {
+            this.moveCursorTo(fold.start.row, fold.start.column);
+            return;
+        }
 
         if (column == 0) {
             this.moveCursorLeft();
             return;
         }
-        else if (match = this.session.nonTokenRe.exec(leftOfCursor)) {
+
+        var str = this.session.getFoldStringAt(row, column, -1);
+        if (str == null) {
+            str = this.doc.getLine(row).substring(0, column)
+        }
+        var leftOfCursor = lang.stringReverse(str);
+
+        var match;
+        this.session.nonTokenRe.lastIndex = 0;
+        this.session.tokenRe.lastIndex = 0;
+
+        if (match = this.session.nonTokenRe.exec(leftOfCursor)) {
             column -= this.session.nonTokenRe.lastIndex;
             this.session.nonTokenRe.lastIndex = 0;
         }
@@ -382,19 +436,13 @@ var Selection = function(session) {
     };
 
     this.moveCursorBy = function(rows, chars) {
-        if (this.session.getUseWrapMode()) {
-            var screenPos = this.session.documentToScreenPosition(
-                this.selectionLead.row, 
-                this.selectionLead.column
-            );
-            var screenCol = (chars == 0 && this.$desiredColumn) || screenPos.column;
-            var docPos = this.session.screenToDocumentPosition(screenPos.row + rows, screenCol);
-            
-            this.moveCursorTo(docPos.row, docPos.column + chars, chars == 0);
-        } else {
-            var docColumn = (chars == 0 && this.$desiredColumn) || this.selectionLead.column;
-            this.moveCursorTo(this.selectionLead.row + rows, docColumn + chars, chars == 0);
-        }
+        var screenPos = this.session.documentToScreenPosition(
+            this.selectionLead.row,
+            this.selectionLead.column
+        );
+        var screenCol = (chars == 0 && this.$desiredColumn) || screenPos.column;
+        var docPos = this.session.screenToDocumentPosition(screenPos.row + rows, screenCol);
+        this.moveCursorTo(docPos.row, docPos.column + chars, chars == 0);
     };
 
     this.moveCursorToPosition = function(position) {
@@ -402,17 +450,25 @@ var Selection = function(session) {
     };
 
     this.moveCursorTo = function(row, column, preventUpdateDesiredColumn) {
+        // Ensure the row/column is not inside of a fold.
+        var fold = this.session.getFoldAt(row, column, 1);
+        if (fold) {
+            row = fold.start.row;
+            column = fold.start.column;
+        }
+        
+        this.$preventUpdateDesiredColumnOnChange = true;
         this.selectionLead.setPosition(row, column);
+        this.$preventUpdateDesiredColumnOnChange = false;
+        
         if (!preventUpdateDesiredColumn)
             this.$updateDesiredColumn(this.selectionLead.column);
     };
 
     this.moveCursorToScreen = function(row, column, preventUpdateDesiredColumn) {
-        if (this.session.getUseWrapMode()) {
-            var pos = this.session.screenToDocumentPosition(row, column);
-            row = pos.row;
-            column = pos.column;
-        }
+        var pos = this.session.screenToDocumentPosition(row, column);
+        row = pos.row;
+        column = pos.column;
         this.moveCursorTo(row, column, preventUpdateDesiredColumn);
     };
 

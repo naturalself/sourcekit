@@ -1,11 +1,39 @@
-/* vim:ts=4:sts=4:sw=4:
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
- * Ajax.org Code Editor (ACE)
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
  *
- * @copyright 2010, Ajax.org Services B.V.
- * @license LGPLv3 <http://www.gnu.org/licenses/lgpl-3.0.txt>
- * @author Fabian Jakobs <fabian AT ajax DOT org>
- */
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Ajax.org Code Editor (ACE).
+ *
+ * The Initial Developer of the Original Code is
+ * Ajax.org B.V.
+ * Portions created by the Initial Developer are Copyright (C) 2010
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *      Fabian Jakobs <fabian AT ajax DOT org>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
 
 define(function(require, exports, module) {
 
@@ -14,20 +42,22 @@ var EventEmitter = require("pilot/event_emitter").EventEmitter;
 
 var WorkerClient = function(topLevelNamespaces, packagedJs, module, classname) {
 
-    this.callbacks = [];
+    this.changeListener = this.changeListener.bind(this);
 
     if (require.packaged) {
         var base = this.$guessBasePath();
         var worker = this.$worker = new Worker(base + packagedJs);
     }
     else {
-        var workerUrl = require.nameToUrl("ace/worker/worker", null, "_");
+        var workerUrl = this.$normalizePath(require.nameToUrl("ace/worker/worker", null, "_"));
         var worker = this.$worker = new Worker(workerUrl);
 
         var tlns = {};
         for (var i=0; i<topLevelNamespaces.length; i++) {
             var ns = topLevelNamespaces[i];
-            tlns[ns] = require.nameToUrl(ns, null, "_").replace(/.js$/, "");
+            var path = this.$normalizePath(require.nameToUrl(ns, null, "_").replace(/.js$/, ""));
+
+            tlns[ns] = path;
         }
     }
 
@@ -43,7 +73,7 @@ var WorkerClient = function(topLevelNamespaces, packagedJs, module, classname) {
 
     var _self = this;
     this.$worker.onerror = function(e) {
-        console.log(e);
+        window.console && console.log && console.log(e);
         throw e;
     };
     this.$worker.onmessage = function(e) {
@@ -72,18 +102,35 @@ var WorkerClient = function(topLevelNamespaces, packagedJs, module, classname) {
 
     oop.implement(this, EventEmitter);
 
+    this.$normalizePath = function(path) {
+        if (!path.match(/^\w+:/)) {
+            path = location.protocol + "//" + location.host
+                // paths starting with a slash are relative to the root (host)
+                + (path.charAt(0) == "/" ? "" : location.pathname.replace(/\/[^\/]*$/, ""))
+                + "/" + path.replace(/^[\/]+/, "");
+        }
+        return path;
+    };
+
     this.$guessBasePath = function() {
+        if (require.aceBaseUrl)
+            return require.aceBaseUrl;
+
         var scripts = document.getElementsByTagName("script");
         for (var i=0; i<scripts.length; i++) {
-            var src = scripts[i].src || scripts[i].getAttribute("src");
+            var script = scripts[i];
+
+            var base = script.getAttribute("data-ace-base");
+            if (base)
+                return base.replace(/\/*$/, "/");
+
+            var src = script.src || script.getAttribute("src");
             if (!src) {
                 continue;
             }
-
-            var m = src.match(/^(.*\/)ace\.js$|^(.*\/)ace-uncompressed\.js$/);
-            if (m) {
+            var m = src.match(/^(?:(.*\/)ace\.js|(.*\/)ace-uncompressed\.js)(?:\?|$)/);
+            if (m)
                 return m[1] || m[2];
-            }
         }
         return "";
     };
@@ -91,6 +138,9 @@ var WorkerClient = function(topLevelNamespaces, packagedJs, module, classname) {
     this.terminate = function() {
         this._dispatchEvent("terminate", {});
         this.$worker.terminate();
+        this.$worker = null;
+        this.$doc.removeEventListener("change", this.changeListener);
+        this.$doc = null;
     };
 
     this.send = function(cmd, args) {
@@ -107,7 +157,29 @@ var WorkerClient = function(topLevelNamespaces, packagedJs, module, classname) {
     };
 
     this.emit = function(event, data) {
-        this.$worker.postMessage({event: event, data: data});
+        try {
+            // firefox refuses to clone objects which have function properties
+            // TODO: cleanup event
+            this.$worker.postMessage({event: event, data: {data: data.data}});
+        }
+        catch(ex) {}
+    };
+
+    this.attachToDocument = function(doc) {
+        if(this.$doc)
+            this.terminate();
+
+        this.$doc = doc;
+        this.call("setValue", [doc.getValue()]);
+        doc.on("change", this.changeListener);
+    };
+
+    this.changeListener = function(e) {
+        e.range = {
+            start: e.data.range.start,
+            end: e.data.range.end
+        };
+        this.emit("change", e);
     };
 
 }).call(WorkerClient.prototype);

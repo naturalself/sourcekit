@@ -37,9 +37,7 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-dawn .ace_editor {\
+exports.cssText = ".ace-dawn .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -192,10 +190,72 @@ color:#5A525F;\
 \
 .ace-dawn .ace_xml_pe {\
   \
+}\
+\
+.ace-dawn .ace_meta {\
+  \
+}\
+\
+.ace-dawn .ace_meta.ace_tag {\
+  \
+}\
+\
+.ace-dawn .ace_meta.ace_tag.ace_input {\
+  \
+}\
+\
+.ace-dawn .ace_entity.ace_other.ace_attribute-name {\
+  \
+}\
+\
+.ace-dawn .ace_entity.ace_name {\
+  \
+}\
+\
+.ace-dawn .ace_entity.ace_name.ace_function {\
+  \
+}\
+\
+.ace-dawn .ace_markup.ace_underline {\
+    text-decoration:underline;\
+}\
+\
+.ace-dawn .ace_markup.ace_heading {\
+  color:#19356D;\
+}\
+\
+.ace-dawn .ace_markup.ace_heading.ace_1 {\
+  \
+}\
+\
+.ace-dawn .ace_markup.ace_heading.ace_2 {\
+  \
+}\
+\
+.ace-dawn .ace_markup.ace_heading.ace_3 {\
+  \
+}\
+\
+.ace-dawn .ace_markup.ace_heading.ace_4 {\
+  \
+}\
+\
+.ace-dawn .ace_markup.ace_heading.ace_5 {\
+  \
+}\
+\
+.ace-dawn .ace_markup.ace_heading.ace_6 {\
+  \
+}\
+\
+.ace-dawn .ace_markup.ace_list {\
+  color:#693A17;\
+}\
+\
+.ace-dawn .ace_collab.ace_user1 {\
+     \
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
+exports.cssClass = "ace-dawn";
 
-    exports.cssClass = "ace-dawn";
 });

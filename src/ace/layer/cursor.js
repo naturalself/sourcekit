@@ -47,12 +47,18 @@ var Cursor = function(parentEl) {
     parentEl.appendChild(this.element);
 
     this.cursor = dom.createElement("div");
-    this.cursor.className = "ace_cursor";
+    this.cursor.className = "ace_cursor ace_hidden";
+    this.element.appendChild(this.cursor);
 
     this.isVisible = false;
 };
 
 (function() {
+
+    this.$padding = 0;
+    this.setPadding = function(padding) {
+        this.$padding = padding;
+    };
 
     this.setSession = function(session) {
         this.session = session;
@@ -60,18 +66,14 @@ var Cursor = function(parentEl) {
 
     this.hideCursor = function() {
         this.isVisible = false;
-        if (this.cursor.parentNode) {
-            this.cursor.parentNode.removeChild(this.cursor);
-        }
+        dom.addCssClass(this.cursor, "ace_hidden");
         clearInterval(this.blinkId);
     };
 
     this.showCursor = function() {
         this.isVisible = true;
-        this.element.appendChild(this.cursor);
-
-        var cursor = this.cursor;
-        cursor.style.visibility = "visible";
+        dom.removeCssClass(this.cursor, "ace_hidden");
+        this.cursor.style.visibility = "visible";
         this.restartTimer();
     };
 
@@ -100,7 +102,8 @@ var Cursor = function(parentEl) {
 
         var position = this.session.selection.getCursor();
         var pos = this.session.documentToScreenPosition(position);
-        var cursorLeft = Math.round(pos.column * this.config.characterWidth);
+        var cursorLeft = Math.round(this.$padding +
+                                    pos.column * this.config.characterWidth);
         var cursorTop = (pos.row - (onScreen ? this.config.firstRowScreen : 0)) *
             this.config.lineHeight;
 
@@ -120,18 +123,21 @@ var Cursor = function(parentEl) {
         this.cursor.style.width = config.characterWidth + "px";
         this.cursor.style.height = config.lineHeight + "px";
 
-        if (this.isVisible) {
-            this.element.appendChild(this.cursor);
+        var overwrite = this.session.getOverwrite()
+        if (overwrite != this.overwrite) {
+            this.overwrite = overwrite;
+            if (overwrite)
+                dom.addCssClass(this.cursor, "ace_overwrite");
+            else
+                dom.removeCssClass(this.cursor, "ace_overwrite");
         }
-        
-        if (this.session.getOverwrite()) {
-            dom.addCssClass(this.cursor, "ace_overwrite");
-        } else {
-            dom.removeCssClass(this.cursor, "ace_overwrite");
-        }
-        
+
         this.restartTimer();
     };
+
+    this.destroy = function() {
+        clearInterval(this.blinkId);
+    }
 
 }).call(Cursor.prototype);
 

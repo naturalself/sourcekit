@@ -37,9 +37,8 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-cobalt .ace_editor {\
+exports.cssClass = "ace-cobalt";
+exports.cssText = ".ace-cobalt .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -188,10 +187,71 @@ color:#0088FF;\
 \
 .ace-cobalt .ace_xml_pe {\
   \
+}\
+\
+.ace-cobalt .ace_meta {\
+  \
+}\
+\
+.ace-cobalt .ace_meta.ace_tag {\
+  color:#9EFFFF;\
+}\
+\
+.ace-cobalt .ace_meta.ace_tag.ace_input {\
+  \
+}\
+\
+.ace-cobalt .ace_entity.ace_other.ace_attribute-name {\
+  \
+}\
+\
+.ace-cobalt .ace_entity.ace_name {\
+  \
+}\
+\
+.ace-cobalt .ace_entity.ace_name.ace_function {\
+  \
+}\
+\
+.ace-cobalt .ace_markup.ace_underline {\
+    text-decoration:underline;\
+}\
+\
+.ace-cobalt .ace_markup.ace_heading {\
+  color:#C8E4FD;\
+background-color:#001221;\
+}\
+\
+.ace-cobalt .ace_markup.ace_heading.ace_1 {\
+  \
+}\
+\
+.ace-cobalt .ace_markup.ace_heading.ace_2 {\
+  \
+}\
+\
+.ace-cobalt .ace_markup.ace_heading.ace_3 {\
+  \
+}\
+\
+.ace-cobalt .ace_markup.ace_heading.ace_4 {\
+  \
+}\
+\
+.ace-cobalt .ace_markup.ace_heading.ace_5 {\
+  \
+}\
+\
+.ace-cobalt .ace_markup.ace_heading.ace_6 {\
+  \
+}\
+\
+.ace-cobalt .ace_markup.ace_list {\
+  background-color:#130D26;\
+}\
+\
+.ace-cobalt .ace_collab.ace_user1 {\
+     \
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
-
-    exports.cssClass = "ace-cobalt";
 });

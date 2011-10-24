@@ -37,9 +37,7 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-eclipse .ace_editor {\
+exports.cssText = ".ace-eclipse .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -63,6 +61,10 @@ define(function(require, exports, module) {
   padding-right: 6px;\
 }\
 \
+.ace-eclipse .ace_print_margin {\
+  width: 1px;\
+  background: #b1b4ba;\
+}\
 .ace-eclipse .ace_text-layer {\
   cursor: text;\
 }\
@@ -107,7 +109,11 @@ define(function(require, exports, module) {
 }\
 \
 .ace-eclipse .ace_line .ace_tag {\
-	color: rgb(63, 127, 127);\
+  color: rgb(63, 127, 127);\
+}\
+\
+.ace-eclipse .ace_line .ace_type {\
+  color: rgb(127, 0, 127);\
 }\
 \
 .ace-eclipse .ace_line .ace_xml_pe {\
@@ -123,12 +129,18 @@ define(function(require, exports, module) {
   border: 1px solid rgb(192, 192, 192);\
 }\
 \
+.ace-eclipse .ace_line .ace_meta.ace_tag {\
+  color:rgb(63, 127, 127);\
+}\
+\
+.ace-eclipse .ace_entity.ace_other.ace_attribute-name {\
+  color:rgb(127, 0, 127);\
+}\
+\
 .ace-eclipse .ace_marker-layer .ace_active_line {\
   background: rgb(232, 242, 254);\
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
+exports.cssClass = "ace-eclipse";
 
-    exports.cssClass = "ace-eclipse";
 });

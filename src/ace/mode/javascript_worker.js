@@ -1,4 +1,3 @@
-
 define(function(require, exports, module) {
     
 var oop = require("pilot/oop");
@@ -26,10 +25,13 @@ oop.inherits(JavaScriptWorker, Mirror);
         } catch(e) {
 //            console.log("narcissus")
 //            console.log(e);
-            sender.emit("narcissus", {
-                row: e.lineno-1,
+            var chunks = e.message.split(":")
+            var message = chunks.pop().trim();
+            var lineNumber = parseInt(chunks.pop().trim()) - 1;
+            this.sender.emit("narcissus", {
+                row: lineNumber,
                 column: null, // TODO convert e.cursor
-                text: e.message,
+                text: message,
                 type: "error"
             });
             return;

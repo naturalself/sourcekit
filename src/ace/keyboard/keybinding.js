@@ -42,19 +42,13 @@ var useragent = require("pilot/useragent");
 var keyUtil  = require("pilot/keys");
 var event = require("pilot/event");
 var settings  = require("pilot/settings").settings;
-var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
-var default_mac = require("ace/keyboard/keybinding/default_mac").bindings;
-var default_win = require("ace/keyboard/keybinding/default_win").bindings;
 var canon = require("pilot/canon");
 require("ace/commands/default_commands");
 
-var KeyBinding = function(editor, config) {
+var KeyBinding = function(editor) {
     this.$editor = editor;
     this.$data = { };
     this.$keyboardHandler = null;
-    this.$defaulKeyboardHandler = new HashHandler(config || (useragent.isMac
-        ? default_mac
-        : default_win));
 };
 
 (function() {
@@ -70,7 +64,9 @@ var KeyBinding = function(editor, config) {
     };
 
     this.$callKeyboardHandler = function (e, hashId, keyOrText, keyCode) {
-        var toExecute;
+        var env = {editor: this.$editor},
+            toExecute;
+
         if (this.$keyboardHandler) {
             toExecute =
                 this.$keyboardHandler.handleKeyboard(this.$data, hashId, keyOrText, keyCode, e);
@@ -78,28 +74,41 @@ var KeyBinding = function(editor, config) {
 
         // If there is nothing to execute yet, then use the default keymapping.
         if (!toExecute || !toExecute.command) {
-            toExecute = this.$defaulKeyboardHandler.
-                handleKeyboard(this.$data, hashId, keyOrText, keyCode, e);
-        }
-
-        if (toExecute) {
-            var success = canon.exec(toExecute.command,
-                                        {editor: this.$editor}, toExecute.args);
-            if (success) {
-                return event.stopEvent(e);
+            if (hashId != 0 || keyCode != 0) {
+                toExecute = {
+                    command: canon.findKeyCommand(env, "editor", hashId, keyOrText)
+                }
+            } else {
+                toExecute = {
+                    command: "inserttext",
+                    args: {
+                        text: keyOrText
+                    }
+                }
             }
         }
+
+        var success = false;
+        if (toExecute) {
+            success = canon.exec(toExecute.command,
+                                        env, "editor", toExecute.args);
+            if (success) {
+                event.stopEvent(e);
+            }
+        }
+        return success;
     };
 
-    this.onCommandKey = function(e, hashId, keyCode) {
-        key = (keyUtil[keyCode] ||
-                String.fromCharCode(keyCode)).toLowerCase();
-
-        this.$callKeyboardHandler(e, hashId, key, keyCode);
+    this.onCommandKey = function(e, hashId, keyCode, keyString) {
+        // In case there is no keyString, try to interprete the keyCode.
+        if (!keyString) {
+            keyString = keyUtil.keyCodeToString(keyCode);
+        }
+        return this.$callKeyboardHandler(e, hashId, keyString, keyCode);
     };
 
     this.onTextInput = function(text) {
-        this.$callKeyboardHandler({}, 0, text, 0);
+        return this.$callKeyboardHandler({}, 0, text, 0);
     }
 
 }).call(KeyBinding.prototype);

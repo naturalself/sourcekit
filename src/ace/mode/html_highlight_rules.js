@@ -46,10 +46,76 @@ var HtmlHighlightRules = function() {
 
     // regexp must not have capturing parentheses
     // regexps are ordered -> the first match is used
+    function string(state) {
+        return [{
+            token : "string",
+            regex : '".*?"'
+        }, {
+            token : "string", // multi line string start
+            merge : true,
+            regex : '["].*$',
+            next : state + "-qqstring"
+        }, {
+            token : "string",
+            regex : "'.*?'"
+        }, {
+            token : "string", // multi line string start
+            merge : true,
+            regex : "['].*$",
+            next : state + "-qstring"
+        }]
+    }
+    
+    function multiLineString(quote, state) {
+        return [{
+            token : "string",
+            merge : true,
+            regex : ".*" + quote,
+            next : state
+        }, {
+            token : "string",
+            merge : true,
+            regex : '.+'
+        }]
+    }
+    
+    function tag(states, name, nextState) {
+        states[name] = [{
+            token : "text",
+            regex : "\\s+"
+        }, {
+            token : "meta.tag",
+            regex : "[-_a-zA-Z0-9:]+",
+            next : name + "embed-attribute-list" 
+        }, {
+            token: "empty",
+            regex: "",
+            next : name + "embed-attribute-list"
+        }];
+
+        states[name + "-qstring"] = multiLineString("'", name);
+        states[name + "-qqstring"] = multiLineString("\"", name);
+        
+        states[name + "embed-attribute-list"] = [{
+            token : "text",
+            regex : ">",
+            next : nextState
+        }, {
+            token : "entity.other.attribute-name",
+            regex : "[-_a-zA-Z0-9:]+"
+        }, {
+            token : "constant.numeric", // float
+            regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
+        }, {
+            token : "text",
+            regex : "\\s+"
+        }].concat(string(name));
+    };
 
     this.$rules = {
         start : [ {
             token : "text",
+            merge : true,
             regex : "<\\!\\[CDATA\\[",
             next : "cdata"
         }, {
@@ -57,6 +123,7 @@ var HtmlHighlightRules = function() {
             regex : "<\\?.*?\\?>"
         }, {
             token : "comment",
+            merge : true,
             regex : "<\\!--",
             next : "comment"
         }, {
@@ -78,70 +145,18 @@ var HtmlHighlightRules = function() {
             token : "text",
             regex : "[^<]+"
         } ],
-
-        script : [ {
-            token : "text",
-            regex : ">",
-            next : "js-start"
-        }, {
-            token : "keyword",
-            regex : "[-_a-zA-Z0-9:]+"
-        }, {
-            token : "text",
-            regex : "\\s+"
-        }, {
-            token : "string",
-            regex : '".*?"'
-        }, {
-            token : "string",
-            regex : "'.*?'"
-        } ],
-
-        css : [ {
-            token : "text",
-            regex : ">",
-            next : "css-start"
-        }, {
-            token : "keyword",
-            regex : "[-_a-zA-Z0-9:]+"
-        }, {
-            token : "text",
-            regex : "\\s+"
-        }, {
-            token : "string",
-            regex : '".*?"'
-        }, {
-            token : "string",
-            regex : "'.*?'"
-        } ],
-
-        tag : [ {
-            token : "text",
-            regex : ">",
-            next : "start"
-        }, {
-            token : "keyword",
-            regex : "[-_a-zA-Z0-9:]+"
-        }, {
-            token : "text",
-            regex : "\\s+"
-        }, {
-            token : "string",
-            regex : '".*?"'
-        }, {
-            token : "string",
-            regex : "'.*?'"
-        } ],
-
+    
         cdata : [ {
             token : "text",
             regex : "\\]\\]>",
             next : "start"
         }, {
             token : "text",
+            merge : true,
             regex : "\\s+"
         }, {
             token : "text",
+            merge : true,
             regex : ".+"
         } ],
 
@@ -151,13 +166,16 @@ var HtmlHighlightRules = function() {
             next : "start"
         }, {
             token : "comment",
+            merge : true,
             regex : ".+"
         } ]
     };
-
-    var jsRules = new JavaScriptHighlightRules().getRules();
-    this.addRules(jsRules, "js-");
-    this.$rules["js-start"].unshift({
+    
+    tag(this.$rules, "tag", "start");
+    tag(this.$rules, "css", "css-start");
+    tag(this.$rules, "script", "js-start");
+    
+    this.embedRules(JavaScriptHighlightRules, "js-", [{
         token: "comment",
         regex: "\\/\\/.*(?=<\\/script>)",
         next: "tag"
@@ -165,15 +183,13 @@ var HtmlHighlightRules = function() {
         token: "text",
         regex: "<\\/(?=script)",
         next: "tag"
-    });
-
-    var cssRules = new CssHighlightRules().getRules();
-    this.addRules(cssRules, "css-");
-    this.$rules["css-start"].unshift({
+    }]);
+    
+    this.embedRules(CssHighlightRules, "css-", [{
         token: "text",
         regex: "<\\/(?=style)",
         next: "tag"
-    });
+    }]);
 };
 
 oop.inherits(HtmlHighlightRules, TextHighlightRules);
