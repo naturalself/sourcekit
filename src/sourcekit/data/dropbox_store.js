@@ -14,6 +14,9 @@ var DropboxStore = function(dropbox) {
 
             return defaultValue;
         },
+        getContent: function(item, callback) {
+            callback(_dropbox.getFileContents(item.path));
+        },
         getValues: function(item, attribute) {
             return (item[attribute] || []).slice(0);
         },
