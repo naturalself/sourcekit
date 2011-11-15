@@ -50,7 +50,11 @@ exports.isMac = (os == "mac");
 /** Is the user using a browser that identifies itself as Linux */
 exports.isLinux = (os == "linux");
 
-exports.isIE = ! + "\v1";
+exports.isIE = 
+    navigator.appName == "Microsoft Internet Explorer"
+    && parseFloat(navigator.userAgent.match(/MSIE ([0-9]+[\.0-9]+)/)[1]);
+    
+exports.isOldIE = exports.isIE && exports.isIE < 9;
 
 /** Is this Firefox or related? */
 exports.isGecko = exports.isMozilla = window.controllers && window.navigator.product === "Gecko";
@@ -64,9 +68,13 @@ exports.isOpera = window.opera && Object.prototype.toString.call(window.opera) =
 /** Is the user using a browser that identifies itself as WebKit */
 exports.isWebKit = parseFloat(ua.split("WebKit/")[1]) || undefined;
 
+exports.isChrome = parseFloat(ua.split(" Chrome/")[1]) || undefined;
+
 exports.isAIR = ua.indexOf("AdobeAIR") >= 0;
 
 exports.isIPad = ua.indexOf("iPad") >= 0;
+
+exports.isTouchPad = ua.indexOf("TouchPad") >= 0;
 
 /**
  * I hate doing this, but we need some way to determine if the user is on a Mac

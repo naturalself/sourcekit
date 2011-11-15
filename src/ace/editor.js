@@ -47,12 +47,11 @@ var event = require("pilot/event");
 var lang = require("pilot/lang");
 var useragent = require("pilot/useragent");
 var TextInput = require("ace/keyboard/textinput").TextInput;
-var MouseHandler = require("ace/mouse_handler").MouseHandler;
+var MouseHandler = require("ace/mouse/mouse_handler").MouseHandler;
 //var TouchHandler = require("ace/touch_handler").TouchHandler;
 var KeyBinding = require("ace/keyboard/keybinding").KeyBinding;
 var EditSession = require("ace/edit_session").EditSession;
 var Search = require("ace/search").Search;
-var BackgroundTokenizer = require("ace/background_tokenizer").BackgroundTokenizer;
 var Range = require("ace/range").Range;
 var EventEmitter = require("pilot/event_emitter").EventEmitter;
 
@@ -63,7 +62,7 @@ var Editor =function(renderer, session) {
 
     this.textInput  = new TextInput(renderer.getTextAreaContainer(), this);
     this.keyBinding = new KeyBinding(this);
-    
+
     // TODO detect touch event support
     if (useragent.isIPad) {
         //this.$mouseHandler = new TouchHandler(this);
@@ -113,18 +112,21 @@ var Editor =function(renderer, session) {
 
     this.getKeyboardHandler = function() {
         return this.keyBinding.getKeyboardHandler();
-    }
+    };
 
     this.setSession = function(session) {
-        if (this.session == session) return;
+        if (this.session == session)
+            return;
 
         if (this.session) {
             var oldSession = this.session;
             this.session.removeEventListener("change", this.$onDocumentChange);
             this.session.removeEventListener("changeMode", this.$onChangeMode);
+            this.session.removeEventListener("tokenizerUpdate", this.$onTokenizerUpdate);
             this.session.removeEventListener("changeTabSize", this.$onChangeTabSize);
             this.session.removeEventListener("changeWrapLimit", this.$onChangeWrapLimit);
             this.session.removeEventListener("changeWrapMode", this.$onChangeWrapMode);
+            this.session.removeEventListener("onChangeFold", this.$onChangeFold);
             this.session.removeEventListener("changeFrontMarker", this.$onChangeFrontMarker);
             this.session.removeEventListener("changeBackMarker", this.$onChangeBackMarker);
             this.session.removeEventListener("changeBreakpoint", this.$onChangeBreakpoint);
@@ -147,6 +149,9 @@ var Editor =function(renderer, session) {
         this.$onChangeMode = this.onChangeMode.bind(this);
         session.addEventListener("changeMode", this.$onChangeMode);
 
+        this.$onTokenizerUpdate = this.onTokenizerUpdate.bind(this);
+        session.addEventListener("tokenizerUpdate", this.$onTokenizerUpdate);
+
         this.$onChangeTabSize = this.renderer.updateText.bind(this.renderer);
         session.addEventListener("changeTabSize", this.$onChangeTabSize);
 
@@ -156,18 +161,21 @@ var Editor =function(renderer, session) {
         this.$onChangeWrapMode = this.onChangeWrapMode.bind(this);
         session.addEventListener("changeWrapMode", this.$onChangeWrapMode);
 
+        this.$onChangeFold = this.onChangeFold.bind(this);
+        session.addEventListener("changeFold", this.$onChangeFold);
+
         this.$onChangeFrontMarker = this.onChangeFrontMarker.bind(this);
         this.session.addEventListener("changeFrontMarker", this.$onChangeFrontMarker);
-        
+
         this.$onChangeBackMarker = this.onChangeBackMarker.bind(this);
         this.session.addEventListener("changeBackMarker", this.$onChangeBackMarker);
-        
+
         this.$onChangeBreakpoint = this.onChangeBreakpoint.bind(this);
         this.session.addEventListener("changeBreakpoint", this.$onChangeBreakpoint);
 
         this.$onChangeAnnotation = this.onChangeAnnotation.bind(this);
         this.session.addEventListener("changeAnnotation", this.$onChangeAnnotation);
-        
+
         this.$onCursorChange = this.onCursorChange.bind(this);
         this.session.addEventListener("changeOverwrite", this.$onCursorChange);
 
@@ -178,8 +186,6 @@ var Editor =function(renderer, session) {
         this.selection.addEventListener("changeSelection", this.$onSelectionChange);
 
         this.onChangeMode();
-        this.bgTokenizer.setDocument(session.getDocument());
-        this.bgTokenizer.start(0);
 
         this.onCursorChange();
         this.onSelectionChange();
@@ -187,6 +193,7 @@ var Editor =function(renderer, session) {
         this.onChangeBackMarker();
         this.onChangeBreakpoint();
         this.onChangeAnnotation();
+        this.session.getUseWrapMode() && this.renderer.adjustWrapLimit();
         this.renderer.scrollToRow(session.getScrollTopRow());
         this.renderer.updateFull();
 
@@ -212,13 +219,21 @@ var Editor =function(renderer, session) {
         this.renderer.setTheme(theme);
     };
 
+    this.getTheme = function() {
+        return this.renderer.getTheme();
+    };
+
     this.setStyle = function(style) {
-        this.renderer.setStyle(style)
+        this.renderer.setStyle(style);
     };
 
     this.unsetStyle = function(style) {
-        this.renderer.unsetStyle(style)
-    }
+        this.renderer.unsetStyle(style);
+    };
+
+    this.setFontSize = function(size) {
+        this.container.style.fontSize = size;
+    };
 
     this.$highlightBrackets = function() {
         if (this.session.$bracketHighlight) {
@@ -239,13 +254,13 @@ var Editor =function(renderer, session) {
             var pos = self.session.findMatchingBracket(self.getCursorPosition());
             if (pos) {
                 var range = new Range(pos.row, pos.column, pos.row, pos.column+1);
-                self.session.$bracketHighlight = self.session.addMarker(range, "ace_bracket");
+                self.session.$bracketHighlight = self.session.addMarker(range, "ace_bracket", "text");
             }
         }, 10);
     };
 
     this.focus = function() {
-        // Safari need the timeout
+        // Safari needs the timeout
         // iOS and Firefox need it called immediately
         // to be on the save side we do both
         var _self = this;
@@ -253,6 +268,10 @@ var Editor =function(renderer, session) {
             _self.textInput.focus();
         });
         this.textInput.focus();
+    };
+
+    this.isFocused = function() {
+        return this.textInput.isFocused();
     };
 
     this.blur = function() {
@@ -275,12 +294,13 @@ var Editor =function(renderer, session) {
         var delta = e.data;
         var range = delta.range;
 
-        this.bgTokenizer.start(range.start.row);
         if (range.start.row == range.end.row && delta.action != "insertLines" && delta.action != "removeLines")
             var lastRow = range.end.row;
         else
             lastRow = Infinity;
         this.renderer.updateLines(range.start.row, lastRow);
+
+        this._dispatchEvent("change", e);
 
         // update cursor because tab characters can influence the cursor position
         this.renderer.updateCursor();
@@ -308,22 +328,28 @@ var Editor =function(renderer, session) {
 
     this.$updateHighlightActiveLine = function() {
         var session = this.getSession();
-        
+
         if (session.$highlightLineMarker) {
             session.removeMarker(session.$highlightLineMarker);
         }
         session.$highlightLineMarker = null;
 
         if (this.getHighlightActiveLine() && (this.getSelectionStyle() != "line" || !this.selection.isMultiLine())) {
-            var cursor = this.getCursorPosition();
-            var range = new Range(cursor.row, 0, cursor.row+1, 0);
-            session.$highlightLineMarker = session.addMarker(range, "ace_active_line", "line");
+            var cursor = this.getCursorPosition(),
+                foldLine = this.session.getFoldLine(cursor.row);
+            var range;
+            if (foldLine) {
+                range = new Range(foldLine.start.row, 0, foldLine.end.row + 1, 0);
+            } else {
+                range = new Range(cursor.row, 0, cursor.row+1, 0);
+            }
+            session.$highlightLineMarker = session.addMarker(range, "ace_active_line", "background");
         }
     };
 
     this.onSelectionChange = function(e) {
         var session = this.getSession();
-        
+
         if (session.$selectionMarker) {
             session.removeMarker(session.$selectionMarker);
         }
@@ -333,22 +359,22 @@ var Editor =function(renderer, session) {
             var range = this.selection.getRange();
             var style = this.getSelectionStyle();
             session.$selectionMarker = session.addMarker(range, "ace_selection", style);
+        } else {
+            this.$updateHighlightActiveLine();
         }
 
-        this.onCursorChange(e);
-
         if (this.$highlightSelectedWord)
-            this.mode.highlightSelection(this);
+            this.session.getMode().highlightSelection(this);
     };
 
     this.onChangeFrontMarker = function() {
         this.renderer.updateFrontMarkers();
     };
-    
+
     this.onChangeBackMarker = function() {
         this.renderer.updateBackMarkers();
     };
-    
+
     this.onChangeBreakpoint = function() {
         this.renderer.setBreakpoints(this.session.getBreakpoints());
     };
@@ -358,22 +384,7 @@ var Editor =function(renderer, session) {
     };
 
     this.onChangeMode = function() {
-        var mode = this.session.getMode();
-        if (this.mode == mode)
-            return;
-
-        this.mode = mode;
-        var tokenizer = mode.getTokenizer();
-
-        if (!this.bgTokenizer) {
-            var onUpdate = this.onTokenizerUpdate.bind(this);
-            this.bgTokenizer = new BackgroundTokenizer(tokenizer, this);
-            this.bgTokenizer.addEventListener("update", onUpdate);
-        } else {
-            this.bgTokenizer.setTokenizer(tokenizer);
-        }
-
-        this.renderer.setTokenizer(this.bgTokenizer);
+        this.renderer.updateText();
     };
 
     this.onChangeWrapLimit = function() {
@@ -384,21 +395,32 @@ var Editor =function(renderer, session) {
         this.renderer.onResize(true);
     };
 
+    this.onChangeFold = function() {
+        // Update the active line marker as due to folding changes the current
+        // line range on the screen might have changed.
+        this.$updateHighlightActiveLine();
+        // TODO: This might be too much updating. Okay for now.
+        this.renderer.updateFull();
+    };
+
     this.getCopyText = function() {
-        if (!this.selection.isEmpty()) {
-            return this.session.getTextRange(this.getSelectionRange());
-        }
-        else {
-            return "";
-        }
+        var text = "";
+        if (!this.selection.isEmpty())
+            text = this.session.getTextRange(this.getSelectionRange());
+
+        this._emit("copy", text);
+        return text;
     };
 
     this.onCut = function() {
         if (this.$readOnly)
             return;
 
+        var range = this.getSelectionRange();
+        this._emit("cut", range);
+
         if (!this.selection.isEmpty()) {
-            this.session.remove(this.getSelectionRange())
+            this.session.remove(range);
             this.clearSelection();
         }
     };
@@ -407,7 +429,18 @@ var Editor =function(renderer, session) {
         if (this.$readOnly)
             return;
 
+        var session = this.session;
+        var mode = session.getMode();
+
         var cursor = this.getCursorPosition();
+
+        if (this.getBehavioursEnabled()) {
+            // Get a transform if the current mode wants one.
+            var transform = mode.transformAction(session.getState(cursor.row), 'insertion', this, session, text);
+            if (transform)
+                text = transform.text;
+        }
+
         text = text.replace("\t", this.session.getTabString());
 
         // remove selected text
@@ -423,28 +456,42 @@ var Editor =function(renderer, session) {
 
         this.clearSelection();
 
-        var lineState     = this.bgTokenizer.getState(cursor.row);
-        var shouldOutdent = this.mode.checkOutdent(lineState, this.session.getLine(cursor.row), text);
-        var line          = this.session.getLine(cursor.row);
-        var lineIndent    = this.mode.getNextLineIndent(lineState, line.slice(0, cursor.column), this.session.getTabString());
-        var end           = this.session.insert(cursor, text);
+        var start = cursor.column;
+        var lineState = session.getState(cursor.row);
+        var shouldOutdent = mode.checkOutdent(lineState, session.getLine(cursor.row), text);
+        var line = session.getLine(cursor.row);
+        var lineIndent = mode.getNextLineIndent(lineState, line.slice(0, cursor.column), session.getTabString());
+        var end = session.insert(cursor, text);
 
-        
-        var lineState = this.bgTokenizer.getState(cursor.row);
+        if (transform && transform.selection) {
+            if (transform.selection.length == 2) { // Transform relative to the current column
+                this.selection.setSelectionRange(
+                    new Range(cursor.row, start + transform.selection[0],
+                              cursor.row, start + transform.selection[1]));
+            } else { // Transform relative to the current row.
+                this.selection.setSelectionRange(
+                    new Range(cursor.row + transform.selection[0],
+                              transform.selection[1],
+                              cursor.row + transform.selection[2],
+                              transform.selection[3]));
+            }
+        }
+
+        var lineState = session.getState(cursor.row);
+
         // TODO disabled multiline auto indent
         // possibly doing the indent before inserting the text
         // if (cursor.row !== end.row) {
-        if (this.session.getDocument().isNewLine(text)) {
+        if (session.getDocument().isNewLine(text)) {
             this.moveCursorTo(cursor.row+1, 0);
-            
-            var size        = this.session.getTabSize(),
-                minIndent   = Number.MAX_VALUE;
 
-            
+            var size = session.getTabSize();
+            var minIndent = Number.MAX_VALUE;
+
             for (var row = cursor.row + 1; row <= end.row; ++row) {
                 var indent = 0;
 
-                line = this.session.getLine(row);
+                line = session.getLine(row);
                 for (var i = 0; i < line.length; ++i)
                     if (line.charAt(i) == '\t')
                         indent += size;
@@ -459,24 +506,44 @@ var Editor =function(renderer, session) {
             for (var row = cursor.row + 1; row <= end.row; ++row) {
                 var outdent = minIndent;
 
-                line = this.session.getLine(row);
+                line = session.getLine(row);
                 for (var i = 0; i < line.length && outdent > 0; ++i)
                     if (line.charAt(i) == '\t')
                         outdent -= size;
                     else if (line.charAt(i) == ' ')
                         outdent -= 1;
-                this.session.remove(new Range(row, 0, row, i));
+                session.remove(new Range(row, 0, row, i));
             }
-            this.session.indentRows(cursor.row + 1, end.row, lineIndent);
-        } else {
-            if (shouldOutdent) {
-                this.mode.autoOutdent(lineState, this.session, cursor.row);
-            }
-        };        
-    }
+            session.indentRows(cursor.row + 1, end.row, lineIndent);
+        }
+        if (shouldOutdent)
+            mode.autoOutdent(lineState, session, cursor.row);
+    };
 
-    this.onTextInput = function(text) {
-        this.keyBinding.onTextInput(text);
+    this.onTextInput = function(text, notPasted) {
+        if (!notPasted)
+            this._emit("paste", text);
+
+        // In case the text was not pasted and we got only one character, then
+        // handel it as a command key stroke.
+        if (notPasted && text.length == 1) {
+            // Note: The `null` as `keyCode` is important here, as there are
+            // some checks in the code for `keyCode == 0` meaning the text comes
+            // from the keyBinding.onTextInput code path.
+            var handled = this.keyBinding.onCommandKey({}, 0, null, text);
+
+            // Check if the text was handled. If not, then handled it as "normal"
+            // text and insert it to the editor directly. This shouldn't be done
+            // using the this.keyBinding.onTextInput(text) function, as it would
+            // make the `text` get sent to the keyboardHandler twice, which might
+            // turn out to be a bad thing in case there is a custome keyboard
+            // handler like the StateHandler.
+            if (!handled) {
+                this.insert(text);
+            }
+        } else {
+            this.keyBinding.onTextInput(text);
+        }
     };
 
     this.onCommandKey = function(e, hashId, keyCode) {
@@ -484,7 +551,7 @@ var Editor =function(renderer, session) {
     };
 
     this.setOverwrite = function(overwrite) {
-        this.session.setOverwrite();        
+        this.session.setOverwrite(overwrite);
     };
 
     this.getOverwrite = function() {
@@ -535,9 +602,9 @@ var Editor =function(renderer, session) {
 
         this.$highlightSelectedWord = shouldHighlight;
         if (shouldHighlight)
-            this.mode.highlightSelection(this);
+            this.session.getMode().highlightSelection(this);
         else
-            this.mode.clearSelectionHighlight(this);
+            this.session.getMode().clearSelectionHighlight(this);
     };
 
     this.getHighlightSelectedWord = function() {
@@ -580,28 +647,39 @@ var Editor =function(renderer, session) {
         return this.$readOnly;
     };
 
-    this.removeRight = function() {
+    this.$modeBehaviours = true;
+    this.setBehavioursEnabled = function (enabled) {
+        this.$modeBehaviours = enabled;
+    };
+
+    this.getBehavioursEnabled = function () {
+        return this.$modeBehaviours;
+    };
+
+    this.remove = function(dir) {
         if (this.$readOnly)
             return;
 
-        if (this.selection.isEmpty()) {
-            this.selection.selectRight();
+        if (this.selection.isEmpty()){
+            if(dir == "left")
+                this.selection.selectLeft();
+            else
+                this.selection.selectRight();
         }
-        this.session.remove(this.getSelectionRange())
+
+        var range = this.getSelectionRange();
+        if (this.getBehavioursEnabled()) {
+            var session = this.session;
+            var state = session.getState(range.start.row);
+            var new_range = session.getMode().transformAction(state, 'deletion', this, session, range);
+            if (new_range)
+                range = new_range;
+        }
+
+        this.session.remove(range);
         this.clearSelection();
     };
 
-    this.removeLeft = function() {
-        if (this.$readOnly)
-            return;
-
-        if (this.selection.isEmpty())
-            this.selection.selectLeft();
-
-        this.session.remove(this.getSelectionRange());
-        this.clearSelection();
-    };
-    
     this.removeWordRight = function() {
         if (this.$readOnly)
             return;
@@ -612,7 +690,7 @@ var Editor =function(renderer, session) {
         this.session.remove(this.getSelectionRange());
         this.clearSelection();
     };
-    
+
     this.removeWordLeft = function() {
         if (this.$readOnly)
             return;
@@ -623,7 +701,7 @@ var Editor =function(renderer, session) {
         this.session.remove(this.getSelectionRange());
         this.clearSelection();
     };
-    
+
     this.removeToLineStart = function() {
         if (this.$readOnly)
             return;
@@ -634,7 +712,7 @@ var Editor =function(renderer, session) {
         this.session.remove(this.getSelectionRange());
         this.clearSelection();
     };
-    
+
     this.removeToLineEnd = function() {
         if (this.$readOnly)
             return;
@@ -642,49 +720,56 @@ var Editor =function(renderer, session) {
         if (this.selection.isEmpty())
             this.selection.selectLineEnd();
 
-        this.session.remove(this.getSelectionRange());
+        var range = this.getSelectionRange();
+        if (range.start.column == range.end.column && range.start.row == range.end.row) {
+            range.end.column = 0;
+            range.end.row++;
+        }
+
+        this.session.remove(range);
         this.clearSelection();
     };
 
     this.splitLine = function() {
         if (this.$readOnly)
             return;
-        
+
         if (!this.selection.isEmpty()) {
             this.session.remove(this.getSelectionRange());
             this.clearSelection();
         }
-    
+
         var cursor = this.getCursorPosition();
         this.insert("\n");
         this.moveCursorToPosition(cursor);
     };
-    
+
     this.transposeLetters = function() {
         if (this.$readOnly)
             return;
-        
+
         if (!this.selection.isEmpty()) {
             return;
         }
-    
+
         var cursor = this.getCursorPosition();
         var column = cursor.column;
-        if (column == 0)
+        if (column === 0)
             return;
-        
+
         var line = this.session.getLine(cursor.row);
+        var swap, range;
         if (column < line.length) {
-            var swap = line.charAt(column) + line.charAt(column-1);
-            var range = new Range(cursor.row, column-1, cursor.row, column+1)
+            swap = line.charAt(column) + line.charAt(column-1);
+            range = new Range(cursor.row, column-1, cursor.row, column+1);
         }
         else {
-            var swap = line.charAt(column-1) + line.charAt(column-2);
-            var range = new Range(cursor.row, column-2, cursor.row, column)
+            swap = line.charAt(column-1) + line.charAt(column-2);
+            range = new Range(cursor.row, column-2, cursor.row, column);
         }
         this.session.replace(range, swap);
     };
-    
+
     this.indent = function() {
         if (this.$readOnly)
             return;
@@ -723,9 +808,9 @@ var Editor =function(renderer, session) {
         if (this.$readOnly)
             return;
 
-        var state = this.bgTokenizer.getState(this.getCursorPosition().row);
-        var rows = this.$getSelectedRows()
-        this.mode.toggleCommentLines(state, this.session, rows.first, rows.last);
+        var state = this.session.getState(this.getCursorPosition().row);
+        var rows = this.$getSelectedRows();
+        this.session.getMode().toggleCommentLines(state, this.session, rows.first, rows.last);
     };
 
     this.removeLines = function() {
@@ -733,7 +818,15 @@ var Editor =function(renderer, session) {
             return;
 
         var rows = this.$getSelectedRows();
-        this.session.remove(new Range(rows.first, 0, rows.last+1, 0));
+        var range;
+        if (rows.last == 0 || rows.last+1 < this.session.getLength())
+            range = new Range(rows.first, 0, rows.last+1, 0);
+        else
+            range = new Range(
+                rows.first-1, this.session.getLine(rows.first-1).length,
+                rows.last, this.session.getLine(rows.last).length
+            );
+        this.session.remove(range);
         this.clearSelection();
     };
 
@@ -814,7 +907,6 @@ var Editor =function(renderer, session) {
     this.onCompositionEnd = function() {
         this.renderer.hideComposition();
     };
-
 
     this.getFirstVisibleRow = function() {
         return this.renderer.getFirstVisibleRow();
@@ -897,7 +989,7 @@ var Editor =function(renderer, session) {
     this.scrollToLine = function(line, center) {
         this.renderer.scrollToLine(line, center);
     };
-    
+
     this.centerSelection = function() {
         var range = this.getSelectionRange();
         var line = Math.floor(range.start.row + (range.end.row - range.start.row) / 2);
@@ -910,7 +1002,7 @@ var Editor =function(renderer, session) {
 
     this.getCursorPositionScreen = function() {
         return this.session.documentToScreenPosition(this.getCursorPosition());
-    }
+    };
 
     this.getSelectionRange = function() {
         return this.selection.getRange();
@@ -922,7 +1014,7 @@ var Editor =function(renderer, session) {
         this.selection.selectAll();
         this.$blockScrolling -= 1;
     };
-    
+
     this.clearSelection = function() {
         this.selection.clearSelection();
     };
@@ -936,17 +1028,17 @@ var Editor =function(renderer, session) {
     };
 
 
-    this.gotoLine = function(lineNumber, row) {
+    this.gotoLine = function(lineNumber, column) {
         this.selection.clearSelection();
 
         this.$blockScrolling += 1;
-        this.moveCursorTo(lineNumber-1, row || 0);
+        this.moveCursorTo(lineNumber-1, column || 0);
         this.$blockScrolling -= 1;
 
         if (!this.isRowVisible(this.getCursorPosition().row)) {
             this.scrollToLine(lineNumber, true);
         }
-    },
+    };
 
     this.navigateTo = function(row, column) {
         this.clearSelection();
@@ -1028,10 +1120,13 @@ var Editor =function(renderer, session) {
             this.$search.set(options);
 
         var range = this.$search.find(this.session);
+        if (!range)
+            return;
+
         this.$tryReplace(range, replacement);
         if (range !== null)
             this.selection.setSelectionRange(range);
-    },
+    };
 
     this.replaceAll = function(replacement, options) {
         if (options) {
@@ -1049,14 +1144,14 @@ var Editor =function(renderer, session) {
         this.$blockScrolling += 1;
         for (var i = ranges.length - 1; i >= 0; --i)
             this.$tryReplace(ranges[i], replacement);
-        
+
         this.selection.setSelectionRange(selection);
         this.$blockScrolling -= 1;
-    },
+    };
 
     this.$tryReplace = function(range, replacement) {
         var input = this.session.getTextRange(range);
-        var replacement = this.$search.replace(input, replacement);
+        replacement = this.$search.replace(input, replacement);
         if (replacement !== null) {
             range.end = this.session.replace(range, replacement);
             return range;
@@ -1075,7 +1170,7 @@ var Editor =function(renderer, session) {
         options.needle = needle;
         this.$search.set(options);
         this.$find();
-    },
+    };
 
     this.findNext = function(options) {
         options = options || {};
@@ -1114,6 +1209,10 @@ var Editor =function(renderer, session) {
 
     this.redo = function() {
         this.session.getUndoManager().redo();
+    };
+
+    this.destroy = function() {
+        this.renderer.destroy();
     };
 
 }).call(Editor.prototype);

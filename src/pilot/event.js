@@ -87,7 +87,7 @@ exports.preventDefault = function(e) {
 };
 
 exports.getDocumentX = function(e) {
-    if (e.clientX) {        
+    if (e.clientX) {
         return e.clientX + dom.getPageScrollLeft();
     } else {
         return e.pageX;
@@ -110,7 +110,7 @@ exports.getButton = function(e) {
         return 0;
     else if (e.type == "contextmenu")
         return 2;
-        
+
     // DOM Event
     if (e.preventDefault) {
         return e.button;
@@ -128,9 +128,14 @@ if (document.documentElement.setCapture) {
             return exports.stopPropagation(e);
         }
 
+        var called = false;
         function onReleaseCapture(e) {
-            eventHandler && eventHandler(e);
-            releaseCaptureHandler && releaseCaptureHandler();
+            eventHandler(e);
+
+            if (!called) {
+                called = true;
+                releaseCaptureHandler(e);
+            }
 
             exports.removeListener(el, "mousemove", eventHandler);
             exports.removeListener(el, "mouseup", onReleaseCapture);
@@ -154,7 +159,7 @@ else {
 
         function onMouseUp(e) {
             eventHandler && eventHandler(e);
-            releaseCaptureHandler && releaseCaptureHandler();
+            releaseCaptureHandler && releaseCaptureHandler(e);
 
             document.removeEventListener("mousemove", onMouseMove, true);
             document.removeEventListener("mouseup", onMouseUp, true);
@@ -168,14 +173,26 @@ else {
 }
 
 exports.addMouseWheelListener = function(el, callback) {
+    var max = 0;
     var listener = function(e) {
         if (e.wheelDelta !== undefined) {
+
+            // some versions of Safari (e.g. 5.0.5) report insanely high
+            // scroll values. These browsers require a higher factor
+            if (Math.abs(e.wheelDeltaY) > max)
+                max = Math.abs(e.wheelDeltaY)
+
+            if (max > 5000)
+                factor = 400;
+            else
+                factor = 8;
+
             if (e.wheelDeltaX !== undefined) {
-                e.wheelX = -e.wheelDeltaX / 8;
-                e.wheelY = -e.wheelDeltaY / 8;
+                e.wheelX = -e.wheelDeltaX / factor;
+                e.wheelY = -e.wheelDeltaY / factor;
             } else {
                 e.wheelX = 0;
-                e.wheelY = -e.wheelDelta / 8;
+                e.wheelY = -e.wheelDelta / factor;
             }
         }
         else {
@@ -208,19 +225,21 @@ exports.addMultiMouseDownListener = function(el, button, count, timeout, callbac
             }, timeout || 600);
         }
 
-        if (exports.getButton(e) != button
-          || Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5)
+        var isButton = exports.getButton(e) == button;
+        if (!isButton || Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5)
             clicks = 0;
 
         if (clicks == count) {
             clicks = 0;
             callback(e);
         }
-        return exports.preventDefault(e);
+
+        if (isButton)
+            return exports.preventDefault(e);
     };
 
     exports.addListener(el, "mousedown", listener);
-    useragent.isIE && exports.addListener(el, "dblclick", listener);
+    useragent.isOldIE && exports.addListener(el, "dblclick", listener);
 };
 
 function normalizeCommandKeys(callback, e, keyCode) {
@@ -258,10 +277,9 @@ function normalizeCommandKeys(callback, e, keyCode) {
     // If there is no hashID and the keyCode is not a function key, then
     // we don't call the callback as we don't handle a command key here
     // (it's a normal key/character input).
-    if (hashId == 0 && !(keyCode in keys.FUNCTION_KEYS)) {
+    if (!(keyCode in keys.FUNCTION_KEYS) && !(keyCode in keys.PRINTABLE_KEYS)) {
         return false;
     }
-
     return callback(e, hashId, keyCode);
 }
 
@@ -294,7 +312,7 @@ exports.addCommandKeyListener = function(el, callback) {
             addListener(el, "keypress", function(e) {
                 var keyId = e.keyIdentifier || e.keyCode;
                 if (lastDown !== keyId) {
-                    return normalizeCommandKeys(callback, e, e.keyCode);
+                    return normalizeCommandKeys(callback, e, lastDown);
                 } else {
                     lastDown = null;
                 }

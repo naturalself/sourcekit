@@ -66,11 +66,11 @@ var Document = function(text) {
         this.remove(new Range(0, 0, len, this.getLine(len-1).length));
         this.insert({row: 0, column:0}, text);
     };
-  	
+
     this.getValue = function() {
         return this.getAllLines().join(this.getNewLineCharacter());
     };
-    
+
     this.createAnchor = function(row, column) {
         return new Anchor(this, row, column);
     };
@@ -87,7 +87,7 @@ var Document = function(text) {
 
 
     this.$detectNewLine = function(text) {
-        var match = text.match(/^.*?(\r?\n)/m);
+        var match = text.match(/^.*?(\r\n|\r|\n)/m);
         if (match) {
             this.$autoNewLine = match[1];
         } else {
@@ -111,7 +111,8 @@ var Document = function(text) {
     this.$autoNewLine = "\n";
     this.$newLineMode = "auto";
     this.setNewLineMode = function(newLineMode) {
-        if (this.$newLineMode === newLineMode) return;
+        if (this.$newLineMode === newLineMode)
+            return;
 
         this.$newLineMode = newLineMode;
     };
@@ -128,7 +129,7 @@ var Document = function(text) {
      * Get a verbatim copy of the given line as it is in the document
      */
     this.getLine = function(row) {
-        return this.getLines(row, row + 1)[0] || "";
+        return this.$lines[row] || "";
     };
 
     this.getLines = function(firstRow, lastRow) {
@@ -213,6 +214,7 @@ var Document = function(text) {
     this.insertNewLine = function(position) {
         position = this.$clipPosition(position);
         var line = this.$lines[position.row] || "";
+
         this.$lines[position.row] = line.substring(0, position.column);
         this.$lines.splice(position.row + 1, 0, line.substring(position.column, line.length));
 
@@ -236,6 +238,7 @@ var Document = function(text) {
             return position;
 
         var line = this.$lines[position.row] || "";
+
         this.$lines[position.row] = line.substring(0, position.column) + text
                 + line.substring(position.column);
 
@@ -382,6 +385,7 @@ var Document = function(text) {
     this.revertDeltas = function(deltas) {
         for (var i=deltas.length-1; i>=0; i--) {
             var delta = deltas[i];
+
             var range = Range.fromPoints(delta.range.start, delta.range.end);
 
             if (delta.action == "insertLines")

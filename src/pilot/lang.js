@@ -45,6 +45,17 @@ exports.stringRepeat = function (string, count) {
      return new Array(count + 1).join(string);
 };
 
+var trimBeginRegexp = /^\s\s*/;
+var trimEndRegexp = /\s\s*$/;
+
+exports.stringTrimLeft = function (string) {
+    return string.replace(trimBeginRegexp, '')
+};
+
+exports.stringTrimRight = function (string) {
+    return string.replace(trimEndRegexp, '');
+};
+
 exports.copyObject = function(obj) {
     var copy = {};
     for (var key in obj) {
@@ -52,6 +63,33 @@ exports.copyObject = function(obj) {
     }
     return copy;
 };
+
+exports.copyArray = function(array){
+    var copy = [];
+    for (i=0, l=array.length; i<l; i++) {
+        if (array[i] && typeof array[i] == "object")
+            copy[i] = this.copyObject( array[i] );
+        else 
+            copy[i] = array[i]
+    }
+    return copy;
+};
+
+exports.deepCopy = function (obj) {
+    if (typeof obj != "object") {
+        return obj;
+    }
+    
+    var copy = obj.constructor();
+    for (var key in obj) {
+        if (typeof obj[key] == "object") {
+            copy[key] = this.deepCopy(obj[key]);
+        } else {
+            copy[key] = obj[key];
+        }
+    }
+    return copy;
+}
 
 exports.arrayToMap = function(arr) {
     var map = {};
@@ -86,14 +124,13 @@ exports.deferredCall = function(fcn) {
     };
 
     var deferred = function(timeout) {
-        if (!timer) {
-            timer = setTimeout(callback, timeout || 0);
-        }
+        deferred.cancel();
+        timer = setTimeout(callback, timeout || 0);
         return deferred;
     }
 
     deferred.schedule = deferred;
-    
+
     deferred.call = function() {
         this.cancel();
         fcn();
@@ -105,7 +142,7 @@ exports.deferredCall = function(fcn) {
         timer = null;
         return deferred;
     };
-    
+
     return deferred;
 };
 

@@ -37,9 +37,7 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-monokai .ace_editor {\
+exports.cssText = ".ace-monokai .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -188,10 +186,72 @@ background-color:#AE81FF;\
 \
 .ace-monokai .ace_xml_pe {\
   \
+}\
+\
+.ace-monokai .ace_meta {\
+  \
+}\
+\
+.ace-monokai .ace_meta.ace_tag {\
+  \
+}\
+\
+.ace-monokai .ace_meta.ace_tag.ace_input {\
+  \
+}\
+\
+.ace-monokai .ace_entity.ace_other.ace_attribute-name {\
+  color:#A6E22E;\
+}\
+\
+.ace-monokai .ace_entity.ace_name {\
+  \
+}\
+\
+.ace-monokai .ace_entity.ace_name.ace_function {\
+  color:#A6E22E;\
+}\
+\
+.ace-monokai .ace_markup.ace_underline {\
+    text-decoration:underline;\
+}\
+\
+.ace-monokai .ace_markup.ace_heading {\
+  \
+}\
+\
+.ace-monokai .ace_markup.ace_heading.ace_1 {\
+  \
+}\
+\
+.ace-monokai .ace_markup.ace_heading.ace_2 {\
+  \
+}\
+\
+.ace-monokai .ace_markup.ace_heading.ace_3 {\
+  \
+}\
+\
+.ace-monokai .ace_markup.ace_heading.ace_4 {\
+  \
+}\
+\
+.ace-monokai .ace_markup.ace_heading.ace_5 {\
+  \
+}\
+\
+.ace-monokai .ace_markup.ace_heading.ace_6 {\
+  \
+}\
+\
+.ace-monokai .ace_markup.ace_list {\
+  \
+}\
+\
+.ace-monokai .ace_collab.ace_user1 {\
+     \
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
+exports.cssClass = "ace-monokai";
 
-    exports.cssClass = "ace-monokai";
 });

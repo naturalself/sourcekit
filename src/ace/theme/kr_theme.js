@@ -37,9 +37,7 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-kr-theme .ace_editor {\
+exports.cssText = ".ace-kr-theme .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -188,10 +186,72 @@ color:#706D5B;\
 \
 .ace-kr-theme .ace_xml_pe {\
   \
+}\
+\
+.ace-kr-theme .ace_meta {\
+  \
+}\
+\
+.ace-kr-theme .ace_meta.ace_tag {\
+  color:#BABD9C;\
+}\
+\
+.ace-kr-theme .ace_meta.ace_tag.ace_input {\
+  \
+}\
+\
+.ace-kr-theme .ace_entity.ace_other.ace_attribute-name {\
+  \
+}\
+\
+.ace-kr-theme .ace_entity.ace_name {\
+  \
+}\
+\
+.ace-kr-theme .ace_entity.ace_name.ace_function {\
+  \
+}\
+\
+.ace-kr-theme .ace_markup.ace_underline {\
+    text-decoration:underline;\
+}\
+\
+.ace-kr-theme .ace_markup.ace_heading {\
+  \
+}\
+\
+.ace-kr-theme .ace_markup.ace_heading.ace_1 {\
+  \
+}\
+\
+.ace-kr-theme .ace_markup.ace_heading.ace_2 {\
+  \
+}\
+\
+.ace-kr-theme .ace_markup.ace_heading.ace_3 {\
+  \
+}\
+\
+.ace-kr-theme .ace_markup.ace_heading.ace_4 {\
+  \
+}\
+\
+.ace-kr-theme .ace_markup.ace_heading.ace_5 {\
+  \
+}\
+\
+.ace-kr-theme .ace_markup.ace_heading.ace_6 {\
+  \
+}\
+\
+.ace-kr-theme .ace_markup.ace_list {\
+  background-color:#0F0040;\
+}\
+\
+.ace-kr-theme .ace_collab.ace_user1 {\
+     \
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
+exports.cssClass = "ace-kr-theme";
 
-    exports.cssClass = "ace-kr-theme";
 });

@@ -96,6 +96,7 @@ var PythonHighlightRules = function() {
             regex : strPre + '"{3}(?:[^\\\\]|\\\\.)*?"{3}'
         }, {
             token : "string",           // multi line """ string start
+            merge : true,
             regex : strPre + '"{3}.*$',
             next : "qqstring"
         }, {
@@ -106,6 +107,7 @@ var PythonHighlightRules = function() {
             regex : strPre + "'{3}(?:[^\\\\]|\\\\.)*?'{3}"
         }, {
             token : "string",           // multi line ''' string start
+            merge : true,
             regex : strPre + "'{3}.*$",
             next : "qstring"
         }, {
@@ -143,10 +145,10 @@ var PythonHighlightRules = function() {
             token : "keyword.operator",
             regex : "\\+|\\-|\\*|\\*\\*|\\/|\\/\\/|%|<<|>>|&|\\||\\^|~|<|>|<=|=>|==|!=|<>|="
         }, {
-            token : "lparen",
+            token : "lparen.paren",
             regex : "[\\[\\(\\{]"
         }, {
-            token : "rparen",
+            token : "paren.rparen",
             regex : "[\\]\\)\\}]"
         }, {
             token : "text",
@@ -158,14 +160,16 @@ var PythonHighlightRules = function() {
             next : "start"
         }, {
             token : "string",
+            merge : true,
             regex : '.+'
         } ],
         "qstring" : [ {
-            token : "string",           // multi line ''' string end
+            token : "string",  // multi line ''' string end
             regex : "(?:[^\\\\]|\\\\.)*?'{3}",
             next : "start"
         }, {
             token : "string",
+            merge : true,
             regex : '.+'
         } ]
     };

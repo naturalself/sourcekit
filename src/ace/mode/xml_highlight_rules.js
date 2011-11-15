@@ -46,7 +46,7 @@ var XmlHighlightRules = function() {
     // regexps are ordered -> the first match is used
 
     this.$rules = {
-        start : [ {
+        start : [{
             token : "text",
             regex : "<\\!\\[CDATA\\[",
             next : "cdata"
@@ -55,6 +55,7 @@ var XmlHighlightRules = function() {
             regex : "<\\?.*?\\?>"
         }, {
             token : "comment",
+            merge : true,
             regex : "<\\!--",
             next : "comment"
         }, {
@@ -67,9 +68,9 @@ var XmlHighlightRules = function() {
         }, {
             token : "text",
             regex : "[^<]+"
-        } ],
+        }],
 
-        tag : [ {
+        tag : [{
             token : "text",
             regex : ">",
             next : "start"
@@ -83,11 +84,41 @@ var XmlHighlightRules = function() {
             token : "string",
             regex : '".*?"'
         }, {
+            token : "string", // multi line string start
+            merge : true,
+            regex : '["].*$',
+            next : "qqstring"
+        }, {
             token : "string",
             regex : "'.*?'"
-        } ],
+        }, {
+            token : "string", // multi line string start
+            merge : true,
+            regex : "['].*$",
+            next : "qstring"
+        }],
 
-        cdata : [ {
+        qstring: [{
+            token : "string",
+            regex : ".*'",
+            next : "tag"
+        }, {
+            token : "string",
+            merge : true,
+            regex : '.+'
+        }],
+        
+        qqstring: [{
+            token : "string",
+            regex : ".*\"",
+            next : "tag"
+        }, {
+            token : "string",
+            merge : true,
+            regex : '.+'
+        }],
+        
+        cdata : [{
             token : "text",
             regex : "\\]\\]>",
             next : "start"
@@ -97,16 +128,17 @@ var XmlHighlightRules = function() {
         }, {
             token : "text",
             regex : "(?:[^\\]]|\\](?!\\]>))+"
-        } ],
+        }],
 
-        comment : [ {
+        comment : [{
             token : "comment",
             regex : ".*?-->",
             next : "start"
         }, {
             token : "comment",
+            merge : true,
             regex : ".+"
-        } ]
+        }]
     };
 };
 

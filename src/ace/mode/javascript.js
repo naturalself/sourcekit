@@ -44,10 +44,12 @@ var JavaScriptHighlightRules = require("ace/mode/javascript_highlight_rules").Ja
 var MatchingBraceOutdent = require("ace/mode/matching_brace_outdent").MatchingBraceOutdent;
 var Range = require("ace/range").Range;
 var WorkerClient = require("ace/worker/worker_client").WorkerClient;
+var CstyleBehaviour = require("ace/mode/behaviour/cstyle").CstyleBehaviour;
 
 var Mode = function() {
     this.$tokenizer = new Tokenizer(new JavaScriptHighlightRules().getRules());
     this.$outdent = new MatchingBraceOutdent();
+    this.$behaviour = new CstyleBehaviour();
 };
 oop.inherits(Mode, TextMode);
 
@@ -93,13 +95,13 @@ oop.inherits(Mode, TextMode);
             return indent;
         }
         
-        if (state == "start") {
-            var match = line.match(/^.*[\{\(\[]\s*$/);
+        if (state == "start" || state == "regex_allowed") {
+            var match = line.match(/^.*[\{\(\[\:]\s*$/);
             if (match) {
                 indent += tab;
             }
         } else if (state == "doc-start") {
-            if (endState == "start") {
+            if (endState == "start" || state == "regex_allowed") {
                 return "";
             }
             var match = line.match(/^\s*(\/?)\*/);
@@ -123,17 +125,8 @@ oop.inherits(Mode, TextMode);
     };
     
     this.createWorker = function(session) {
-        var doc = session.getDocument();
         var worker = new WorkerClient(["ace", "pilot"], "worker-javascript.js", "ace/mode/javascript_worker", "JavaScriptWorker");
-        worker.call("setValue", [doc.getValue()]);
-        
-        doc.on("change", function(e) {
-            e.range = {
-                start: e.data.range.start,
-                end: e.data.range.end
-            };
-            worker.emit("change", e);
-        });
+		worker.attachToDocument(session.getDocument());
             
         worker.on("jslint", function(results) {
             var errors = [];
@@ -146,10 +139,9 @@ oop.inherits(Mode, TextMode);
                         text: error.reason,
                         type: "warning",
                         lint: error
-                    })
+                    });
             }
-                    
-            session.setAnnotations(errors)
+            session.setAnnotations(errors);
         });
         
         worker.on("narcissus", function(e) {

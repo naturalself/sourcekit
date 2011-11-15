@@ -40,6 +40,22 @@ define(function(require, exports, module) {
 var StateHandler = require("ace/keyboard/state_handler").StateHandler;
 var matchCharacterOnly =  require("ace/keyboard/state_handler").matchCharacterOnly;
 
+var vimcommand = function(key, exec, then) {
+    return {
+        regex:  [ "([0-9]*)", key ],
+        exec:   exec,
+        params: [
+            {
+                name:     "times",
+                match:    1,
+                type:     "number",
+                defaultValue:     1
+            }
+        ],
+        then:   then
+    }
+}
+
 var vimStates = {
     start: [
         {
@@ -47,53 +63,48 @@ var vimStates = {
             then:   "insertMode"
         },
         {
-            regex:  [ "([0-9]*)", "(k|up)" ],
-            exec:   "golineup",
-            params: [
-                {
-                    name:     "times",
-                    match:    1,
-                    type:     "number",
-                    defaultValue:     1
-                }
-            ]
+            key:    "d",
+            then:   "deleteMode"
         },
         {
-            regex:  [ "([0-9]*)", "(j|down|enter)" ],
-            exec:   "golinedown",
-            params: [
-                {
-                    name:    "times",
-                    match:   1,
-                    type:    "number",
-                    defaultValue:    1
-                }
-            ]
-        },
-        {
-            regex:  [ "([0-9]*)", "(l|right)" ],
+            key:    "a",
             exec:   "gotoright",
-            params: [
-                {
-                    name:   "times",
-                    match:  1,
-                    type:   "number",
-                    defaultValue:     1
-                }
-            ]
+            then:   "insertMode"
         },
         {
-            regex:  [ "([0-9]*)", "(h|left)" ],
-            exec:   "gotoleft",
-            params: [
-                {
-                    name:     "times",
-                    match:    1,
-                    type:     "number",
-                    defaultValue:     1
-                }
-            ]
+            key:    "shift-i",
+            exec:   "gotolinestart",
+            then:   "insertMode"
         },
+        {
+            key:    "shift-a",
+            exec:   "gotolineend",
+            then:   "insertMode"
+        },
+        {
+            key:    "shift-c",
+            exec:   "removetolineend",
+            then:   "insertMode"
+        },
+        {
+            key:    "shift-r",
+            exec:   "overwrite",
+            then:   "replaceMode"
+        },
+        vimcommand("(k|up)", "golineup"),
+        vimcommand("(j|down)", "golinedown"),
+        vimcommand("(l|right)", "golineright"),
+        vimcommand("(h|left)", "golineleft"),
+        {
+            key:    "shift-g",
+            exec:   "gotoend"
+        },
+        vimcommand("b", "gotowordleft"),
+        vimcommand("e", "gotowordright"),
+        vimcommand("x", "del"),
+        vimcommand("shift-x", "backspace"),
+        vimcommand("shift-d", "removetolineend"),
+        vimcommand("u", "undo"), // [count] on this may/may not work, depending on browser implementation...
         {
             comment:    "Catch some keyboard input to stop it here",
             match:      matchCharacterOnly
@@ -102,6 +113,20 @@ var vimStates = {
     insertMode: [
         {
             key:      "esc",
+            then:     "start"
+        }
+    ],
+    replaceMode: [
+        {
+            key:      "esc",
+            exec:     "overwrite",
+            then:     "start"
+        }
+    ],
+    deleteMode: [
+        {
+            key:      "d",
+            exec:     "removeline",
             then:     "start"
         }
     ]

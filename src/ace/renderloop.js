@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *      Fabian Jakobs <fabian AT ajax DOT org>
+ *      Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -39,10 +40,11 @@ define(function(require, exports, module) {
 
 var event = require("pilot/event");
 
-var RenderLoop = function(onRender) {
+var RenderLoop = function(onRender, window) {
     this.onRender = onRender;
     this.pending = false;
     this.changes = 0;
+    this.setTimeoutZero = this.setTimeoutZero.bind(window);
 };
 
 (function() {
@@ -63,29 +65,38 @@ var RenderLoop = function(onRender) {
         }
     };
 
-    if (window.postMessage) {
+    this.setTimeoutZero = window.requestAnimationFrame ||
+         window.webkitRequestAnimationFrame ||
+         window.mozRequestAnimationFrame ||
+         window.oRequestAnimationFrame ||
+         window.msRequestAnimationFrame;
 
-        this.messageName = "zero-timeout-message";
+    if (this.setTimeoutZero) {
+        this.setTimeoutZero = this.setTimeoutZero;
+    } else if (window.postMessage) {
 
-        this.setTimeoutZero = function(callback) {
-            if (!this.attached) {
-                var _self = this;
-                event.addListener(window, "message", function(e) {
-                    if (_self.callback && e.data == _self.messageName) {
-                        event.stopPropagation(e);
-                        _self.callback();
-                    }
-                });
-                this.attached = true;
-            }
-            this.callback = callback;
-            window.postMessage(this.messageName, "*");
-        }
+        this.setTimeoutZero = (function(messageName, attached, listener) {
+            return function setTimeoutZero(callback) {
+                // Set up listener if not listening already.
+                if (!attached) {
+                    event.addListener(this, "message", function(e) {
+                        if (listener && e.data == messageName) {
+                            event.stopPropagation(e);
+                            listener();
+                        }
+                    });
+                    attached = true;
+                }
+
+                listener = callback;
+                this.postMessage(messageName, "*");
+            };
+        })("zero-timeout-message", false, null);
 
     } else {
 
         this.setTimeoutZero = function(callback) {
-            setTimeout(callback, 0);
+            this.setTimeout(callback, 0);
         }
     }
 

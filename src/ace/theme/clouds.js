@@ -37,9 +37,8 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-clouds .ace_editor {\
+exports.cssClass = "ace-clouds";
+exports.cssText = ".ace-clouds .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -186,10 +185,70 @@ define(function(require, exports, module) {
 \
 .ace-clouds .ace_xml_pe {\
   \
+}\
+\
+.ace-clouds .ace_meta {\
+  \
+}\
+\
+.ace-clouds .ace_meta.ace_tag {\
+  \
+}\
+\
+.ace-clouds .ace_meta.ace_tag.ace_input {\
+  \
+}\
+\
+.ace-clouds .ace_entity.ace_other.ace_attribute-name {\
+  color:#606060;\
+}\
+\
+.ace-clouds .ace_entity.ace_name {\
+  \
+}\
+\
+.ace-clouds .ace_entity.ace_name.ace_function {\
+  \
+}\
+\
+.ace-clouds .ace_markup.ace_underline {\
+    text-decoration:underline;\
+}\
+\
+.ace-clouds .ace_markup.ace_heading {\
+  \
+}\
+\
+.ace-clouds .ace_markup.ace_heading.ace_1 {\
+  \
+}\
+\
+.ace-clouds .ace_markup.ace_heading.ace_2 {\
+  \
+}\
+\
+.ace-clouds .ace_markup.ace_heading.ace_3 {\
+  \
+}\
+\
+.ace-clouds .ace_markup.ace_heading.ace_4 {\
+  \
+}\
+\
+.ace-clouds .ace_markup.ace_heading.ace_5 {\
+  \
+}\
+\
+.ace-clouds .ace_markup.ace_heading.ace_6 {\
+  \
+}\
+\
+.ace-clouds .ace_markup.ace_list {\
+  \
+}\
+\
+.ace-clouds .ace_collab.ace_user1 {\
+     \
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
-
-    exports.cssClass = "ace-clouds";
 });

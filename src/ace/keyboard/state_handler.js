@@ -64,7 +64,8 @@ StateHandler.prototype = {
             if (binding.key) {
                 binding.key = new RegExp('^' + binding.key + '$');
             } else if (Array.isArray(binding.regex)) {
-                binding.key = new RegExp('^' + binding.regex[1] + '$');
+                if (!('key' in binding))
+                  binding.key = new RegExp('^' + binding.regex[1] + '$');
                 binding.regex = new RegExp(binding.regex.join('') + '$');
             } else if (binding.regex) {
                 binding.regex = new RegExp(binding.regex + '$');
@@ -140,11 +141,11 @@ StateHandler.prototype = {
             }
 
             // If there is a command to execute, then figure out the
-            // comand and the arguments.
+            // command and the arguments.
             if (binding.exec) {
                 result.command = binding.exec;
 
-                // Bulid the arguments.
+                // Build the arguments.
                 if (binding.params) {
                     var value;
                     result.args = {};
@@ -197,7 +198,7 @@ StateHandler.prototype = {
         // If we pressed any command key but no other key, then ignore the input.
         // Otherwise "shift-" is added to the buffer, and later on "shift-g"
         // which results in "shift-shift-g" which doesn't make senese.
-        if (hashId != 0 && (key == "" || String.fromCharCode(0))) {
+        if (hashId != 0 && (key == "" || key == String.fromCharCode(0))) {
             return null;
         }
 

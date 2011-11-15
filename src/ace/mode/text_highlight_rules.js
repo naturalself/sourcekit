@@ -37,19 +37,21 @@
 
 define(function(require, exports, module) {
 
+var lang = require("pilot/lang");
+
 var TextHighlightRules = function() {
 
     // regexp must not have capturing parentheses
     // regexps are ordered -> the first match is used
 
     this.$rules = {
-        "start" : [ {
+        "start" : [{
             token : "empty_line",
             regex : '^$'
         }, {
             token : "text",
             regex : ".+"
-        } ]
+        }]
     };
 };
 
@@ -73,6 +75,34 @@ var TextHighlightRules = function() {
     this.getRules = function() {
         return this.$rules;
     };
+    
+    this.embedRules = function (HighlightRules, prefix, escapeRules, states) {
+        var embedRules = new HighlightRules().getRules();
+        if (states) {
+            for (var i = 0; i < states.length; i++) {
+                states[i] = prefix + states[i];
+            }
+        } else {
+            states = [];
+            for (var key in embedRules) {
+                states.push(prefix + key);
+            }
+        }
+        this.addRules(embedRules, prefix);
+        
+        for (var i = 0; i < states.length; i++) {
+            Array.prototype.unshift.apply(this.$rules[states[i]], lang.deepCopy(escapeRules));
+        }
+        
+        if (!this.$embeds) {
+            this.$embeds = [];
+        }
+        this.$embeds.push(prefix);
+    }
+    
+    this.getEmbeds = function() {
+        return this.$embeds;
+    }
 
 }).call(TextHighlightRules.prototype);
 

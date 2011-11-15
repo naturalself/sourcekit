@@ -20,6 +20,7 @@
  *
  * Contributor(s):
  *      Fabian Jakobs <fabian AT ajax DOT org>
+ *      Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -51,8 +52,13 @@ var ScrollBar = function(parent) {
 
     parent.appendChild(this.element);
 
-    this.width = dom.scrollbarWidth();
-    this.element.style.width = this.width + "px";
+    // in OSX lion the scrollbars appear to have no width. In this case resize
+    // the to show the scrollbar but still pretend that the scrollbar has a width
+    // of 0px
+    // in Firefox 6+ scrollbar is hidden if element has the same width as scrollbar
+    // make element a little bit wider to retain scrollbar when page is zoomed 
+    this.width = dom.scrollbarWidth(parent.ownerDocument);
+    this.element.style.width = (this.width || 15) + 5 + "px";
 
     event.addListener(this.element, "scroll", this.onScroll.bind(this));
 };

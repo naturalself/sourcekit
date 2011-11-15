@@ -37,9 +37,8 @@
 
 define(function(require, exports, module) {
 
-    var dom = require("pilot/dom");
-
-    var cssText = ".ace-twilight .ace_editor {\
+exports.cssClass = "ace-twilight";
+exports.cssText = ".ace-twilight .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -190,10 +189,70 @@ color:#5F5A60;\
 \
 .ace-twilight .ace_xml_pe {\
   color:#494949;\
+}\
+\
+.ace-twilight .ace_meta {\
+  \
+}\
+\
+.ace-twilight .ace_meta.ace_tag {\
+  color:#AC885B;\
+}\
+\
+.ace-twilight .ace_meta.ace_tag.ace_input {\
+  \
+}\
+\
+.ace-twilight .ace_entity.ace_other.ace_attribute-name {\
+  \
+}\
+\
+.ace-twilight .ace_entity.ace_name {\
+  \
+}\
+\
+.ace-twilight .ace_entity.ace_name.ace_function {\
+  color:#AC885B;\
+}\
+\
+.ace-twilight .ace_markup.ace_underline {\
+    text-decoration:underline;\
+}\
+\
+.ace-twilight .ace_markup.ace_heading {\
+  color:#CF6A4C;\
+}\
+\
+.ace-twilight .ace_markup.ace_heading.ace_1 {\
+  \
+}\
+\
+.ace-twilight .ace_markup.ace_heading.ace_2 {\
+  \
+}\
+\
+.ace-twilight .ace_markup.ace_heading.ace_3 {\
+  \
+}\
+\
+.ace-twilight .ace_markup.ace_heading.ace_4 {\
+  \
+}\
+\
+.ace-twilight .ace_markup.ace_heading.ace_5 {\
+  \
+}\
+\
+.ace-twilight .ace_markup.ace_heading.ace_6 {\
+  \
+}\
+\
+.ace-twilight .ace_markup.ace_list {\
+  color:#F9EE98;\
+}\
+\
+.ace-twilight .ace_collab.ace_user1 {\
+     \
 }";
 
-    // import CSS once
-    dom.importCssString(cssText);
-
-    exports.cssClass = "ace-twilight";
 });

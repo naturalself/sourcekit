@@ -21,6 +21,7 @@
  *
  * Contributor(s):
  *      Fabian Jakobs <fabian AT ajax DOT org>
+ *      Mihai Sucan <mihai DOT sucan AT gmail DOT com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -45,6 +46,9 @@ var dom = require("pilot/dom");
 var TextInput = function(parentNode, host) {
 
     var text = dom.createElement("textarea");
+    if (useragent.isTouchPad)
+    	text.setAttribute("x-palm-disable-auto-cap", true);
+        
     text.style.left = "-10000px";
     parentNode.appendChild(text);
 
@@ -53,7 +57,14 @@ var TextInput = function(parentNode, host) {
 
     var inCompostion = false;
     var copied = false;
+    var pasted = false;
     var tempStyle = '';
+
+    function select() {
+        try {
+            text.select();
+        } catch (e) {}
+    }
 
     function sendText(valueToSend) {
         if (!copied) {
@@ -62,20 +73,36 @@ var TextInput = function(parentNode, host) {
                 if (value.charCodeAt(value.length-1) == PLACEHOLDER.charCodeAt(0)) {
                     value = value.slice(0, -1);
                     if (value)
-                        host.onTextInput(value);
-                } else
-                    host.onTextInput(value);
+                        host.onTextInput(value, !pasted);
+                }
+                else {
+                    host.onTextInput(value, !pasted);
+                }
+
+                // If editor is no longer focused we quit immediately, since
+                // it means that something else is in charge now.
+                if (!isFocused())
+                    return false;
             }
         }
+
         copied = false;
+        pasted = false;
 
         // Safari doesn't fire copy events if no text is selected
         text.value = PLACEHOLDER;
-        text.select();
+        select();
     }
 
     var onTextInput = function(e) {
-        if (useragent.isIE && text.value.charCodeAt(0) > 128) return;
+        setTimeout(function () {
+            if (!inCompostion)
+                sendText(e.data);                
+        }, 0);
+    };
+    
+    var onPropertyChange = function(e) {
+        if (useragent.isOldIE && text.value.charCodeAt(0) > 128) return;
         setTimeout(function() {
             if (!inCompostion)
                 sendText();
@@ -84,10 +111,6 @@ var TextInput = function(parentNode, host) {
 
     var onCompositionStart = function(e) {
         inCompostion = true;
-        if (!useragent.isIE) {
-            sendText();
-            text.value = "";
-        };
         host.onCompositionStart();
         if (!useragent.isGecko) setTimeout(onCompositionUpdate, 0);
     };
@@ -97,12 +120,9 @@ var TextInput = function(parentNode, host) {
         host.onCompositionUpdate(text.value);
     };
 
-    var onCompositionEnd = function() {
+    var onCompositionEnd = function(e) {
         inCompostion = false;
         host.onCompositionEnd();
-        setTimeout(function () {
-            sendText();
-        }, 0);
     };
 
     var onCopy = function(e) {
@@ -112,12 +132,12 @@ var TextInput = function(parentNode, host) {
             text.value = copyText;
         else
             e.preventDefault();
-        text.select();
+        select();
         setTimeout(function () {
             sendText();
         }, 0);
     };
-
+    
     var onCut = function(e) {
         copied = true;
         var copyText = host.getCopyText();
@@ -126,45 +146,48 @@ var TextInput = function(parentNode, host) {
             host.onCut();
         } else
             e.preventDefault();
-        text.select();
+        select();
         setTimeout(function () {
             sendText();
         }, 0);
     };
 
     event.addCommandKeyListener(text, host.onCommandKey.bind(host));
-    event.addListener(text, "keypress", onTextInput);
-    if (useragent.isIE) {
+    if (useragent.isOldIE) {
         var keytable = { 13:1, 27:1 };
         event.addListener(text, "keyup", function (e) {
             if (inCompostion && (!text.value || keytable[e.keyCode]))
                 setTimeout(onCompositionEnd, 0);
             if ((text.value.charCodeAt(0)|0) < 129) {
                 return;
-            };
+            }
             inCompostion ? onCompositionUpdate() : onCompositionStart();
         });
-    };
-    event.addListener(text, "textInput", onTextInput);
+    }
+    
+    if ("onpropertychange" in text && !("oninput" in text))
+        event.addListener(text, "propertychange", onPropertyChange);
+    else
+        event.addListener(text, "input", onTextInput);
+    
     event.addListener(text, "paste", function(e) {
+        // Mark that the next input text comes from past.
+        pasted = true;
         // Some browsers support the event.clipboardData API. Use this to get
         // the pasted content which increases speed if pasting a lot of lines.
         if (e.clipboardData && e.clipboardData.getData) {
             sendText(e.clipboardData.getData("text/plain"));
             e.preventDefault();
-        } else
-        // If a browser doesn't support any of the things above, use the regular
-        // method to detect the pasted input.
-        {
-            onTextInput();
+        } 
+        else {
+            // If a browser doesn't support any of the things above, use the regular
+            // method to detect the pasted input.
+            onPropertyChange();
         }
     });
-    if (!useragent.isIE) {
-        event.addListener(text, "propertychange", onTextInput);
-    };
 
-    if (useragent.isIE) {
-        event.addListener(text, "beforecopy", function(e) {        
+    if ("onbeforecopy" in text && typeof clipboardData !== "undefined") {
+        event.addListener(text, "beforecopy", function(e) {
             var copyText = host.getCopyText();
             if(copyText)
                 clipboardData.setData("Text", copyText);
@@ -202,18 +225,23 @@ var TextInput = function(parentNode, host) {
 
     event.addListener(text, "focus", function() {
         host.onFocus();
-        text.select();
+        select();
     });
 
     this.focus = function() {
         host.onFocus();
-        text.select();
+        select();
         text.focus();
     };
 
     this.blur = function() {
         text.blur();
     };
+
+    function isFocused() {
+        return document.activeElement === text;
+    };
+    this.isFocused = isFocused;
 
     this.getElement = function() {
         return text;
