@@ -315,7 +315,7 @@ var Dropbox = function(consumerKey, consumerSecret) {
                     });
                 } else { // Step 2
                     var accessTokenUrl = "https://www.dropbox.com/" + _dropboxApiVersion + "/oauth/access_token";
-                    var message = _createOauthRequest(accessTokenUrl);
+                    var message = _createOauthRequest(accessTokenUrl,{tokenSecret: _tokens['requestTokenSecret']});
 
                     _sendOauthRequest(message, {
                         type: "text",
