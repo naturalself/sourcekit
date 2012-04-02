@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Sourcekit by kenotron</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/kenotron/sourcekit">Fork On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/kenotron/sourcekit/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/kenotron/sourcekit/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Sourcekit</h1>
+          <p>Textmate-like Editor Inside Chrome</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/kenotron">kenotron</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/mattgraham">mattgraham</a></span>
+        </div>
+
+        <h1>SourceKit</h1>
+
+<p>A lightweight programmer's text and source code editor right inside of Chrome. It saves files directly to Dropbox, so if you have the Dropbox sync software installed, the changes will appear locally as if you did so with a text editor! Changes will be stored remotely so naturally this same extension will pull up the same copy of the file everywhere!</p>
+
+<h2>Resources</h2>
+
+<p>Report issues here: <a href="https://github.com/kenotron/sourcekit/issues">https://github.com/kenotron/sourcekit/issues</a>
+Follow me: <a href="http://twitter.com/kenneth_chau">http://twitter.com/kenneth_chau</a></p>
+
+<h2>Details</h2>
+
+<p>Embedded is the excellent Ajax.org's Ace text editor component. This allows for a very natural text editing experience while retaining Chrome's amazing JavaScript performance.</p>
+
+<h2>Installation</h2>
+
+<ul>
+<li>Go to the Google Web Store, search for 'SourceKit' - install it!</li>
+<li>-OR- Clone the repository and then install as an 'unpacked extension' inside Chrome</li>
+</ul><h2>Contributors</h2>
+
+<ul>
+<li>antimatter15: <a href="https://github.com/antimatter15">https://github.com/antimatter15</a></li>
+<li>csnodgrass: <a href="https://github.com/colesnodgrass">https://github.com/colesnodgrass</a></li>
+<li>mrpants: <a href="https://github.com/mrpants">https://github.com/mrpants</a></li>
+<li>jmuk: <a href="https://github.com/jmuk">https://github.com/jmuk</a></li>
+</ul><h2>Changelog</h2>
+
+<h3>0.8.0</h3>
+
+<ul>
+<li>Added localstorage support (jmuk)</li>
+<li>Added extension based storage engines support (jmuk)</li>
+</ul><h3>0.7.4</h3>
+
+<ul>
+<li>Fixed the version number to Dropbox's API calls.</li>
+</ul><h3>0.7.3</h3>
+
+<ul>
+<li>Fixed the url to Dropbox's API calls.</li>
+</ul><h3>0.7.2</h3>
+
+<ul>
+<li>Fixed a rendering bug with the options dialog</li>
+</ul><h3>0.7.1</h3>
+
+<ul>
+<li>Fixed version numbering</li>
+</ul><h3>0.7.0</h3>
+
+<ul>
+<li>colesnodgrass added Options (saving to localStorage)!!!!!</li>
+<li>kenotron updated icon text to be consistently white (it's so subtle, you probably didn't notice it...)</li>
+</ul><h3>0.6.6</h3>
+
+<ul>
+<li>Added several themes: THANKS to mrpants!!!</li>
+<li>Added .pm syntax highlight for Perl module files (duh!)</li>
+<li>New icons :) Hope you like it!!</li>
+</ul><h3>0.6.5</h3>
+
+<ul>
+<li>Added Word Wrap selection</li>
+<li>Added Theme selection</li>
+</ul><h3>0.6.4</h3>
+
+<ul>
+<li>Replaced direct calls to dropbox.js with Dojo data api (can you guess where I'm headed?!)</li>
+<li>Added Perl, CoffeeScript, and C# highlighter support</li>
+<li>Updated RequireJS to v2.3 (since Ace supports it now!)</li>
+</ul><h3>0.6.3</h3>
+
+<ul>
+<li>Fixed the file mode mapping file (more file types and added html &amp; js); THANKS to antimatter15!!! </li>
+</ul><h3>0.6.2</h3>
+
+<ul>
+<li>Added auto syntax hightlighting</li>
+</ul><h3>0.6.1</h3>
+
+<ul>
+<li>HOLY MOTHER OF REWRITE!</li>
+<li>Now uses Dojo, Ace</li>
+<li>Authenticates via more user friendly Dropbox OAuth API</li>
+<li>Got rid of the Dropbox email / password screen</li>
+<li>Added capability to create new files and folders and delete files (right click does it!)</li>
+</ul><h2>Older Changelog (not relevant anymore!)</h2>
+
+<h3>0.5.0 (never released)</h3>
+
+<ul>
+<li>Added PLUGINs support</li>
+<li>Fixed a file name compatibility issue in the file list</li>
+<li>Never released...</li>
+</ul><h3>0.4.1</h3>
+
+<ul>
+<li>C#, SQL support</li>
+<li>Do not prevent editing text/* mime types (shell, CSS, and others are allowed)</li>
+</ul><h3>0.4.0</h3>
+
+<ul>
+<li>By popular demand, this has been converted to a packaged app!</li>
+</ul><h3>0.3.8</h3>
+
+<ul>
+<li>Utilize Bespin's buffers when switching tabs</li>
+<li>Fixes undo / redo functionality (so the undo history is not mixed between tabs!!!)</li>
+<li>Added a "lock" so one cannot click on multiple files while the first file is being loaded</li>
+<li>Much better looking "Options" page</li>
+</ul><h3>0.3.7</h3>
+
+<ul>
+<li>Fixed a bug about opening files with spaces in them</li>
+<li>Can create files / folders with the file list on the left</li>
+<li>Added default page so the app is less "bare" when started</li>
+</ul><h3>0.3.6</h3>
+
+<ul>
+<li>BUG FIX... had a typo in the last release</li>
+</ul><h3>0.3.5</h3>
+
+<ul>
+<li>Tabbed interface!</li>
+<li>Added support for C#, and CoffeeScript</li>
+</ul><h3>0.3.4</h3>
+
+<ul>
+<li>Added a syntax highlighting support for many different languages including: C/C++, Ruby, Python, PHP, HTML, JavaScript, Java</li>
+<li>The file list is sorted now (on open)</li>
+</ul><h3>0.3.3</h3>
+
+<ul>
+<li>Applied to Dropbox for production application status! (pending approval!!!)</li>
+<li>Renamed to SourceKit</li>
+<li>too many ChromePad's and too Chrome specific</li>
+</ul><h3>0.3.1</h3>
+
+<ul>
+<li>First public release!</li>
+</ul>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+  </body>
+</html>
