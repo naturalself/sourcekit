@@ -120,7 +120,6 @@ Editor.prototype.openFile = function(item) {
         }
         // setup session
         store.getContent(item, function(data) {
-                           console.log(data);
             if (Mode != null) {
                 this.sessions[id] = new AceEditSession(data, new Mode());
             } else {

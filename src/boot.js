@@ -1,27 +1,17 @@
+dojo.require('dijit.layout.BorderContainer');
+dojo.require('dijit.layout.ContentPane');
+dojo.require('dijit.layout.TabContainer');
+dojo.require('dijit.Dialog');
+dojo.require('dijit.form.Select');
+
 var config = {
-    baseUrl: "/src"
+    baseUrl: "/src",
 }
 
 var deps = [
     "sourcekit/application",
-    "pilot/plugin_manager",
-    "pilot/settings",
-    "pilot/environment"    
-];
-
-var plugins = [
-    "pilot/index",
-    "cockpit/index",
-    "ace/defaults"
 ];
 
 require(config, deps, function(Application) {
-    var catalog = require("pilot/plugin_manager").catalog;
-
-    catalog.registerPlugins(plugins).then(function() {
-        var env = require("pilot/environment").create();
-        catalog.startupPlugins({ env: env }).then(function() {
-            require("sourcekit/application").start();
-        });
-    });
+    Application.start();
 });

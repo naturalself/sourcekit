@@ -9,13 +9,15 @@ var DropboxStore = function(dropbox) {
             if (item[attribute]) {
                 return attribute;
             } else if (attribute == "content") {
-                return _dropbox.getFileContents(item.path);
+                return _dropbox.readFile(item.path);
             }
 
             return defaultValue;
         },
         getContent: function(item, callback) {
-            callback(_dropbox.getFileContents(item.path));
+            _dropbox.readFile(item.path, null, function(apiError, contents, stat) {
+                callback(contents);
+            });
         },
         getValues: function(item, attribute) {
             return (item[attribute] || []).slice(0);
@@ -41,24 +43,26 @@ var DropboxStore = function(dropbox) {
             if (keywordArgs.item) {
                 var item = keywordArgs.item;
 
-                if (item.is_dir || item.root != null) {
-                    _dropbox.getDirectoryContents(item.path, function(data) {
-                        for (i in data.contents) {
-                            if (data.contents[i].is_dir) {
-                                data.contents[i].children = [];
-                                data.contents[i].loaded = false;
-                            } else {
-                                data.contents[i].loaded = false;
+                if (item.isFolder || item.root != null) {
+                    _dropbox.readdir(item.path, null, function(apiError, data, folderStat, filesStat) {
+                        if (apiError == null)
+                            {for (i in filesStat) {
+                                if (filesStat[i].isFolder) {
+                                    filesStat[i].children = [];
+                                    filesStat[i].loaded = false;
+                                } else {
+                                    filesStat[i].loaded = false;
+                                }
+
+                                item.children.push(filesStat[i]);
                             }
 
-                            item.children.push(data.contents[i]);
+                            item.loaded = true;
+                            keywordArgs['onItem'].call(scope, item);
                         }
-
-                        item.loaded = true;
-                        keywordArgs['onItem'].call(scope, item);
                     });
-                } else if (!item.is_dir) {
-                    _dropbox.getFileContents(item.path, function(data) {
+                } else if (!item.isFolder) {
+                    _dropbox.readFile(item.path, null, function(apiError, data) {
                         item.loaded = true;
                         keywordArgs['onItem'].call(scope, item);
                     });
@@ -73,30 +77,30 @@ var DropboxStore = function(dropbox) {
             var path = keywordArgs.query.path;
             var scope = keywordArgs.scope || dojo.global;
 
-            _dropbox.getDirectoryContents(path, function(data) {
-                for (i in data.contents) {
-                    if (data.contents[i].is_dir) {
-                        data.contents[i].children = [];
-                        data.contents[i].loaded = false;
+            _dropbox.readdir(path, null, function(apiError, data, folderStat, filesStat) {
+                for (i in filesStat) {
+                    if (filesStat[i].isFolder) {
+                        filesStat[i].children = [];
+                        filesStat[i].loaded = false;
                     } else {
                         // ??
-                        data.contents[i].loaded = false;
+                        filesStat[i].loaded = false;
                     }
                 }
 
                 if (keywordArgs.onBegin) {
-                    keywordArgs['onBegin'].call(scope, data.contents.length, keywordArgs)
+                    keywordArgs['onBegin'].call(scope, filesStat.length, keywordArgs)
                 }
 
                 if (keywordArgs.onItem){
                     for (i in data.contents){
-                        keywordArgs["onItem"].call(scope, data.contents[i], keywordArgs);
+                        keywordArgs["onItem"].call(scope, filesStat[i], keywordArgs);
                     }
                     if (keywordArgs.onComplete) {
                         keywordArgs["onComplete"].call(scope, keywordArgs);
                     }
                 } else if (keywordArgs.onComplete){
-                    keywordArgs["onComplete"].call(scope, data.contents, keywordArgs);
+                    keywordArgs["onComplete"].call(scope, filesStat, keywordArgs);
                 }
             });
         },
@@ -148,12 +152,12 @@ var DropboxStore = function(dropbox) {
                 this.onNew(item, onNewParentInfo);
             }).bind(this);
 
-            if (item.is_dir) {
+            if (item.isFolder) {
                 item.loaded = true;
-                _dropbox.createDirectory(item.path, onSuccess);
+                _dropbox.mkdir(item.path, onSuccess);
             } else {
                 item.loaded = true;
-                _dropbox.putFileContents(item.path, "", onSuccess);
+                _dropbox.writeFile(item.path, "", onSuccess);
             }
 
             children.push(item);
@@ -181,7 +185,7 @@ var DropboxStore = function(dropbox) {
             item[attribute] = value;
 
             if (attribute == "content") {
-                _dropbox.putFileContents(item.path, value, (function() {
+                _dropbox.writeFile(item.path, value, (function(apiError, stat) {
                     this.onSet(item, attribute, oldValue, value);
                 }).bind(this));
             }

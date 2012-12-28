@@ -10,30 +10,34 @@ body, html { width:100%; height:100%; margin:0; padding:0; overflow: hidden; }
 
 #borderLeft {
     width: 200px; 
-    margin: 5px 0 5px 5px;
-    padding: 0;
-    border: #B5BCC7 solid 1px;
+    background: #eee;
+}
+
+.dijitTreeRow {
+  background-image: none !important;
 }
 
 #borderCenter {
     padding: 0 5px 5px 0;
-    
 }
 
 #introContainer {
-  background: #ddd;
+  background: #111;
   height: 100%;
   width: 100%;
+
+  display: -webkit-flex;
+  -webkit-justify-content: center;
+  -webkit-align-items: center;
+  -webkit-flex-direction: column;
 }
 
 #introContainer h1 {
 	font-size: 50px;
 	font-family: helvetica;
 	font-weight: bold;
-	color: #999;
-	margin: 0 auto 0 auto;
-	padding: 50px 0 0 0;
-	text-shadow: 1px 1px 1px white;
+	color: #111;
+	text-shadow: 1px 1px 3px #333;
 	text-align: center;
 }
 

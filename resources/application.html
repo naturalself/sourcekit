@@ -7,13 +7,6 @@
         <link rel="stylesheet" href="css/themes/claro/claro.css" />
         <link rel="stylesheet" href="css/application.css" />
         <script src="../src/dojo/dojo.js.uncompressed.js" djConfig="parseOnLoad:true"></script>
-        <script type="text/javascript">
-            dojo.require('dijit.layout.BorderContainer');
-            dojo.require('dijit.layout.ContentPane');
-            dojo.require('dijit.layout.TabContainer');
-			dojo.require('dijit.Dialog');
-			dojo.require('dijit.form.Select');
-        </script>
     </head>
     <body class="claro">
 		<div dojoType="dijit.Dialog" id="optionsDialog" title="Options">
@@ -47,6 +40,7 @@
             </div>
         </div>
         <div id="editorContainer"></div>
+        <script src="../src/dropbox/dropbox.min.js"></script>
         <script src="../src/require.js"></script>
         <script src="../src/boot.js"></script>
     </body>

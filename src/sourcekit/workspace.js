@@ -1,10 +1,9 @@
 define('sourcekit/workspace', [
-    'dropbox/dropbox',
     'sourcekit/data/dropbox_store',
     'sourcekit/data/localStorage_store',
     'sourcekit/data/extension_store',
     'sourcekit/editor',
-    'sourcekit/filelist'], function (Dropbox, DropboxStore, LocalStorageStore, ExtensionStore, Editor, FileList) {
+    'sourcekit/filelist'], function (DropboxStore, LocalStorageStore, ExtensionStore, Editor, FileList) {
 
 var Workspace = function() {
     this.stores = { };
@@ -29,11 +28,10 @@ Workspace.prototype.destroy = function() {
 };
 
 Workspace.getDropboxWorkspace = function(ws, callback) {
-    var consumerKey = "06rngr4earvyn5p";
-    var consumerSecret = "w6mhnhbqg9qvkw0";
-    var dropbox = new Dropbox(consumerKey, consumerSecret);
-
-    dropbox.authorize((function() {
+    var apiKey = "BmCnFlJ0hjA=|f4pXqjr1JZp6ewS37m0n0ihlQk9CWCc3LaJXFNXhHA==";
+    var dropbox = new Dropbox.Client({key:apiKey,sandbox:false});
+    dropbox.authDriver(new Dropbox.Drivers.Redirect({ rememberUser: true }));
+    dropbox.authenticate((function(apiError, dropbox) {
         var store = new DropboxStore(dropbox);
         ws.registerStore(store);
 
@@ -77,7 +75,7 @@ Workspace.getAllWorkspace = function(callback) {
   var methods = [
     Workspace.getDropboxWorkspace,
 //    Workspace.getLocalStorageWorkspace,
-    Workspace.getExtensionWorkspaces
+//    Workspace.getExtensionWorkspaces
   ];
   var retval = true;
   var ws = new Workspace();

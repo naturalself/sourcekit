@@ -12,9 +12,9 @@
         'ace/theme/pastel_on_dark',
         'ace/theme/textmate',
         'ace/theme/twilight',
-        'sourcekit/editor/theme/merbivore',
-        'sourcekit/editor/theme/merbivore_soft',
-        'sourcekit/editor/theme/vibrant_ink',
+        'ace/theme/merbivore',
+        'ace/theme/merbivore_soft',
+        'ace/theme/vibrant_ink',
     ],
 function() {
 	return {
