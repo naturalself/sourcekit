@@ -25,6 +25,12 @@ Contributors
 
 Changelog
 ---------
+### 0.8.1 ###
+* temporarily disabling the other store methods
+* deleted unused deps
+* updated Ace version
+* updated to use dropbox-js project
+
 ### 0.8.0 ###
 * Added localstorage support (jmuk)
 * Added extension based storage engines support (jmuk)
