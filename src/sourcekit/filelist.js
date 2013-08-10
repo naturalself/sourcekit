@@ -63,7 +63,7 @@ FileList.prototype.setupInterface = function() {
             if (fileName != null) {
                 var parentItem = null;
 
-                if (this.fileNodeInContext.item.is_dir) {
+                if (this.fileNodeInContext.item.is_dir || this.fileNodeInContext.item.isFolder) {
                     parentItem = this.fileNodeInContext.item;
                 } else if (this.fileNodeInContext.getParent() != null) {
                     parentItem = this.fileNodeInContext.getParent().item;
