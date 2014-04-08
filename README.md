@@ -25,6 +25,10 @@ Contributors
 
 Changelog
 ---------
+### 0.8.3 ###
+* What happened to 0.8.2?? Dunno
+* Fixed the manifest.json
+
 ### 0.8.1 ###
 * temporarily disabling the other store methods
 * deleted unused deps
