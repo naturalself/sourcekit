@@ -28,23 +28,20 @@ Workspace.prototype.destroy = function() {
 };
 
 Workspace.getDropboxWorkspace = function(ws, callback) {
-    var apiKey = "BmCnFlJ0hjA=|f4pXqjr1JZp6ewS37m0n0ihlQk9CWCc3LaJXFNXhHA==";
+    var apiKey = "0660jgq6erg4h63";
     var dropbox = new Dropbox.Client({key:apiKey,sandbox:false});
-    dropbox.authDriver(new Dropbox.Drivers.Redirect({ rememberUser: true }));
-    dropbox.authenticate((function(apiError, dropbox) {
-        var store = new DropboxStore(dropbox);
-        ws.registerStore(store);
+    dropbox.authDriver(new Dropbox.AuthDriver.ChromeExtension({
+        receiverPath: "/resources/chrome_oauth_receiver.html"}));
+    //dropbox.authDriver(new Dropbox.AuthDrivers.Redirect({ rememberUser: true }));
+    dropbox.authenticate(
+        (function(apiError, dropbox) {
+            var store = new DropboxStore(dropbox);
+            ws.registerStore(store);
 
-        if (callback) {
-            callback.call(this, ws);
-        }
-    }).bind(this),
-    /* error callback */
-    function() {
-        if (callback) {
-            callback.call(this, ws);
-        }
-    });
+            if (callback) {
+                callback.call(this, ws);
+            }
+        }).bind(this));
 
     return true;
 };

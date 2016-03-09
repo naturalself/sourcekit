@@ -15,3 +15,8 @@ function init() {
   chrome.extension.onRequestExternal.addListener(acceptExtensions);
 }
 window.addEventListener('load',init);
+
+chrome.browserAction.onClicked.addListener(function(activeTab){
+  var newURL = "/resources/application.html";
+  chrome.tabs.create({ url: newURL });
+});
